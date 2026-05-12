@@ -23,8 +23,6 @@ export default function Login() {
         try {
             const res = await loginUser(form);
 
-            console.log(res.data);
-
             localStorage.setItem(
                 "accessToken",
                 res.data.accessToken

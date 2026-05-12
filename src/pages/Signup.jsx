@@ -26,8 +26,6 @@ export default function Signup() {
 
             setMessage(res.data.message);
 
-            console.log(res.data);
-
         } catch (err) {
             console.error(err);
 

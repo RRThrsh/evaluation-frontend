@@ -22,23 +22,22 @@ export default function Login() {
         e.preventDefault();
         setLoading(true);
         setMessage("");
-
+    
         try {
             const res = await loginUser(form);
-
+        
             localStorage.setItem(
                 "accessToken",
                 res.data.accessToken
             );
-
+        
             setMessage("Login successful!");
-
-            // Optional redirect
-            // navigate("/dashboard");
-
+        
+            navigate("/home");
+        
         } catch (err) {
             console.error(err);
-
+        
             setMessage(
                 err.response?.data?.message || "Login failed"
             );

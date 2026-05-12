@@ -1,14 +1,14 @@
 import axios from "axios";
 
 const API = axios.create({
-    baseURL: "http://localhost:5000/auth",
+    baseURL: "http://localhost:3000/auth",
     withCredentials: true
 });
 
-export const registerUser = async (data) => {
+export const registerUser = (data) => {
     return API.post("/register", data);
 };
 
-export const loginUser = async (data) => {
+export const loginUser = (data) => {
     return API.post("/login", data);
 };

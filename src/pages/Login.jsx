@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../api/auth";
 
 export default function Login() {
+
+    const navigate = useNavigate();
+
     const [form, setForm] = useState({
         email: "",
         password: "",
@@ -20,27 +23,38 @@ export default function Login() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         setLoading(true);
         setMessage("");
-    
+
         try {
             const res = await loginUser(form);
-        
+
             localStorage.setItem(
                 "accessToken",
                 res.data.accessToken
             );
-        
+
+            if (res.data.user) {
+                localStorage.setItem(
+                    "user",
+                    JSON.stringify(res.data.user)
+                );
+            }
+
             setMessage("Login successful!");
-        
-            navigate("/home");
-        
+
+            setTimeout(() => {
+                navigate("/home");
+            }, 1000);
+
         } catch (err) {
             console.error(err);
-        
+
             setMessage(
                 err.response?.data?.message || "Login failed"
             );
+
         } finally {
             setLoading(false);
         }
@@ -48,7 +62,7 @@ export default function Login() {
 
     return (
         <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 px-6">
-            
+
             {/* Background Glow */}
             <div className="absolute inset-0 -z-10">
                 <div className="absolute left-1/2 top-0 h-[450px] w-[450px] -translate-x-1/2 rounded-full bg-blue-500/20 blur-3xl" />
@@ -56,9 +70,10 @@ export default function Login() {
 
             {/* Login Card */}
             <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
-                
+
                 {/* Header */}
                 <div className="mb-8 text-center">
+
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/20">
                         <span className="text-3xl">🔐</span>
                     </div>
@@ -72,7 +87,7 @@ export default function Login() {
                     </p>
                 </div>
 
-                {/* Alert Message */}
+                {/* Alert */}
                 {message && (
                     <div
                         className={`mb-5 rounded-xl border px-4 py-3 text-sm ${
@@ -86,8 +101,11 @@ export default function Login() {
                 )}
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-5">
-                    
+                <form
+                    onSubmit={handleSubmit}
+                    className="space-y-5"
+                >
+
                     {/* Email */}
                     <div>
                         <label className="mb-2 block text-sm font-medium text-slate-300">
@@ -101,12 +119,14 @@ export default function Login() {
                             value={form.email}
                             onChange={handleChange}
                             required
+                            autoComplete="email"
                             className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none transition-all duration-300 placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
                         />
                     </div>
 
                     {/* Password */}
                     <div>
+
                         <div className="mb-2 flex items-center justify-between">
                             <label className="text-sm font-medium text-slate-300">
                                 Password
@@ -114,7 +134,7 @@ export default function Login() {
 
                             <button
                                 type="button"
-                                className="text-sm text-blue-400 hover:text-blue-300"
+                                className="text-sm text-blue-400 transition hover:text-blue-300"
                             >
                                 Forgot password?
                             </button>
@@ -127,6 +147,7 @@ export default function Login() {
                             value={form.password}
                             onChange={handleChange}
                             required
+                            autoComplete="current-password"
                             className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-4 py-3 text-white outline-none transition-all duration-300 placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
                         />
                     </div>
@@ -137,6 +158,7 @@ export default function Login() {
                         disabled={loading}
                         className="group flex w-full items-center justify-center rounded-xl bg-blue-500 py-3 text-lg font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] hover:bg-blue-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
                     >
+
                         {loading ? (
                             <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                         ) : (
@@ -153,15 +175,18 @@ export default function Login() {
                 {/* Divider */}
                 <div className="my-6 flex items-center gap-4">
                     <div className="h-px flex-1 bg-white/10" />
+
                     <span className="text-sm text-slate-500">
                         OR
                     </span>
+
                     <div className="h-px flex-1 bg-white/10" />
                 </div>
 
                 {/* Signup */}
                 <p className="text-center text-slate-400">
                     Don&apos;t have an account?{" "}
+
                     <Link
                         to="/signup"
                         className="font-medium text-blue-400 transition hover:text-blue-300"

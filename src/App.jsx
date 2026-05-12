@@ -15,6 +15,12 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
 
+            {/* USERS */}
+
+            {/* MODERATORS */}
+
+            {/* ADMIN */}
+            
             {/* ERROR HANDLER */}
             <Route path="/429" element={<TooManyRequests />} />
             <Route path="*" element={<NotFound />} />

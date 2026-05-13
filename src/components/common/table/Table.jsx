@@ -1,14 +1,14 @@
 import React from "react";
-import { TABLE_STYLES } from "./Table.styles";
+import { table_styles } from "./table.style";
 
 export default function Table({ columns = [], data = [] }) {
     return (
         <div className="overflow-x-auto">
-            <table className={TABLE_STYLES.table}>
-                <thead className={TABLE_STYLES.head}>
+            <table className={table_styles.table}>
+                <thead className={table_styles.head}>
                     <tr>
                         {columns.map((c) => (
-                            <th key={c.key} className={TABLE_STYLES.th}>
+                            <th key={c.key} className={table_styles.th}>
                                 {c.header}
                             </th>
                         ))}
@@ -17,9 +17,9 @@ export default function Table({ columns = [], data = [] }) {
                 
                 <tbody>
                     {data.map((row, i) => (
-                        <tr key={i} className={TABLE_STYLES.tr}>
+                        <tr key={i} className={table_styles.tr}>
                             {columns.map((c) => (
-                                <td key={c.key} className={TABLE_STYLES.td}>
+                                <td key={c.key} className={table_styles.td}>
                                     {row[c.key]}
                                 </td>
                             ))}

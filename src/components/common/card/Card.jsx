@@ -1,12 +1,33 @@
 import React from "react";
-import { card_styles } from "./card.styles";
+import { View, Text, Pressable } from "react-native";
+import { cardStyles } from "./card.constant";
+import { CardPropTypes } from "./card.types";
 
-export default function Card({ title, children, footer }) {
+const Card = ({
+    title,
+    description,
+    children,
+    onPress,
+    variant = "default",
+    className = "",
+}) => {
+    const styles = cardStyles(variant);
+
+    const Wrapper = onPress ? Pressable : View;
+
     return (
-        <div className={card_styles.container}>
-            {title && <h3 className={card_styles.title}>{title}</h3>}
-            <div>{children}</div>
-            {footer && <div className={card_styles.footer}>{footer}</div>}
-        </div>
+        <Wrapper onPress={onPress} className={`${styles.container} ${className}`}>
+            {title ? <Text className={styles.title}>{title}</Text> : null}
+
+            {description ? (
+                <Text className={styles.description}>{description}</Text>
+            ) : null}
+
+            {children}
+        </Wrapper>
     );
-}
+};
+
+Card.propTypes = CardPropTypes;
+
+export default Card;

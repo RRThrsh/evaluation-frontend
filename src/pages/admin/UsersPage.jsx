@@ -6,43 +6,17 @@ import EditUserModal from "../../components/admin/users/EditUserModal";
 import CreateUserModal from "../../components/admin/users/CreateUserModal";
 
 export default function UsersPage() {
-    const [query, setQuery] = useState("");
-    const [page, setPage] = useState(1);
+    const perPage = 5;
 
-    const [selectedUser, setSelectedUser] = useState(null);
-
-    const [openDeleteModal, setOpenDeleteModal] = useState(false);
-    const [openEditModal, setOpenEditModal] = useState(false);
-    const [openCreateModal, setOpenCreateModal] = useState(false);
-
-    const [formData, setFormData] = useState({
+    const resetForm = {
         name: "",
         email: "",
         role: "user",
         status: "active",
-    });
-
-    const handleOpenCreate = () => {
-        setFormData(resetForm);
-        setErrors({});
-        setOpenCreateModal(true);
     };
 
-    const handleCreateUser = () => {
-        if (!validateForm()) return;    
-
-        const newUser = {
-            id: Date.now(),
-            ...formData,
-        };  
-
-        setUsers((prev) => [newUser, ...prev]);
-        setOpenCreateModal(false);
-    };
-
-    const [errors, setErrors] = useState({});
-
-    const perPage = 5;
+    const [query, setQuery] = useState("");
+    const [page, setPage] = useState(1);
 
     const [users, setUsers] = useState([
         { id: 1, name: "John Doe", email: "john@example.com", role: "admin", status: "active" },
@@ -54,6 +28,16 @@ export default function UsersPage() {
         { id: 7, name: "Tony Stark", email: "tony@example.com", role: "admin", status: "active" },
     ]);
 
+    const [selectedUser, setSelectedUser] = useState(null);
+
+    const [openDeleteModal, setOpenDeleteModal] = useState(false);
+    const [openEditModal, setOpenEditModal] = useState(false);
+    const [openCreateModal, setOpenCreateModal] = useState(false);
+
+    const [formData, setFormData] = useState(resetForm);
+    const [errors, setErrors] = useState({});
+
+    // ---------------- FILTER + PAGINATION ----------------
     const filteredUsers = useMemo(() => {
         return users.filter((u) =>
             u.name.toLowerCase().includes(query.toLowerCase())
@@ -74,6 +58,7 @@ export default function UsersPage() {
             if (e.key === "Escape") {
                 setOpenDeleteModal(false);
                 setOpenEditModal(false);
+                setOpenCreateModal(false);
             }
         };
 
@@ -81,7 +66,28 @@ export default function UsersPage() {
         return () => document.removeEventListener("keydown", handleEsc);
     }, []);
 
-    // DELETE
+    // ---------------- CREATE ----------------
+    const handleOpenCreate = () => {
+        setSelectedUser(null);
+        setFormData(resetForm);
+        setErrors({});
+        setOpenCreateModal(true);
+    };
+
+    const handleCreateUser = () => {
+        if (!validateForm()) return;
+
+        const newUser = {
+            id: Date.now(),
+            ...formData,
+        };
+
+        setUsers((prev) => [newUser, ...prev]);
+        setOpenCreateModal(false);
+        setFormData(resetForm);
+    };
+
+    // ---------------- DELETE ----------------
     const handleOpenDelete = (user) => {
         setSelectedUser(user);
         setOpenDeleteModal(true);
@@ -93,36 +99,12 @@ export default function UsersPage() {
         setSelectedUser(null);
     };
 
-    // EDIT
+    // ---------------- EDIT ----------------
     const handleOpenEdit = (user) => {
         setSelectedUser(user);
-        setFormData({
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            status: user.status,
-        });
+        setFormData(user);
         setErrors({});
         setOpenEditModal(true);
-    };
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((p) => ({ ...p, [name]: value }));
-    };
-
-    const validateForm = () => {
-        const newErrors = {};
-
-        if (!formData.name.trim()) newErrors.name = "Name is required";
-        if (!formData.email.trim()) {
-            newErrors.email = "Email is required";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            newErrors.email = "Invalid email address";
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
     };
 
     const handleSaveEdit = () => {
@@ -138,17 +120,30 @@ export default function UsersPage() {
         setSelectedUser(null);
     };
 
+    // ---------------- FORM ----------------
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((p) => ({ ...p, [name]: value }));
+    };
+
+    const validateForm = () => {
+        const newErrors = {};
+
+        if (!formData.name.trim()) newErrors.name = "Name is required";
+
+        if (!formData.email.trim()) {
+            newErrors.email = "Email is required";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            newErrors.email = "Invalid email address";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     return (
         <>
-            <CreateUserModal
-                open={openCreateModal}
-                formData={formData}
-                errors={errors}
-                onClose={() => setOpenCreateModal(false)}
-                onChange={handleChange}
-                onCreate={handleCreateUser}
-            />
-            
+            {/* TABLE */}
             <UsersTable
                 users={paginatedUsers}
                 query={query}
@@ -160,21 +155,30 @@ export default function UsersPage() {
                 onDelete={handleOpenDelete}
             />
 
-            <DeleteUserModal
-                open={openDeleteModal}
-                user={selectedUser}
-                onClose={() => setOpenDeleteModal(false)}
-                onConfirm={handleDeleteUser}
+            {/* MODALS */}
+            <CreateUserModal
+                open={openCreateModal}
+                formData={formData}
+                errors={errors}
+                onClose={() => setOpenCreateModal(false)}
+                onChange={handleChange}
+                onCreate={handleCreateUser}
             />
 
             <EditUserModal
                 open={openEditModal}
-                user={selectedUser}
                 formData={formData}
                 errors={errors}
                 onClose={() => setOpenEditModal(false)}
                 onChange={handleChange}
                 onSave={handleSaveEdit}
+            />
+
+            <DeleteUserModal
+                open={openDeleteModal}
+                user={selectedUser}
+                onClose={() => setOpenDeleteModal(false)}
+                onConfirm={handleDeleteUser}
             />
         </>
     );

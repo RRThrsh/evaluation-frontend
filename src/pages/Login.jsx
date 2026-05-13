@@ -1,19 +1,24 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../api/auth";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
 
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const [form, setForm] = useState({
         email: "",
         password: "",
     });
 
-    const [message, setMessage] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [message, setMessage] =
+        useState("");
 
+    const [loading, setLoading] =
+        useState(false);
+        
     const handleChange = (e) => {
         setForm({
             ...form,
@@ -22,37 +27,51 @@ export default function Login() {
     };
 
     const handleSubmit = async (e) => {
+
         e.preventDefault();
 
         setLoading(true);
         setMessage("");
 
         try {
-            const res = await loginUser(form);
 
-            localStorage.setItem(
-                "accessToken",
-                res.data.accessToken
-            );
+            const res =
+                await loginUser(form);
 
-            if (res.data.user) {
-                localStorage.setItem(
-                    "user",
-                    JSON.stringify(res.data.user)
-                );
-            }
+            const { accessToken, user } =
+                res.data;
 
-            setMessage("Login successful!");
-
-            setTimeout(() => {
-                navigate("/home");
-            }, 1000);
-
-        } catch (err) {
-            console.error(err);
+            login(accessToken, user);
 
             setMessage(
-                err.response?.data?.message || "Login failed"
+                "Login successful!"
+            );
+
+            setTimeout(() => {
+                const role =
+                    user.role.toLowerCase();
+
+                if (user.role === "admin") {
+                    navigate("/admin");
+                } else if (
+                    user.role === "moderator"
+                ) {
+                    navigate("/moderator");
+                } else if (
+                    user.role === "staff"
+                ) {
+                    navigate("/staff");
+                } else {
+                    navigate("/home");
+                }
+            }, 800);
+
+        } catch (err) {
+
+            setMessage(
+                err.response?.data
+                    ?.message ||
+                    "Login failed"
             );
 
         } finally {
@@ -75,7 +94,9 @@ export default function Login() {
                 <div className="mb-8 text-center">
 
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/20">
-                        <span className="text-3xl">🔐</span>
+                        <span className="text-3xl">
+                            🔐
+                        </span>
                     </div>
 
                     <h2 className="text-4xl font-extrabold tracking-tight text-white">
@@ -83,7 +104,8 @@ export default function Login() {
                     </h2>
 
                     <p className="mt-2 text-slate-400">
-                        Login to continue managing evaluations
+                        Login to continue managing
+                        evaluations
                     </p>
                 </div>
 
@@ -91,7 +113,11 @@ export default function Login() {
                 {message && (
                     <div
                         className={`mb-5 rounded-xl border px-4 py-3 text-sm ${
-                            message.toLowerCase().includes("successful")
+                            message
+                                .toLowerCase()
+                                .includes(
+                                    "successful"
+                                )
                                 ? "border-green-500/20 bg-green-500/10 text-green-400"
                                 : "border-red-500/20 bg-red-500/10 text-red-400"
                         }`}
@@ -108,6 +134,7 @@ export default function Login() {
 
                     {/* Email */}
                     <div>
+
                         <label className="mb-2 block text-sm font-medium text-slate-300">
                             Email Address
                         </label>
@@ -128,6 +155,7 @@ export default function Login() {
                     <div>
 
                         <div className="mb-2 flex items-center justify-between">
+
                             <label className="text-sm font-medium text-slate-300">
                                 Password
                             </label>
@@ -164,6 +192,7 @@ export default function Login() {
                         ) : (
                             <>
                                 Login
+
                                 <span className="ml-2 transition-transform group-hover:translate-x-1">
                                     →
                                 </span>
@@ -174,6 +203,7 @@ export default function Login() {
 
                 {/* Divider */}
                 <div className="my-6 flex items-center gap-4">
+
                     <div className="h-px flex-1 bg-white/10" />
 
                     <span className="text-sm text-slate-500">
@@ -185,6 +215,7 @@ export default function Login() {
 
                 {/* Signup */}
                 <p className="text-center text-slate-400">
+
                     Don&apos;t have an account?{" "}
 
                     <Link

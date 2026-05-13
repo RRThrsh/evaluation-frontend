@@ -1,9 +1,9 @@
 import React from "react";
-import { BADGE_STYLES } from "./Badge.styles";
+import { badge_styles } from "./badge.style";
 
 export default function Badge({ children, variant = "default" }) {
     return (
-        <span className={BADGE_STYLES[variant]}>
+        <span className={badge_styles[variant]}>
             {children}
         </span>
     );

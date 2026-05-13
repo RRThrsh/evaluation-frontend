@@ -76,7 +76,7 @@ export default function AdminHome() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
 
-            <main className="mx-auto max-w-7xl">
+            <main className="mx-auto max-w-7xl py-10">
                 {/* STATS */}
                 <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
                     {stats.map((stat) => (

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 
-import UsersTable from "./UsersTable";
-import DeleteUserModal from "./DeleteUserModal";
-import EditUserModal from "./EditUserModal";
+import UsersTable from "../../components/admin/users/UsersTable";
+import DeleteUserModal from "../../components/admin/users/DeleteUserModal";
+import EditUserModal from "../../components/admin/users/EditUserModal";
 
 export default function UsersPage() {
     const [query, setQuery] = useState("");

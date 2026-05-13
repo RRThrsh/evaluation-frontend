@@ -4,21 +4,76 @@ import UsersTable from "../../components/admin/users/UsersTable";
 import DeleteUserModal from "../../components/admin/users/DeleteUserModal";
 import EditUserModal from "../../components/admin/users/EditUserModal";
 
+const API_URL = "http://localhost:5000";
+
+/* =========================
+    API LAYER (clean separation)
+========================= */
+const fetchUsersAPI = async () => {
+    const res = await fetch(`${API_URL}/admin/users?limit=100&offset=0`, {
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data.message || "Failed to fetch users");
+    }
+
+    return data.data;
+};
+
+const deleteUserAPI = async (id) => {
+    const res = await fetch(`${API_URL}/admin/users/${id}`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data.message || "Failed to delete user");
+    }
+
+    return data;
+};
+
+const updateUserRoleAPI = async (id, role) => {
+    const res = await fetch(`${API_URL}/admin/users/${id}/role`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ role }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data.message || "Failed to update role");
+    }
+
+    return data;
+};
+
+/* =========================
+    MAIN COMPONENT
+========================= */
 export default function UsersPage() {
     const perPage = 5;
 
+    const [users, setUsers] = useState([]);
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
 
-    const [users, setUsers] = useState([
-        { id: 1, name: "John Doe", email: "john@example.com", role: "admin", status: "active" },
-        { id: 2, name: "Jane Smith", email: "jane@example.com", role: "moderator", status: "active" },
-        { id: 3, name: "Mike Ross", email: "mike@example.com", role: "user", status: "banned" },
-        { id: 4, name: "Sarah Connor", email: "sarah@example.com", role: "user", status: "active" },
-        { id: 5, name: "Bruce Wayne", email: "bruce@example.com", role: "moderator", status: "active" },
-        { id: 6, name: "Clark Kent", email: "clark@example.com", role: "user", status: "banned" },
-        { id: 7, name: "Tony Stark", email: "tony@example.com", role: "admin", status: "active" },
-    ]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const [selectedUser, setSelectedUser] = useState(null);
 
@@ -26,19 +81,45 @@ export default function UsersPage() {
     const [openEditModal, setOpenEditModal] = useState(false);
 
     const [formData, setFormData] = useState({
-        name: "",
+        full_name: "",
         email: "",
-        role: "user",
-        status: "active",
+        role: "USER",
     });
 
     const [errors, setErrors] = useState({});
 
-    // ---------------- FILTER + PAGINATION ----------------
+    /* =========================
+        LOAD USERS
+    ========================= */
+    useEffect(() => {
+        const load = async () => {
+            try {
+                setLoading(true);
+                const data = await fetchUsersAPI();
+                setUsers(data);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        load();
+    }, []);
+
+    /* =========================
+        NORMALIZED FILTER
+    ========================= */
     const filteredUsers = useMemo(() => {
-        return users.filter((u) =>
-            u.name.toLowerCase().includes(query.toLowerCase())
-        );
+        const q = query.toLowerCase();
+
+        return users.filter((u) => {
+            return (
+                u.full_name?.toLowerCase().includes(q) ||
+                u.email?.toLowerCase().includes(q) ||
+                u.role?.toLowerCase().includes(q)
+            );
+        });
     }, [users, query]);
 
     const totalPages = Math.ceil(filteredUsers.length / perPage);
@@ -50,6 +131,9 @@ export default function UsersPage() {
 
     useEffect(() => setPage(1), [query]);
 
+    /* =========================
+        MODALS
+    ========================= */
     useEffect(() => {
         const handleEsc = (e) => {
             if (e.key === "Escape") {
@@ -62,22 +146,41 @@ export default function UsersPage() {
         return () => document.removeEventListener("keydown", handleEsc);
     }, []);
 
-    // ---------------- DELETE ----------------
+    /* =========================
+        DELETE USER
+    ========================= */
     const handleOpenDelete = (user) => {
         setSelectedUser(user);
         setOpenDeleteModal(true);
     };
 
-    const handleDeleteUser = () => {
-        setUsers((prev) => prev.filter((u) => u.id !== selectedUser.id));
-        setOpenDeleteModal(false);
-        setSelectedUser(null);
+    const handleDeleteUser = async () => {
+        try {
+            await deleteUserAPI(selectedUser.id);
+
+            setUsers((prev) =>
+                prev.filter((u) => u.id !== selectedUser.id)
+            );
+
+            setOpenDeleteModal(false);
+            setSelectedUser(null);
+        } catch (err) {
+            setError(err.message);
+        }
     };
 
-    // ---------------- EDIT ----------------
+    /* =========================
+        EDIT USER (ROLE ONLY)
+    ========================= */
     const handleOpenEdit = (user) => {
         setSelectedUser(user);
-        setFormData(user);
+
+        setFormData({
+            full_name: user.full_name || "",
+            email: user.email || "",
+            role: user.role || "USER",
+        });
+
         setErrors({});
         setOpenEditModal(true);
     };
@@ -88,36 +191,52 @@ export default function UsersPage() {
     };
 
     const validateForm = () => {
-        const newErrors = {};
+        const err = {};
 
-        if (!formData.name.trim()) newErrors.name = "Name is required";
-
-        if (!formData.email.trim()) {
-            newErrors.email = "Email is required";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            newErrors.email = "Invalid email address";
+        if (!formData.full_name.trim()) {
+            err.full_name = "Name is required";
         }
 
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        if (!formData.email.trim()) {
+            err.email = "Email is required";
+        }
+
+        setErrors(err);
+        return Object.keys(err).length === 0;
     };
 
-    const handleSaveEdit = () => {
+    const handleSaveEdit = async () => {
         if (!validateForm()) return;
 
-        setUsers((prev) =>
-            prev.map((u) =>
-                u.id === selectedUser.id ? { ...u, ...formData } : u
-            )
-        );
+        try {
+            await updateUserRoleAPI(selectedUser.id, formData.role);
 
-        setOpenEditModal(false);
-        setSelectedUser(null);
+            setUsers((prev) =>
+                prev.map((u) =>
+                    u.id === selectedUser.id
+                        ? { ...u, role: formData.role }
+                        : u
+                )
+            );
+
+            setOpenEditModal(false);
+            setSelectedUser(null);
+        } catch (err) {
+            setError(err.message);
+        }
     };
 
+    /* =========================
+        UI
+    ========================= */
     return (
         <>
-            {/* TABLE */}
+            {error && (
+                <div className="p-3 text-red-500">
+                    {error}
+                </div>
+            )}
+
             <UsersTable
                 users={paginatedUsers}
                 query={query}
@@ -127,9 +246,9 @@ export default function UsersPage() {
                 totalPages={totalPages}
                 onEdit={handleOpenEdit}
                 onDelete={handleOpenDelete}
+                loading={loading}
             />
 
-            {/* EDIT MODAL */}
             <EditUserModal
                 open={openEditModal}
                 formData={formData}
@@ -139,7 +258,6 @@ export default function UsersPage() {
                 onSave={handleSaveEdit}
             />
 
-            {/* DELETE MODAL */}
             <DeleteUserModal
                 open={openDeleteModal}
                 user={selectedUser}

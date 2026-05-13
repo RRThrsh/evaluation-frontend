@@ -1,12 +1,12 @@
 import React from "react";
-import { CARD_STYLES } from "./Card.styles";
+import { card_styles } from "./card.styles";
 
 export default function Card({ title, children, footer }) {
     return (
-        <div className={CARD_STYLES.container}>
-            {title && <h3 className={CARD_STYLES.title}>{title}</h3>}
+        <div className={card_styles.container}>
+            {title && <h3 className={card_styles.title}>{title}</h3>}
             <div>{children}</div>
-            {footer && <div className={CARD_STYLES.footer}>{footer}</div>}
+            {footer && <div className={card_styles.footer}>{footer}</div>}
         </div>
     );
 }

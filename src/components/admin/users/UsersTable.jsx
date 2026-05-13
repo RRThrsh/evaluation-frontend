@@ -16,39 +16,52 @@ export default function UsersTable({
 }) {
     const [openCreateModal, setOpenCreateModal] = useState(false);
 
+    /* =========================
+        BACKEND-ALIGNED FORM
+    ========================= */
     const [formData, setFormData] = useState({
-        name: "",
+        full_name: "",
         email: "",
-        role: "user",
-        status: "active",
+        role: "USER",
     });
 
     const [errors, setErrors] = useState({});
 
     const resetForm = {
-        name: "",
+        full_name: "",
         email: "",
-        role: "user",
-        status: "active",
+        role: "USER",
     };
 
-    // ---------------- VALIDATION ----------------
+    /* =========================
+        VALIDATION (BACKEND SAFE)
+    ========================= */
     const validateForm = () => {
         const newErrors = {};
 
-        if (!formData.name.trim()) newErrors.name = "Name is required";
+        if (!formData.full_name.trim()) {
+            newErrors.full_name = "Name is required";
+        }
 
         if (!formData.email.trim()) {
             newErrors.email = "Email is required";
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+        } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
             newErrors.email = "Email is invalid";
+        }
+
+        if (
+            !["USER", "STAFF", "MODERATOR", "ADMIN"].includes(formData.role)
+        ) {
+            newErrors.role = "Invalid role";
         }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    // ---------------- HANDLERS ----------------
+    /* =========================
+        HANDLERS
+    ========================= */
     const handleChange = (e) => {
         const { name, value } = e.target;
 
@@ -74,9 +87,16 @@ export default function UsersTable({
     const handleCreateUser = () => {
         if (!validateForm()) return;
 
+        /* NOTE:
+            Backend does NOT yet have "create user" route in your admin file.
+            So this is frontend-controlled unless you add POST /admin/users
+        */
         const newUser = {
-            id: Date.now(),
-            ...formData,
+            id: Date.now(), // TEMP (frontend only)
+            full_name: formData.full_name,
+            email: formData.email,
+            role: formData.role,
+            is_verified: false,
         };
 
         onCreateUser(newUser);
@@ -85,6 +105,9 @@ export default function UsersTable({
         setFormData(resetForm);
     };
 
+    /* =========================
+        UI
+    ========================= */
     return (
         <div className="space-y-6">
 
@@ -101,7 +124,9 @@ export default function UsersTable({
             {/* HEADER */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">User Management</h1>
+                    <h1 className="text-2xl font-bold">
+                        User Management
+                    </h1>
                     <p className="text-slate-400">
                         Manage platform users and permissions
                     </p>
@@ -133,7 +158,7 @@ export default function UsersTable({
                         <tr className="text-left text-sm text-slate-400">
                             <th className="px-6 py-4">User</th>
                             <th className="px-6 py-4">Role</th>
-                            <th className="px-6 py-4">Status</th>
+                            <th className="px-6 py-4">Verified</th>
                             <th className="px-6 py-4">Actions</th>
                         </tr>
                     </thead>
@@ -150,7 +175,10 @@ export default function UsersTable({
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="4" className="text-center py-10 text-slate-400">
+                                <td
+                                    colSpan="4"
+                                    className="text-center py-10 text-slate-400"
+                                >
                                     No users found
                                 </td>
                             </tr>

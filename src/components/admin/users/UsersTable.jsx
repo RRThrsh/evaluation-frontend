@@ -22,13 +22,6 @@ export default function UsersTable({
                         Manage platform users and permissions
                     </p>
                 </div>
-
-                <button
-                    onClick={handleOpenCreate}
-                    className="rounded-xl bg-blue-500 px-5 py-3 font-semibold transition hover:bg-blue-600"
-                >
-                    Add User
-                </button>
             </div>
 
             {/* SEARCH */}

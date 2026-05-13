@@ -30,11 +30,13 @@ export default function Login() {
         try {
             const res = await loginUser(form);
 
+            // Save access token
             localStorage.setItem(
                 "accessToken",
                 res.data.accessToken
             );
 
+            // Save user info
             if (res.data.user) {
                 localStorage.setItem(
                     "user",
@@ -44,15 +46,33 @@ export default function Login() {
 
             setMessage("Login successful!");
 
+            // Get role
+            const role = res.data.user?.role;
+
+            // Redirect by role
             setTimeout(() => {
-                navigate("/home");
+
+                if (role === "admin") {
+                    navigate("/admin");
+
+                } else if (role === "moderator") {
+                    navigate("/moderator");
+
+                } else if (role === "staff") {
+                    navigate("/staff");
+
+                } else {
+                    navigate("/home");
+                }
+
             }, 1000);
 
         } catch (err) {
             console.error(err);
 
             setMessage(
-                err.response?.data?.message || "Login failed"
+                err.response?.data?.message ||
+                "Login failed"
             );
 
         } finally {
@@ -75,7 +95,9 @@ export default function Login() {
                 <div className="mb-8 text-center">
 
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/20">
-                        <span className="text-3xl">🔐</span>
+                        <span className="text-3xl">
+                            🔐
+                        </span>
                     </div>
 
                     <h2 className="text-4xl font-extrabold tracking-tight text-white">
@@ -83,7 +105,8 @@ export default function Login() {
                     </h2>
 
                     <p className="mt-2 text-slate-400">
-                        Login to continue managing evaluations
+                        Login to continue managing
+                        evaluations
                     </p>
                 </div>
 
@@ -91,7 +114,11 @@ export default function Login() {
                 {message && (
                     <div
                         className={`mb-5 rounded-xl border px-4 py-3 text-sm ${
-                            message.toLowerCase().includes("successful")
+                            message
+                                .toLowerCase()
+                                .includes(
+                                    "successful"
+                                )
                                 ? "border-green-500/20 bg-green-500/10 text-green-400"
                                 : "border-red-500/20 bg-red-500/10 text-red-400"
                         }`}
@@ -108,6 +135,7 @@ export default function Login() {
 
                     {/* Email */}
                     <div>
+
                         <label className="mb-2 block text-sm font-medium text-slate-300">
                             Email Address
                         </label>
@@ -128,6 +156,7 @@ export default function Login() {
                     <div>
 
                         <div className="mb-2 flex items-center justify-between">
+
                             <label className="text-sm font-medium text-slate-300">
                                 Password
                             </label>
@@ -164,6 +193,7 @@ export default function Login() {
                         ) : (
                             <>
                                 Login
+
                                 <span className="ml-2 transition-transform group-hover:translate-x-1">
                                     →
                                 </span>
@@ -174,6 +204,7 @@ export default function Login() {
 
                 {/* Divider */}
                 <div className="my-6 flex items-center gap-4">
+
                     <div className="h-px flex-1 bg-white/10" />
 
                     <span className="text-sm text-slate-500">
@@ -185,6 +216,7 @@ export default function Login() {
 
                 {/* Signup */}
                 <p className="text-center text-slate-400">
+
                     Don&apos;t have an account?{" "}
 
                     <Link

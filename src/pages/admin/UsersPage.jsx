@@ -140,6 +140,15 @@ export default function UsersPage() {
 
     return (
         <>
+            <CreateUserModal
+                open={openCreateModal}
+                formData={formData}
+                errors={errors}
+                onClose={() => setOpenCreateModal(false)}
+                onChange={handleChange}
+                onCreate={handleCreateUser}
+            />
+            
             <UsersTable
                 users={paginatedUsers}
                 query={query}

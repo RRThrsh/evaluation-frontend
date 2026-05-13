@@ -1,77 +1,88 @@
-import { useEffect, useMemo, useState } from "react";
 import {
     Search,
     MoreVertical,
     Shield,
     Trash2,
     Pencil,
+    X,
 } from "lucide-react";
+
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 
 export default function UsersPage() {
 
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
 
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [openDeleteModal, setOpenDeleteModal] = useState(false);
+
+    const modalRef = useRef(null);
+
     const perPage = 5;
 
-    const users = useMemo(
-        () => [
-            {
-                id: 1,
-                name: "John Doe",
-                email: "john@example.com",
-                role: "admin",
-                status: "active",
-            },
-            {
-                id: 2,
-                name: "Jane Smith",
-                email: "jane@example.com",
-                role: "moderator",
-                status: "active",
-            },
-            {
-                id: 3,
-                name: "Mike Ross",
-                email: "mike@example.com",
-                role: "user",
-                status: "banned",
-            },
-            {
-                id: 4,
-                name: "Sarah Connor",
-                email: "sarah@example.com",
-                role: "user",
-                status: "active",
-            },
-            {
-                id: 5,
-                name: "Bruce Wayne",
-                email: "bruce@example.com",
-                role: "moderator",
-                status: "active",
-            },
-            {
-                id: 6,
-                name: "Clark Kent",
-                email: "clark@example.com",
-                role: "user",
-                status: "banned",
-            },
-            {
-                id: 7,
-                name: "Tony Stark",
-                email: "tony@example.com",
-                role: "admin",
-                status: "active",
-            },
-        ],
-        []
-    );
+    const [users, setUsers] = useState([
+        {
+            id: 1,
+            name: "John Doe",
+            email: "john@example.com",
+            role: "admin",
+            status: "active",
+        },
+        {
+            id: 2,
+            name: "Jane Smith",
+            email: "jane@example.com",
+            role: "moderator",
+            status: "active",
+        },
+        {
+            id: 3,
+            name: "Mike Ross",
+            email: "mike@example.com",
+            role: "user",
+            status: "banned",
+        },
+        {
+            id: 4,
+            name: "Sarah Connor",
+            email: "sarah@example.com",
+            role: "user",
+            status: "active",
+        },
+        {
+            id: 5,
+            name: "Bruce Wayne",
+            email: "bruce@example.com",
+            role: "moderator",
+            status: "active",
+        },
+        {
+            id: 6,
+            name: "Clark Kent",
+            email: "clark@example.com",
+            role: "user",
+            status: "banned",
+        },
+        {
+            id: 7,
+            name: "Tony Stark",
+            email: "tony@example.com",
+            role: "admin",
+            status: "active",
+        },
+    ]);
 
-    const filteredUsers = users.filter((user) =>
-        user.name.toLowerCase().includes(query.toLowerCase())
-    );
+    const filteredUsers = useMemo(() => {
+        return users.filter((user) =>
+            user.name.toLowerCase().includes(query.toLowerCase())
+        );
+    }, [users, query]);
 
     const totalPages = Math.ceil(filteredUsers.length / perPage);
 
@@ -84,97 +95,120 @@ export default function UsersPage() {
         setPage(1);
     }, [query]);
 
+    useEffect(() => {
+        const handleEsc = (e) => {
+            if (e.key === "Escape") {
+                setOpenDeleteModal(false);
+            }
+        };
+
+        document.addEventListener("keydown", handleEsc);
+
+        return () => {
+            document.removeEventListener("keydown", handleEsc);
+        };
+    }, []);
+
+    const handleOpenDelete = (user) => {
+        setSelectedUser(user);
+        setOpenDeleteModal(true);
+    };
+
+    const handleDeleteUser = () => {
+        setUsers((prev) =>
+            prev.filter((u) => u.id !== selectedUser.id)
+        );
+
+        setOpenDeleteModal(false);
+        setSelectedUser(null);
+    };
+
     return (
-        <div className="space-y-6">
+        <>
+            <div className="space-y-6">
 
-            {/* HEADER */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                {/* HEADER */}
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 
-                <div>
-                    <h1 className="text-2xl font-bold">
-                        User Management
-                    </h1>
+                    <div>
+                        <h1 className="text-2xl font-bold">
+                            User Management
+                        </h1>
 
-                    <p className="text-slate-400">
-                        Manage platform users and permissions
-                    </p>
+                        <p className="text-slate-400">
+                            Manage platform users and permissions
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        className="rounded-xl bg-blue-500 px-5 py-3 font-semibold transition hover:bg-blue-600"
+                    >
+                        Add User
+                    </button>
+
                 </div>
 
-                <button
-                    type="button"
-                    className="rounded-xl bg-blue-500 px-5 py-3 font-semibold transition hover:bg-blue-600"
-                >
-                    Add User
-                </button>
+                {/* SEARCH */}
+                <div className="flex items-center rounded-2xl border border-white/10 bg-white/5 px-4">
 
-            </div>
+                    <Search
+                        size={18}
+                        className="text-slate-400"
+                    />
 
-            {/* SEARCH */}
-            <div className="flex items-center rounded-2xl border border-white/10 bg-white/5 px-4">
+                    <input
+                        type="text"
+                        placeholder="Search users..."
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        className="w-full bg-transparent px-4 py-4 outline-none"
+                    />
 
-                <Search
-                    size={18}
-                    className="text-slate-400"
-                />
+                </div>
 
-                <input
-                    type="text"
-                    placeholder="Search users..."
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    aria-label="Search users"
-                    className="w-full bg-transparent px-4 py-4 outline-none"
-                />
+                {/* TABLE */}
+                <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
 
-            </div>
+                    <div className="overflow-x-auto">
 
-            {/* TABLE CONTAINER */}
-            <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
+                        <table className="w-full min-w-[700px]">
 
-                <div className="overflow-x-auto">
+                            <thead className="border-b border-white/10 bg-white/5">
 
-                    <table className="w-full min-w-[700px]">
+                                <tr className="text-left text-sm text-slate-400">
 
-                        {/* TABLE HEADER */}
-                        <thead className="border-b border-white/10 bg-white/5">
+                                    <th className="px-6 py-4">
+                                        User
+                                    </th>
 
-                            <tr className="text-left text-sm text-slate-400">
+                                    <th className="px-6 py-4">
+                                        Role
+                                    </th>
 
-                                <th className="px-6 py-4">
-                                    User
-                                </th>
+                                    <th className="px-6 py-4">
+                                        Status
+                                    </th>
 
-                                <th className="px-6 py-4">
-                                    Role
-                                </th>
+                                    <th className="px-6 py-4">
+                                        Actions
+                                    </th>
 
-                                <th className="px-6 py-4">
-                                    Status
-                                </th>
+                                </tr>
 
-                                <th className="px-6 py-4">
-                                    Actions
-                                </th>
+                            </thead>
 
-                            </tr>
+                            <tbody>
 
-                        </thead>
-
-                        {/* TABLE BODY */}
-                        <tbody>
-
-                            {paginatedUsers.length > 0 ? (
-
-                                paginatedUsers.map((user) => (
+                                {paginatedUsers.map((user) => (
 
                                     <tr
                                         key={user.id}
-                                        className="border-b border-white/5 transition hover:bg-white/5"
+                                        className="border-b border-white/5 hover:bg-white/5"
                                     >
 
                                         {/* USER */}
                                         <td className="px-6 py-4">
-
                                             <div>
                                                 <p className="font-medium">
                                                     {user.name}
@@ -184,20 +218,14 @@ export default function UsersPage() {
                                                     {user.email}
                                                 </p>
                                             </div>
-
                                         </td>
 
                                         {/* ROLE */}
                                         <td className="px-6 py-4">
-
                                             <div className="inline-flex items-center gap-2 rounded-xl bg-blue-500/10 px-3 py-1 text-sm text-blue-400">
-
                                                 <Shield size={14} />
-
                                                 {user.role}
-
                                             </div>
-
                                         </td>
 
                                         {/* STATUS */}
@@ -220,26 +248,24 @@ export default function UsersPage() {
 
                                             <div className="flex items-center gap-3">
 
-                                                {/* EDIT */}
                                                 <button
                                                     type="button"
-                                                    className="rounded-lg p-2 transition hover:bg-white/10"
+                                                    className="rounded-lg p-2 hover:bg-white/10"
                                                 >
                                                     <Pencil size={16} />
                                                 </button>
 
-                                                {/* DELETE */}
                                                 <button
                                                     type="button"
-                                                    className="rounded-lg p-2 text-red-400 transition hover:bg-red-500/10"
+                                                    onClick={() => handleOpenDelete(user)}
+                                                    className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
 
-                                                {/* MORE */}
                                                 <button
                                                     type="button"
-                                                    className="rounded-lg p-2 transition hover:bg-white/10"
+                                                    className="rounded-lg p-2 hover:bg-white/10"
                                                 >
                                                     <MoreVertical size={16} />
                                                 </button>
@@ -250,58 +276,113 @@ export default function UsersPage() {
 
                                     </tr>
 
-                                ))
+                                ))}
 
-                            ) : (
+                            </tbody>
 
-                                <tr>
+                        </table>
 
-                                    <td
-                                        colSpan="4"
-                                        className="px-6 py-10 text-center text-slate-400"
-                                    >
-                                        No users found
-                                    </td>
+                    </div>
 
-                                </tr>
+                    {/* PAGINATION */}
+                    <div className="flex items-center justify-between border-t border-white/10 px-6 py-4">
 
-                            )}
+                        <button
+                            type="button"
+                            disabled={page === 1}
+                            onClick={() => setPage((p) => p - 1)}
+                            className="rounded-xl border border-white/10 px-4 py-2 disabled:opacity-50"
+                        >
+                            Previous
+                        </button>
 
-                        </tbody>
+                        <span className="text-sm text-slate-400">
+                            Page {page} of {totalPages || 1}
+                        </span>
 
-                    </table>
+                        <button
+                            type="button"
+                            disabled={page >= totalPages}
+                            onClick={() => setPage((p) => p + 1)}
+                            className="rounded-xl border border-white/10 px-4 py-2 disabled:opacity-50"
+                        >
+                            Next
+                        </button>
 
-                </div>
-
-                {/* PAGINATION */}
-                <div className="flex items-center justify-between border-t border-white/10 px-6 py-4">
-
-                    <button
-                        type="button"
-                        disabled={page === 1}
-                        onClick={() => setPage((p) => p - 1)}
-                        className="rounded-xl border border-white/10 px-4 py-2 transition disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        Previous
-                    </button>
-
-                    <span className="text-sm text-slate-400">
-                        Page {page} of {totalPages || 1}
-                    </span>
-
-                    <button
-                        type="button"
-                        disabled={page >= totalPages}
-                        onClick={() => setPage((p) => p + 1)}
-                        className="rounded-xl border border-white/10 px-4 py-2 transition disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        Next
-                    </button>
+                    </div>
 
                 </div>
 
             </div>
 
-        </div>
+            {/* DELETE MODAL */}
+            {openDeleteModal && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+                    onClick={() => setOpenDeleteModal(false)}
+                >
+
+                    <div
+                        ref={modalRef}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-900 p-6 shadow-2xl"
+                    >
+
+                        {/* HEADER */}
+                        <div className="mb-4 flex items-center justify-between">
+
+                            <h2 className="text-xl font-bold">
+                                Delete User
+                            </h2>
+
+                            <button
+                                type="button"
+                                onClick={() => setOpenDeleteModal(false)}
+                                className="rounded-lg p-2 hover:bg-white/10"
+                            >
+                                <X size={18} />
+                            </button>
+
+                        </div>
+
+                        {/* CONTENT */}
+                        <p className="text-slate-300">
+                            Are you sure you want to delete{" "}
+                            <span className="font-semibold text-white">
+                                {selectedUser?.name}
+                            </span>
+                            ?
+                        </p>
+
+                        <p className="mt-2 text-sm text-slate-500">
+                            This action cannot be undone.
+                        </p>
+
+                        {/* ACTIONS */}
+                        <div className="mt-6 flex justify-end gap-3">
+
+                            <button
+                                type="button"
+                                onClick={() => setOpenDeleteModal(false)}
+                                className="rounded-xl border border-white/10 px-5 py-3 hover:bg-white/10"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleDeleteUser}
+                                className="rounded-xl bg-red-500 px-5 py-3 font-semibold text-white hover:bg-red-600"
+                            >
+                                Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            )}
+        </>
     );
 }

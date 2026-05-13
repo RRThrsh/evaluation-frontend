@@ -23,7 +23,10 @@ export default function UsersTable({
                     </p>
                 </div>
 
-                <button className="rounded-xl bg-blue-500 px-5 py-3 font-semibold hover:bg-blue-600">
+                <button
+                    onClick={handleOpenCreate}
+                    className="rounded-xl bg-blue-500 px-5 py-3 font-semibold transition hover:bg-blue-600"
+                >
                     Add User
                 </button>
             </div>

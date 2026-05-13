@@ -1,10 +1,20 @@
 import React from "react";
-import { badge_styles } from "./badge.style";
+import { Text, Pressable } from "react-native";
+import { badgeStyles } from "./badge.constant";
+import { BadgePropTypes } from "./badge.types";
 
-export default function Badge({ children, variant = "default" }) {
+const Badge = ({ label, variant = "default", size = "md", onPress }) => {
+    const styles = badgeStyles(variant, size);
+    
+    const Wrapper = onPress ? Pressable : React.Fragment;
+    
     return (
-        <span className={badge_styles[variant]}>
-            {children}
-        </span>
+        <Wrapper {...(onPress ? { onPress } : {})}>
+            <Text className={styles}>{label}</Text>
+        </Wrapper>
     );
-}
+};
+
+Badge.propTypes = BadgePropTypes;
+
+export default Badge;

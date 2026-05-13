@@ -1,78 +1,69 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { loginUser } from "../api/auth";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
 
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const [form, setForm] = useState({
         email: "",
         password: "",
     });
 
-    const [message, setMessage] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [message, setMessage] =
+        useState("");
 
-    const handleChange = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value,
-        });
-    };
+    const [loading, setLoading] =
+        useState(false);
 
     const handleSubmit = async (e) => {
+
         e.preventDefault();
 
         setLoading(true);
         setMessage("");
 
         try {
-            const res = await loginUser(form);
 
-            // Save access token
-            localStorage.setItem(
-                "accessToken",
-                res.data.accessToken
+            const res =
+                await loginUser(form);
+
+            const { accessToken, user } =
+                res.data;
+
+            login(accessToken, user);
+
+            setMessage(
+                "Login successful!"
             );
 
-            // Save user info
-            if (res.data.user) {
-                localStorage.setItem(
-                    "user",
-                    JSON.stringify(res.data.user)
-                );
-            }
-
-            setMessage("Login successful!");
-
-            // Get role
-            const role = res.data.user?.role;
-
-            // Redirect by role
             setTimeout(() => {
 
-                if (role === "admin") {
+                if (user.role === "admin") {
                     navigate("/admin");
-
-                } else if (role === "moderator") {
+                } else if (
+                    user.role ===
+                    "moderator"
+                ) {
                     navigate("/moderator");
-
-                } else if (role === "staff") {
+                } else if (
+                    user.role === "staff"
+                ) {
                     navigate("/staff");
-
                 } else {
                     navigate("/home");
                 }
-
-            }, 1000);
+            }, 800);
 
         } catch (err) {
-            console.error(err);
 
             setMessage(
-                err.response?.data?.message ||
-                "Login failed"
+                err.response?.data
+                    ?.message ||
+                    "Login failed"
             );
 
         } finally {

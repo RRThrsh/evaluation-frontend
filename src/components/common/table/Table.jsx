@@ -1,32 +1,51 @@
 import React from "react";
-import { table_styles } from "./table.style";
+import { View, Text, Pressable, ScrollView } from "react-native";
+import { tableStyles } from "./table.constant";
+import { TablePropTypes } from "./table.types";
 
-export default function Table({ columns = [], data = [] }) {
+const Table = ({
+    columns = [],
+    data = [],
+    onRowPress,
+    variant = "default",
+}) => {
+    const styles = tableStyles(variant);
+
     return (
-        <div className="overflow-x-auto">
-            <table className={table_styles.table}>
-                <thead className={table_styles.head}>
-                    <tr>
-                        {columns.map((c) => (
-                            <th key={c.key} className={table_styles.th}>
-                                {c.header}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                
-                <tbody>
-                    {data.map((row, i) => (
-                        <tr key={i} className={table_styles.tr}>
-                            {columns.map((c) => (
-                                <td key={c.key} className={table_styles.td}>
-                                    {row[c.key]}
-                                </td>
-                            ))}
-                        </tr>
+        <ScrollView horizontal>
+            <View className={styles.container}>
+              {/* Header */}
+                <View className={styles.headerRow}>
+                    {columns.map((col) => (
+                        <Text key={col.key} className={styles.headerCell}>
+                            {col.title}
+                        </Text>
                     ))}
-                </tbody>
-            </table>
-        </div>
+                </View>
+            
+              {/* Rows */}
+                {data.map((row, rowIndex) => {
+                    const RowWrapper = onRowPress ? Pressable : View;
+                    
+                    return (
+                        <RowWrapper
+                            key={rowIndex}
+                            onPress={() => onRowPress?.(row)}
+                            className={styles.row}
+                        >
+                            {columns.map((col) => (
+                                <Text key={col.key} className={styles.cell}>
+                                    {row[col.key]}
+                                </Text>
+                            ))}
+                        </RowWrapper>
+                    );
+                })}
+            </View>
+        </ScrollView>
     );
-}
+};
+
+Table.propTypes = TablePropTypes;
+
+export default Table;

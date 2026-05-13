@@ -48,12 +48,13 @@ export default function Login() {
             );
 
             setTimeout(() => {
+                const role =
+                    user.role.toLowerCase();
 
                 if (user.role === "admin") {
                     navigate("/admin");
                 } else if (
-                    user.role ===
-                    "moderator"
+                    user.role === "moderator"
                 ) {
                     navigate("/moderator");
                 } else if (

@@ -8,32 +8,28 @@ const API = axios.create({
 // =======================
 // Attach Access Token
 // =======================
-API.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem("accessToken");
+API.interceptors.request.use((config) => {
+    const token =
+        localStorage.getItem("accessToken");
 
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
+    if (token) {
+        config.headers.Authorization =
+            `Bearer ${token}`;
+    }
 
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+    return config;
+});
 
 // =======================
-// Refresh Token Logic
+// Refresh Logic
 // =======================
 let isRefreshing = false;
 let failedQueue = [];
 
 const processQueue = (error, token = null) => {
     failedQueue.forEach((prom) => {
-        if (error) {
-            prom.reject(error);
-        } else {
-            prom.resolve(token);
-        }
+        if (error) prom.reject(error);
+        else prom.resolve(token);
     });
 
     failedQueue = [];
@@ -45,53 +41,72 @@ const processQueue = (error, token = null) => {
 API.interceptors.response.use(
     (response) => response,
     async (error) => {
+
         const originalRequest = error.config;
 
         if (
             error.response?.status === 401 &&
             !originalRequest._retry
         ) {
+
             if (isRefreshing) {
-                return new Promise((resolve, reject) => {
-                    failedQueue.push({ resolve, reject });
-                })
-                    .then((token) => {
-                        originalRequest.headers.Authorization = `Bearer ${token}`;
-                        return API(originalRequest);
-                    })
-                    .catch((err) => Promise.reject(err));
+                return new Promise(
+                    (resolve, reject) => {
+                        failedQueue.push({
+                            resolve,
+                            reject,
+                        });
+                    }
+                ).then((token) => {
+                    originalRequest.headers.Authorization =
+                        `Bearer ${token}`;
+                    return API(originalRequest);
+                });
             }
 
             originalRequest._retry = true;
             isRefreshing = true;
 
             try {
-                const res = await axios.post(
-                    "http://localhost:3000/auth/refresh",
+
+                const res = await API.post(
+                    "/auth/refresh",
                     {},
-                    { withCredentials: true }
                 );
 
-                const newAccessToken = res.data.accessToken;
+                const newToken =
+                    res.data.accessToken;
 
                 localStorage.setItem(
                     "accessToken",
-                    newAccessToken
+                    newToken
                 );
 
-                API.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
-                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                API.defaults.headers.common.Authorization =
+                    `Bearer ${newToken}`;
 
-                processQueue(null, newAccessToken);
+                originalRequest.headers.Authorization =
+                    `Bearer ${newToken}`;
+
+                processQueue(null, newToken);
+
+                window.dispatchEvent(
+                    new Event("token-refresh")
+                );
 
                 return API(originalRequest);
 
             } catch (err) {
+
                 processQueue(err, null);
 
-                localStorage.removeItem("accessToken");
+                localStorage.removeItem(
+                    "accessToken"
+                );
 
-                window.location.href = "/login";
+                localStorage.removeItem("user");
+
+                window.location.assign("/login");
 
                 return Promise.reject(err);
             } finally {

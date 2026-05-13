@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import UsersTable from "../../components/admin/users/UsersTable";
 import DeleteUserModal from "../../components/admin/users/DeleteUserModal";
 import EditUserModal from "../../components/admin/users/EditUserModal";
+import CreateUserModal from "../../components/admin/users/CreateUserModal";
 
 export default function UsersPage() {
     const [query, setQuery] = useState("");
@@ -12,6 +13,7 @@ export default function UsersPage() {
 
     const [openDeleteModal, setOpenDeleteModal] = useState(false);
     const [openEditModal, setOpenEditModal] = useState(false);
+    const [openCreateModal, setOpenCreateModal] = useState(false);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -19,6 +21,24 @@ export default function UsersPage() {
         role: "user",
         status: "active",
     });
+
+    const handleOpenCreate = () => {
+        setFormData(resetForm);
+        setErrors({});
+        setOpenCreateModal(true);
+    };
+
+    const handleCreateUser = () => {
+        if (!validateForm()) return;    
+
+        const newUser = {
+            id: Date.now(),
+            ...formData,
+        };  
+
+        setUsers((prev) => [newUser, ...prev]);
+        setOpenCreateModal(false);
+    };
 
     const [errors, setErrors] = useState({});
 

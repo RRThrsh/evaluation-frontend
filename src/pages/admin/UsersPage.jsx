@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import UsersTable from "../../components/admin/users/UsersTable";
 import DeleteUserModal from "../../components/admin/users/DeleteUserModal";
 import EditUserModal from "../../components/admin/users/EditUserModal";
-import CreateUserModal from "../../components/admin/users/CreateUserModal";
 
 export default function UsersPage() {
     const perPage = 5;
@@ -25,6 +24,13 @@ export default function UsersPage() {
 
     const [openDeleteModal, setOpenDeleteModal] = useState(false);
     const [openEditModal, setOpenEditModal] = useState(false);
+
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        role: "user",
+        status: "active",
+    });
 
     const [errors, setErrors] = useState({});
 
@@ -76,20 +82,6 @@ export default function UsersPage() {
         setOpenEditModal(true);
     };
 
-    const handleSaveEdit = () => {
-        if (!validateForm()) return;
-
-        setUsers((prev) =>
-            prev.map((u) =>
-                u.id === selectedUser.id ? { ...u, ...formData } : u
-            )
-        );
-
-        setOpenEditModal(false);
-        setSelectedUser(null);
-    };
-
-    // ---------------- FORM ----------------
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((p) => ({ ...p, [name]: value }));
@@ -110,6 +102,19 @@ export default function UsersPage() {
         return Object.keys(newErrors).length === 0;
     };
 
+    const handleSaveEdit = () => {
+        if (!validateForm()) return;
+
+        setUsers((prev) =>
+            prev.map((u) =>
+                u.id === selectedUser.id ? { ...u, ...formData } : u
+            )
+        );
+
+        setOpenEditModal(false);
+        setSelectedUser(null);
+    };
+
     return (
         <>
             {/* TABLE */}
@@ -124,6 +129,7 @@ export default function UsersPage() {
                 onDelete={handleOpenDelete}
             />
 
+            {/* EDIT MODAL */}
             <EditUserModal
                 open={openEditModal}
                 formData={formData}
@@ -133,6 +139,7 @@ export default function UsersPage() {
                 onSave={handleSaveEdit}
             />
 
+            {/* DELETE MODAL */}
             <DeleteUserModal
                 open={openDeleteModal}
                 user={selectedUser}

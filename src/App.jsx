@@ -13,6 +13,9 @@ import StaffHome from "./pages/staff/StaffHome";
 import ModeratorHome from "./pages/moderator/ModeratorHome";
 import AdminHome from "./pages/admin/AdminHome";
 
+// LAYOUT
+import AdminLayout from "./components/layout/AdminLayout";
+
 // ROUTES
 import ProtectedRoute from "./routes/ProtectedRoute";
 
@@ -61,15 +64,13 @@ export default function App() {
 
             {/* ADMIN */}
             <Route path="/admin" element={
-                    <ProtectedRoute
-                        allowedRoles={[
-                            "admin",
-                        ]}
-                    >
+                    <ProtectedRoute allowedRoles={[ "admin" ]} >
                         <AdminHome />
                     </ProtectedRoute>
                 }
-            />
+            >
+                <Route index element={<AdminLayout />} />
+            </Route>
 
             {/* ERRORS */}
             <Route path="/429" element={<TooManyRequests />} />

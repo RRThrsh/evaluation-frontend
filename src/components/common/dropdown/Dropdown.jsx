@@ -1,34 +1,53 @@
 import React, { useState } from "react";
-import { dropdown_styles } from "./dropdown.style";
+import { View, Text, Pressable } from "react-native";
+import { dropdownStyles } from "./dropdown.constant";
+import { DropdownPropTypes } from "./dropdown.types";
 
-export default function Dropdown({ label, options = [], onSelect }) {
+const Dropdown = ({
+    label = "Select an option",
+    options = [],
+    value,
+    onChange,
+    variant = "default",
+}) => {
     const [open, setOpen] = useState(false);
 
+    const styles = dropdownStyles(variant);
+
+    const selectedLabel =
+        options.find((opt) => opt.value === value)?.label || label;
+
+    const handleSelect = (option) => {
+        onChange?.(option.value);
+        setOpen(false);
+    };
+
     return (
-        <div className="relative inline-block">
-            <button
-                className={dropdown_styles.button}
-                onClick={() => setOpen(!open)}
+        <View className={styles.container}>
+            <Pressable
+                onPress={() => setOpen((prev) => !prev)}
+                className={styles.button}
             >
-            {label}
-            </button>
-        
+                <Text className={styles.buttonText}>{selectedLabel}</Text>
+            </Pressable>
+
             {open && (
-                <ul className={dropdown_styles.menu}>
-                    {options.map((opt, i) => (
-                        <li
-                            key={i}
-                            className={dropdown_styles.item}
-                            onClick={() => {
-                            onSelect?.(opt);
-                            setOpen(false);
-                            }}
+                <View className={styles.dropdown}>
+                    {options.map((option) => (
+                        <Pressable
+                            key={option.value}
+                            onPress={() => handleSelect(option)}
+                            className={styles.item}
                         >
-                            {opt.label || opt}
-                        </li>
+                            <Text className={styles.itemText}>{option.label}</Text>
+                        </Pressable>
                     ))}
-                </ul>
+                </View>
             )}
-        </div>
+        </View>
     );
-}
+};
+
+Dropdown.propTypes = DropdownPropTypes;
+
+export default Dropdown;

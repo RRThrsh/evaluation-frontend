@@ -1,14 +1,34 @@
 import React from "react";
-import { empty_state_styles } from "./emptystate.style";
+import { View, Text, Pressable } from "react-native";
+import { emptyStateStyles } from "./emptystate.constant";
+import { EmptyStatePropTypes } from "./emptystate.types";
 
-export default function EmptyState({ title, description, action }) {
+const EmptyState = ({
+    title = "No data found",
+    description,
+    actionLabel,
+    onAction,
+    variant = "default",
+}) => {
+    const styles = emptyStateStyles(variant);
+
     return (
-        <div className={empty_state_styles.container}>
-            <h3 className={empty_state_styles.title}>{title}</h3>
-            {description && (
-                <p className={empty_state_styles.description}>{description}</p>
-            )}
-            {action && <div className="mt-4">{action}</div>}
-        </div>
+        <View className={styles.container}>
+            <Text className={styles.title}>{title}</Text>
+
+            {description ? (
+                <Text className={styles.description}>{description}</Text>
+            ) : null}
+
+            {actionLabel && onAction ? (
+                <Pressable onPress={onAction} className={styles.button}>
+                    <Text className={styles.buttonText}>{actionLabel}</Text>
+                </Pressable>
+            ) : null}
+        </View>
     );
-}
+};
+
+EmptyState.propTypes = EmptyStatePropTypes;
+
+export default EmptyState;

@@ -13,6 +13,12 @@ import StaffHome from "./pages/staff/StaffHome";
 import ModeratorHome from "./pages/moderator/ModeratorHome";
 import AdminHome from "./pages/admin/AdminHome";
 
+// ADMIN PAGE
+import UsersPage from "./pages/admin/UsersPage";
+
+// LAYOUT
+import AdminLayout from "./components/layout/AdminLayout";
+
 // ROUTES
 import ProtectedRoute from "./routes/ProtectedRoute";
 
@@ -60,16 +66,16 @@ export default function App() {
             />
 
             {/* ADMIN */}
-            <Route path="/admin" element={
-                    <ProtectedRoute
-                        allowedRoles={[
-                            "admin",
-                        ]}
-                    >
-                        <AdminHome />
+            <Route path="/admin" 
+                element={
+                    <ProtectedRoute allowedRoles={[ "admin" ]} >
+                        <AdminLayout />
                     </ProtectedRoute>
                 }
-            />
+            >
+                <Route index element={<AdminHome />} />
+                <Route path="users" element={<UsersPage />} />
+            </Route>
 
             {/* ERRORS */}
             <Route path="/429" element={<TooManyRequests />} />

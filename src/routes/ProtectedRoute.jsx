@@ -19,11 +19,11 @@ export default function ProtectedRoute({
         );
     }
 
+    const role = user.role?.toLowerCase();
+
     if (
         allowedRoles &&
-        !allowedRoles.includes(
-            user.role
-        )
+        !allowedRoles.includes(role)
     ) {
         return (
             <Navigate

@@ -7,40 +7,22 @@ import {
     X,
 } from "lucide-react";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 
 export default function UsersPage() {
 
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
 
-    const perPage = 5;
-
-    // =========================
-    // USERS DATA
-    // =========================
-    const [users, setUsers] = useState([
-        { id: 1, name: "John Doe", email: "john@example.com", role: "admin", status: "active" },
-        { id: 2, name: "Jane Smith", email: "jane@example.com", role: "moderator", status: "active" },
-        { id: 3, name: "Mike Ross", email: "mike@example.com", role: "user", status: "banned" },
-        { id: 4, name: "Sarah Connor", email: "sarah@example.com", role: "user", status: "active" },
-        { id: 5, name: "Bruce Wayne", email: "bruce@example.com", role: "moderator", status: "active" },
-        { id: 6, name: "Clark Kent", email: "clark@example.com", role: "user", status: "banned" },
-        { id: 7, name: "Tony Stark", email: "tony@example.com", role: "admin", status: "active" },
-    ]);
-
-    // =========================
-    // MODALS STATE
-    // =========================
-    const [openDeleteModal, setOpenDeleteModal] = useState(false);
-    const [openEditModal, setOpenEditModal] = useState(false);
-    const [openCreateModal, setOpenCreateModal] = useState(false);
-
     const [selectedUser, setSelectedUser] = useState(null);
+    const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
-    // =========================
-    // EDIT FORM
-    // =========================
+    const [openEditModal, setOpenEditModal] = useState(false);
+
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -50,24 +32,63 @@ export default function UsersPage() {
 
     const [errors, setErrors] = useState({});
 
-    // =========================
-    // CREATE FORM
-    // =========================
-    const [createFormData, setCreateFormData] = useState({
-        name: "",
-        email: "",
-        role: "user",
-        status: "active",
-    });
+    const perPage = 5;
 
-    const [createErrors, setCreateErrors] = useState({});
+    const [users, setUsers] = useState([
+        {
+            id: 1,
+            name: "John Doe",
+            email: "john@example.com",
+            role: "admin",
+            status: "active",
+        },
+        {
+            id: 2,
+            name: "Jane Smith",
+            email: "jane@example.com",
+            role: "moderator",
+            status: "active",
+        },
+        {
+            id: 3,
+            name: "Mike Ross",
+            email: "mike@example.com",
+            role: "user",
+            status: "banned",
+        },
+        {
+            id: 4,
+            name: "Sarah Connor",
+            email: "sarah@example.com",
+            role: "user",
+            status: "active",
+        },
+        {
+            id: 5,
+            name: "Bruce Wayne",
+            email: "bruce@example.com",
+            role: "moderator",
+            status: "active",
+        },
+        {
+            id: 6,
+            name: "Clark Kent",
+            email: "clark@example.com",
+            role: "user",
+            status: "banned",
+        },
+        {
+            id: 7,
+            name: "Tony Stark",
+            email: "tony@example.com",
+            role: "admin",
+            status: "active",
+        },
+    ]);
 
-    // =========================
-    // FILTER + PAGINATION
-    // =========================
     const filteredUsers = useMemo(() => {
-        return users.filter((u) =>
-            u.name.toLowerCase().includes(query.toLowerCase())
+        return users.filter((user) =>
+            user.name.toLowerCase().includes(query.toLowerCase())
         );
     }, [users, query]);
 
@@ -82,67 +103,98 @@ export default function UsersPage() {
         setPage(1);
     }, [query]);
 
-    // =========================
-    // ESC CLOSE MODALS
-    // =========================
     useEffect(() => {
+
         const handleEsc = (e) => {
+
             if (e.key === "Escape") {
                 setOpenDeleteModal(false);
                 setOpenEditModal(false);
-                setOpenCreateModal(false);
             }
         };
 
         document.addEventListener("keydown", handleEsc);
-        return () => document.removeEventListener("keydown", handleEsc);
+
+        return () => {
+            document.removeEventListener("keydown", handleEsc);
+        };
+
     }, []);
 
-    // =========================
-    // DELETE USER
-    // =========================
-    const openDelete = (user) => {
+    const handleOpenDelete = (user) => {
         setSelectedUser(user);
         setOpenDeleteModal(true);
     };
 
-    const handleDelete = () => {
+    const handleDeleteUser = () => {
+
         setUsers((prev) =>
             prev.filter((u) => u.id !== selectedUser.id)
         );
-        setSelectedUser(null);
+
         setOpenDeleteModal(false);
+        setSelectedUser(null);
     };
 
-    // =========================
-    // EDIT USER
-    // =========================
-    const openEdit = (user) => {
+    const handleOpenEdit = (user) => {
+
         setSelectedUser(user);
-        setFormData(user);
+
+        setFormData({
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            status: user.status,
+        });
+
         setErrors({});
         setOpenEditModal(true);
     };
 
-    const handleEditChange = (e) => {
+    const handleChange = (e) => {
+
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
     };
 
-    const validateEdit = () => {
-        const err = {};
-        if (!formData.name.trim()) err.name = "Name required";
-        if (!formData.email.trim()) err.email = "Email required";
-        setErrors(err);
-        return Object.keys(err).length === 0;
+    const validateForm = () => {
+
+        const newErrors = {};
+
+        if (!formData.name.trim()) {
+            newErrors.name = "Name is required";
+        }
+
+        if (!formData.email.trim()) {
+            newErrors.email = "Email is required";
+        } else if (
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+        ) {
+            newErrors.email = "Invalid email address";
+        }
+
+        setErrors(newErrors);
+
+        return Object.keys(newErrors).length === 0;
     };
 
-    const saveEdit = () => {
-        if (!validateEdit()) return;
+    // SAVE EDIT
+    const handleSaveEdit = () => {
+
+        if (!validateForm()) return;
 
         setUsers((prev) =>
-            prev.map((u) =>
-                u.id === selectedUser.id ? { ...u, ...formData } : u
+            prev.map((user) =>
+                user.id === selectedUser.id
+                    ? {
+                            ...user,
+                            ...formData,
+                        }
+                    : user
             )
         );
 
@@ -150,252 +202,456 @@ export default function UsersPage() {
         setSelectedUser(null);
     };
 
-    // =========================
-    // CREATE USER
-    // =========================
-    const handleCreateChange = (e) => {
-        const { name, value } = e.target;
-        setCreateFormData((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const validateCreate = () => {
-        const err = {};
-
-        if (!createFormData.name.trim()) err.name = "Name required";
-        if (!createFormData.email.trim()) err.email = "Email required";
-
-        const exists = users.some(
-            (u) => u.email === createFormData.email
-        );
-
-        if (exists) err.email = "Email already exists";
-
-        setCreateErrors(err);
-        return Object.keys(err).length === 0;
-    };
-
-    const createUser = () => {
-        if (!validateCreate()) return;
-
-        const newUser = {
-            id: Date.now(),
-            ...createFormData,
-        };
-
-        setUsers((prev) => [newUser, ...prev]);
-
-        setCreateFormData({
-            name: "",
-            email: "",
-            role: "user",
-            status: "active",
-        });
-
-        setOpenCreateModal(false);
-    };
-
-    // =========================
-    // UI
-    // =========================
     return (
         <>
             <div className="space-y-6">
 
                 {/* HEADER */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+
                     <div>
                         <h1 className="text-2xl font-bold">
                             User Management
                         </h1>
+
                         <p className="text-slate-400">
-                            Manage users
+                            Manage platform users and permissions
                         </p>
                     </div>
 
                     <button
-                        onClick={() => setOpenCreateModal(true)}
-                        className="rounded-xl bg-blue-500 px-5 py-3 font-semibold hover:bg-blue-600"
+                        type="button"
+                        className="rounded-xl bg-blue-500 px-5 py-3 font-semibold transition hover:bg-blue-600"
                     >
                         Add User
                     </button>
+
                 </div>
 
                 {/* SEARCH */}
                 <div className="flex items-center rounded-2xl border border-white/10 bg-white/5 px-4">
-                    <Search size={18} />
+
+                    <Search
+                        size={18}
+                        className="text-slate-400"
+                    />
+
                     <input
+                        type="text"
+                        placeholder="Search users..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         className="w-full bg-transparent px-4 py-4 outline-none"
-                        placeholder="Search users..."
                     />
+
                 </div>
 
                 {/* TABLE */}
-                <div className="rounded-3xl border border-white/10 bg-white/5 overflow-hidden">
+                <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
 
-                    <table className="w-full">
+                    <div className="overflow-x-auto">
 
-                        <thead className="bg-white/5 border-b border-white/10">
-                            <tr className="text-left text-sm text-slate-400">
-                                <th className="p-4">User</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
+                        <table className="w-full min-w-[700px]">
 
-                        <tbody>
-                            {paginatedUsers.map((u) => (
-                                <tr key={u.id} className="border-b border-white/5">
-                                    <td className="p-4">
-                                        <div>
-                                            <p>{u.name}</p>
-                                            <p className="text-sm text-slate-400">
-                                                {u.email}
-                                            </p>
-                                        </div>
-                                    </td>
+                            {/* TABLE HEAD */}
+                            <thead className="border-b border-white/10 bg-white/5">
 
-                                    <td>{u.role}</td>
+                                <tr className="text-left text-sm text-slate-400">
 
-                                    <td>{u.status}</td>
+                                    <th className="px-6 py-4">
+                                        User
+                                    </th>
 
-                                    <td className="flex gap-2 p-4">
+                                    <th className="px-6 py-4">
+                                        Role
+                                    </th>
 
-                                        <button onClick={() => openEdit(u)}>
-                                            <Pencil size={16} />
-                                        </button>
+                                    <th className="px-6 py-4">
+                                        Status
+                                    </th>
 
-                                        <button onClick={() => openDelete(u)}>
-                                            <Trash2 size={16} />
-                                        </button>
+                                    <th className="px-6 py-4">
+                                        Actions
+                                    </th>
 
-                                    </td>
                                 </tr>
-                            ))}
-                        </tbody>
 
-                    </table>
+                            </thead>
+
+                            {/* TABLE BODY */}
+                            <tbody>
+
+                                {paginatedUsers.length > 0 ? (
+
+                                    paginatedUsers.map((user) => (
+
+                                        <tr
+                                            key={user.id}
+                                            className="border-b border-white/5 hover:bg-white/5"
+                                        >
+
+                                            {/* USER */}
+                                            <td className="px-6 py-4">
+
+                                                <div>
+                                                    <p className="font-medium">
+                                                        {user.name}
+                                                    </p>
+
+                                                    <p className="text-sm text-slate-400">
+                                                        {user.email}
+                                                    </p>
+                                                </div>
+
+                                            </td>
+
+                                            {/* ROLE */}
+                                            <td className="px-6 py-4">
+
+                                                <div className="inline-flex items-center gap-2 rounded-xl bg-blue-500/10 px-3 py-1 text-sm text-blue-400">
+
+                                                    <Shield size={14} />
+
+                                                    {user.role}
+
+                                                </div>
+
+                                            </td>
+
+                                            {/* STATUS */}
+                                            <td className="px-6 py-4">
+
+                                                <span
+                                                    className={`rounded-xl px-3 py-1 text-sm ${
+                                                        user.status === "active"
+                                                            ? "bg-green-500/10 text-green-400"
+                                                            : "bg-red-500/10 text-red-400"
+                                                    }`}
+                                                >
+                                                    {user.status}
+                                                </span>
+
+                                            </td>
+
+                                            {/* ACTIONS */}
+                                            <td className="px-6 py-4">
+
+                                                <div className="flex items-center gap-3">
+
+                                                    {/* EDIT */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOpenEdit(user)}
+                                                        className="rounded-lg p-2 hover:bg-white/10"
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
+
+                                                    {/* DELETE */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOpenDelete(user)}
+                                                        className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+
+                                                    {/* MORE */}
+                                                    <button
+                                                        type="button"
+                                                        className="rounded-lg p-2 hover:bg-white/10"
+                                                    >
+                                                        <MoreVertical size={16} />
+                                                    </button>
+
+                                                </div>
+
+                                            </td>
+
+                                        </tr>
+
+                                    ))
+
+                                ) : (
+
+                                    <tr>
+
+                                        <td
+                                            colSpan="4"
+                                            className="px-6 py-10 text-center text-slate-400"
+                                        >
+                                            No users found
+                                        </td>
+
+                                    </tr>
+
+                                )}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    {/* PAGINATION */}
+                    <div className="flex items-center justify-between border-t border-white/10 px-6 py-4">
+
+                        <button
+                            type="button"
+                            disabled={page === 1}
+                            onClick={() => setPage((p) => p - 1)}
+                            className="rounded-xl border border-white/10 px-4 py-2 disabled:opacity-50"
+                        >
+                            Previous
+                        </button>
+
+                        <span className="text-sm text-slate-400">
+                            Page {page} of {totalPages || 1}
+                        </span>
+
+                        <button
+                            type="button"
+                            disabled={page >= totalPages}
+                            onClick={() => setPage((p) => p + 1)}
+                            className="rounded-xl border border-white/10 px-4 py-2 disabled:opacity-50"
+                        >
+                            Next
+                        </button>
+
+                    </div>
 
                 </div>
 
             </div>
 
-            {/* ================= DELETE MODAL ================= */}
+            {/* DELETE MODAL */}
             {openDeleteModal && (
-                <Modal onClose={() => setOpenDeleteModal(false)}>
-                    <h2 className="text-xl font-bold mb-4">
-                        Delete User
-                    </h2>
 
-                    <p>
-                        Are you sure you want to delete{" "}
-                        <b>{selectedUser?.name}</b>?
-                    </p>
+                <div
+                    onClick={() => setOpenDeleteModal(false)}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+                >
 
-                    <div className="flex justify-end gap-3 mt-6">
-                        <button onClick={() => setOpenDeleteModal(false)}>
-                            Cancel
-                        </button>
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-900 p-6"
+                    >
 
-                        <button onClick={handleDelete} className="text-red-500">
-                            Delete
-                        </button>
+                        <div className="mb-4 flex items-center justify-between">
+
+                            <h2 className="text-xl font-bold">
+                                Delete User
+                            </h2>
+
+                            <button
+                                type="button"
+                                onClick={() => setOpenDeleteModal(false)}
+                                className="rounded-lg p-2 hover:bg-white/10"
+                            >
+                                <X size={18} />
+                            </button>
+
+                        </div>
+
+                        <p className="text-slate-300">
+                            Are you sure you want to delete{" "}
+                            <span className="font-semibold text-white">
+                                {selectedUser?.name}
+                            </span>
+                            ?
+                        </p>
+
+                        <p className="mt-2 text-sm text-slate-500">
+                            This action cannot be undone.
+                        </p>
+
+                        <div className="mt-6 flex justify-end gap-3">
+
+                            <button
+                                type="button"
+                                onClick={() => setOpenDeleteModal(false)}
+                                className="rounded-xl border border-white/10 px-5 py-3 hover:bg-white/10"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleDeleteUser}
+                                className="rounded-xl bg-red-500 px-5 py-3 font-semibold hover:bg-red-600"
+                            >
+                                Delete
+                            </button>
+
+                        </div>
+
                     </div>
-                </Modal>
+
+                </div>
+
             )}
 
-            {/* ================= EDIT MODAL ================= */}
+            {/* EDIT MODAL */}
             {openEditModal && (
-                <Modal onClose={() => setOpenEditModal(false)}>
 
-                    <h2 className="text-xl font-bold mb-4">
-                        Edit User
-                    </h2>
+                <div
+                    onClick={() => setOpenEditModal(false)}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+                >
 
-                    <input
-                        name="name"
-                        value={formData.name}
-                        onChange={handleEditChange}
-                        placeholder="Name"
-                        className="w-full mb-2"
-                    />
-                    {errors.name && <p>{errors.name}</p>}
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6"
+                    >
 
-                    <input
-                        name="email"
-                        value={formData.email}
-                        onChange={handleEditChange}
-                        placeholder="Email"
-                        className="w-full mb-2"
-                    />
-                    {errors.email && <p>{errors.email}</p>}
+                        {/* HEADER */}
+                        <div className="mb-6 flex items-center justify-between">
 
-                    <button onClick={saveEdit}>
-                        Save
-                    </button>
+                            <h2 className="text-xl font-bold">
+                                Edit User
+                            </h2>
 
-                </Modal>
-            )}
+                            <button
+                                type="button"
+                                onClick={() => setOpenEditModal(false)}
+                                className="rounded-lg p-2 hover:bg-white/10"
+                            >
+                                <X size={18} />
+                            </button>
 
-            {/* ================= CREATE MODAL ================= */}
-            {openCreateModal && (
-                <Modal onClose={() => setOpenCreateModal(false)}>
+                        </div>
 
-                    <h2 className="text-xl font-bold mb-4">
-                        Create User
-                    </h2>
+                        {/* FORM */}
+                        <div className="space-y-5">
 
-                    <input
-                        name="name"
-                        value={createFormData.name}
-                        onChange={handleCreateChange}
-                        placeholder="Name"
-                        className="w-full mb-2"
-                    />
-                    {createErrors.name && <p>{createErrors.name}</p>}
+                            {/* NAME */}
+                            <div>
 
-                    <input
-                        name="email"
-                        value={createFormData.email}
-                        onChange={handleCreateChange}
-                        placeholder="Email"
-                        className="w-full mb-2"
-                    />
-                    {createErrors.email && <p>{createErrors.email}</p>}
+                                <label className="mb-2 block text-sm text-slate-400">
+                                    Full Name
+                                </label>
 
-                    <button onClick={createUser}>
-                        Create
-                    </button>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-blue-500"
+                                />
 
-                </Modal>
+                                {errors.name && (
+                                    <p className="mt-2 text-sm text-red-400">
+                                        {errors.name}
+                                    </p>
+                                )}
+
+                            </div>
+
+                            {/* EMAIL */}
+                            <div>
+
+                                <label className="mb-2 block text-sm text-slate-400">
+                                    Email
+                                </label>
+
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-blue-500"
+                                />
+
+                                {errors.email && (
+                                    <p className="mt-2 text-sm text-red-400">
+                                        {errors.email}
+                                    </p>
+                                )}
+
+                            </div>
+
+                            {/* ROLE */}
+                            <div>
+
+                                <label className="mb-2 block text-sm text-slate-400">
+                                    Role
+                                </label>
+
+                                <select
+                                    name="role"
+                                    value={formData.role}
+                                    onChange={handleChange}
+                                    className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-blue-500"
+                                >
+                                    <option value="user">
+                                        User
+                                    </option>
+
+                                    <option value="moderator">
+                                        Moderator
+                                    </option>
+
+                                    <option value="admin">
+                                        Admin
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            {/* STATUS */}
+                            <div>
+
+                                <label className="mb-2 block text-sm text-slate-400">
+                                    Status
+                                </label>
+
+                                <select
+                                    name="status"
+                                    value={formData.status}
+                                    onChange={handleChange}
+                                    className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-blue-500"
+                                >
+                                    <option value="active">
+                                        Active
+                                    </option>
+
+                                    <option value="banned">
+                                        Banned
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+                        {/* ACTIONS */}
+                        <div className="mt-8 flex justify-end gap-3">
+
+                            <button
+                                type="button"
+                                onClick={() => setOpenEditModal(false)}
+                                className="rounded-xl border border-white/10 px-5 py-3 hover:bg-white/10"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleSaveEdit}
+                                className="rounded-xl bg-blue-500 px-5 py-3 font-semibold hover:bg-blue-600"
+                            >
+                                Save Changes
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
             )}
         </>
-    );
-}
-
-/* ================= REUSABLE MODAL ================= */
-function Modal({ children, onClose }) {
-
-    return (
-        <div
-            onClick={onClose}
-            className="fixed inset-0 flex items-center justify-center bg-black/60"
-        >
-            <div
-                onClick={(e) => e.stopPropagation()}
-                className="bg-slate-900 p-6 rounded-2xl w-[400px]"
-            >
-                <button
-                    className="absolute top-3 right-3"
-                    onClick={onClose}
-                >
-                    <X size={18} />
-                </button>
-
-                {children}
-            </div>
-        </div>
     );
 }

@@ -8,13 +8,6 @@ import CreateUserModal from "../../components/admin/users/CreateUserModal";
 export default function UsersPage() {
     const perPage = 5;
 
-    const resetForm = {
-        name: "",
-        email: "",
-        role: "user",
-        status: "active",
-    };
-
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
 
@@ -32,9 +25,7 @@ export default function UsersPage() {
 
     const [openDeleteModal, setOpenDeleteModal] = useState(false);
     const [openEditModal, setOpenEditModal] = useState(false);
-    const [openCreateModal, setOpenCreateModal] = useState(false);
 
-    const [formData, setFormData] = useState(resetForm);
     const [errors, setErrors] = useState({});
 
     // ---------------- FILTER + PAGINATION ----------------
@@ -58,34 +49,12 @@ export default function UsersPage() {
             if (e.key === "Escape") {
                 setOpenDeleteModal(false);
                 setOpenEditModal(false);
-                setOpenCreateModal(false);
             }
         };
 
         document.addEventListener("keydown", handleEsc);
         return () => document.removeEventListener("keydown", handleEsc);
     }, []);
-
-    // ---------------- CREATE ----------------
-    const handleOpenCreate = () => {
-        setSelectedUser(null);
-        setFormData(resetForm);
-        setErrors({});
-        setOpenCreateModal(true);
-    };
-
-    const handleCreateUser = () => {
-        if (!validateForm()) return;
-
-        const newUser = {
-            id: Date.now(),
-            ...formData,
-        };
-
-        setUsers((prev) => [newUser, ...prev]);
-        setOpenCreateModal(false);
-        setFormData(resetForm);
-    };
 
     // ---------------- DELETE ----------------
     const handleOpenDelete = (user) => {
@@ -153,16 +122,6 @@ export default function UsersPage() {
                 totalPages={totalPages}
                 onEdit={handleOpenEdit}
                 onDelete={handleOpenDelete}
-            />
-
-            {/* MODALS */}
-            <CreateUserModal
-                open={openCreateModal}
-                formData={formData}
-                errors={errors}
-                onClose={() => setOpenCreateModal(false)}
-                onChange={handleChange}
-                onCreate={handleCreateUser}
             />
 
             <EditUserModal

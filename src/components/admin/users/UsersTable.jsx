@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import UserRow from "./UserRow";
+import CreateUserModal from "./CreateUserModal";
 
 export default function UsersTable({
     users,
@@ -11,8 +12,38 @@ export default function UsersTable({
     onEdit,
     onDelete,
 }) {
+    // ---------------- CREATE ----------------
+    const handleOpenCreate = () => {
+        setSelectedUser(null);
+        setFormData(resetForm);
+        setErrors({});
+        setOpenCreateModal(true);
+    };
+
+    const handleCreateUser = () => {
+        if (!validateForm()) return;
+
+        const newUser = {
+            id: Date.now(),
+            ...formData,
+        };
+
+        setUsers((prev) => [newUser, ...prev]);
+        setOpenCreateModal(false);
+        setFormData(resetForm);
+    };
+
     return (
         <div className="space-y-6">
+            {/* MODALS */}
+            <CreateUserModal
+                open={openCreateModal}
+                formData={formData}
+                errors={errors}
+                onClose={() => setOpenCreateModal(false)}
+                onChange={handleChange}
+                onCreate={handleCreateUser}
+            />
 
             {/* HEADER */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

@@ -5,22 +5,16 @@ import {
     Shield,
     Database,
     Activity,
-    Bell,
     Search,
-    Settings,
-    LogOut,
-    Server,
     UserCog,
+    Server,
 } from "lucide-react";
 
-import { Link } from "react-router-dom";
+import AdminNavbar from "../../components/admin/AdminNavbar";
+import StatCard from "../../components/admin/StatCard";
 
 export default function AdminHome() {
     const [query, setQuery] = useState("");
-    const [showProfile, setShowProfile] = useState(false);
-
-    const user =
-        JSON.parse(localStorage.getItem("user")) || {};
 
     const stats = [
         {
@@ -56,111 +50,13 @@ export default function AdminHome() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
 
-            {/* Navbar */}
-            <header className="border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
-
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-
-                    <div>
-                        <h1 className="text-2xl font-bold">
-                            Admin Dashboard
-                        </h1>
-
-                        <p className="text-sm text-slate-400">
-                            Full system management and
-                            analytics
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-
-                        <button className="rounded-xl border border-white/10 bg-white/5 p-3 hover:bg-white/10">
-                            <Bell size={20} />
-                        </button>
-
-                        {/* Profile */}
-                        <div className="relative">
-
-                            <button
-                                onClick={() =>
-                                    setShowProfile(
-                                        !showProfile
-                                    )
-                                }
-                                className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-2 hover:bg-white/10"
-                            >
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20 font-bold text-blue-400">
-                                    {user.full_name
-                                        ?.split(" ")
-                                        .map((n) => n[0])
-                                        .join("")
-                                        .slice(0, 2)}
-                                </div>
-
-                                <div className="hidden md:block">
-                                    <p className="text-sm font-semibold">
-                                        {
-                                            user.full_name
-                                        }
-                                    </p>
-
-                                    <p className="text-xs text-slate-400">
-                                        Admin
-                                    </p>
-                                </div>
-                            </button>
-
-                            {showProfile && (
-                                <div className="absolute right-0 mt-3 w-72 rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
-
-                                    <div className="border-b border-white/10 p-5">
-                                        <h3 className="font-semibold">
-                                            {
-                                                user.full_name
-                                            }
-                                        </h3>
-
-                                        <p className="text-sm text-slate-400">
-                                            {
-                                                user.email
-                                            }
-                                        </p>
-                                    </div>
-
-                                    <div className="p-2">
-
-                                        <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 hover:bg-white/10">
-                                            <Settings
-                                                size={
-                                                    18
-                                                }
-                                            />
-                                            Settings
-                                        </button>
-
-                                        <Link to="/">
-                                            <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-red-400 hover:bg-red-500/10">
-                                                <LogOut
-                                                    size={
-                                                        18
-                                                    }
-                                                />
-                                                Logout
-                                            </button>
-                                        </Link>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </header>
+            {/* NAVBAR (now separate file) */}
+            <AdminNavbar />
 
             <main className="mx-auto max-w-7xl px-6 py-10">
 
                 {/* Search */}
                 <div className="mb-8 flex items-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-
                     <div className="pl-5 text-slate-500">
                         <Search size={20} />
                     </div>
@@ -168,9 +64,7 @@ export default function AdminHome() {
                     <input
                         type="text"
                         value={query}
-                        onChange={(e) =>
-                            setQuery(e.target.value)
-                        }
+                        onChange={(e) => setQuery(e.target.value)}
                         placeholder="Search users, logs, settings..."
                         className="w-full bg-transparent px-4 py-5 outline-none"
                     />
@@ -182,45 +76,9 @@ export default function AdminHome() {
 
                 {/* Stats */}
                 <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-
-                    {stats.map((stat) => {
-                        const Icon = stat.icon;
-
-                        return (
-                            <div
-                                key={stat.title}
-                                className="rounded-3xl border border-white/10 bg-white/5 p-6"
-                            >
-                                <div className="flex justify-between">
-
-                                    <div>
-                                        <p className="text-sm text-slate-400">
-                                            {
-                                                stat.title
-                                            }
-                                        </p>
-
-                                        <h2 className="mt-3 text-4xl font-bold">
-                                            {
-                                                stat.value
-                                            }
-                                        </h2>
-                                    </div>
-
-                                    <div
-                                        className={`rounded-2xl p-4 ${stat.bg}`}
-                                    >
-                                        <Icon
-                                            size={26}
-                                            className={
-                                                stat.color
-                                            }
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {stats.map((stat) => (
+                        <StatCard key={stat.title} {...stat} />
+                    ))}
                 </div>
 
                 {/* Admin Panels */}
@@ -235,12 +93,7 @@ export default function AdminHome() {
                         </div>
 
                         <div className="space-y-4">
-
-                            {[
-                                "Manage Users",
-                                "Assign Roles",
-                                "Review Accounts",
-                            ].map((item) => (
+                            {["Manage Users", "Assign Roles", "Review Accounts"].map((item) => (
                                 <button
                                     key={item}
                                     className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-5 py-4 text-left hover:bg-white/10"
@@ -260,12 +113,7 @@ export default function AdminHome() {
                         </div>
 
                         <div className="space-y-4">
-
-                            {[
-                                "Server Monitoring",
-                                "Database Backups",
-                                "System Logs",
-                            ].map((item) => (
+                            {["Server Monitoring", "Database Backups", "System Logs"].map((item) => (
                                 <button
                                     key={item}
                                     className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-5 py-4 text-left hover:bg-white/10"

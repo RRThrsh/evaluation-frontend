@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Search } from "lucide-react";
 import UserRow from "./UserRow";
 import CreateUserModal from "./CreateUserModal";
@@ -11,10 +12,60 @@ export default function UsersTable({
     totalPages,
     onEdit,
     onDelete,
+    onCreateUser,
 }) {
-    // ---------------- CREATE ----------------
+    const [openCreateModal, setOpenCreateModal] = useState(false);
+
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        role: "user",
+        status: "active",
+    });
+
+    const [errors, setErrors] = useState({});
+
+    const resetForm = {
+        name: "",
+        email: "",
+        role: "user",
+        status: "active",
+    };
+
+    // ---------------- VALIDATION ----------------
+    const validateForm = () => {
+        const newErrors = {};
+
+        if (!formData.name.trim()) newErrors.name = "Name is required";
+
+        if (!formData.email.trim()) {
+            newErrors.email = "Email is required";
+        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+            newErrors.email = "Email is invalid";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    // ---------------- HANDLERS ----------------
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+
+        if (errors[name]) {
+            setErrors((prev) => ({
+                ...prev,
+                [name]: "",
+            }));
+        }
+    };
+
     const handleOpenCreate = () => {
-        setSelectedUser(null);
         setFormData(resetForm);
         setErrors({});
         setOpenCreateModal(true);
@@ -28,14 +79,16 @@ export default function UsersTable({
             ...formData,
         };
 
-        setUsers((prev) => [newUser, ...prev]);
+        onCreateUser(newUser);
+
         setOpenCreateModal(false);
         setFormData(resetForm);
     };
 
     return (
         <div className="space-y-6">
-            {/* MODALS */}
+
+            {/* CREATE MODAL */}
             <CreateUserModal
                 open={openCreateModal}
                 formData={formData}
@@ -53,10 +106,10 @@ export default function UsersTable({
                         Manage platform users and permissions
                     </p>
                 </div>
-                
+
                 <button
                     onClick={handleOpenCreate}
-                    className="rounded-xl bg-blue-500 px-5 py-3 font-semibold transition hover:bg-blue-600"
+                    className="rounded-xl bg-blue-500 px-5 py-3 font-semibold hover:bg-blue-600"
                 >
                     Add User
                 </button>
@@ -68,8 +121,8 @@ export default function UsersTable({
                 <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search users..."
                     className="w-full bg-transparent px-4 py-4 outline-none"
+                    placeholder="Search users..."
                 />
             </div>
 
@@ -110,7 +163,7 @@ export default function UsersTable({
                     <button
                         disabled={page === 1}
                         onClick={() => setPage((p) => p - 1)}
-                        className="border px-4 py-2 rounded-xl disabled:opacity-50"
+                        className="px-4 py-2 border rounded-xl disabled:opacity-50"
                     >
                         Previous
                     </button>
@@ -122,7 +175,7 @@ export default function UsersTable({
                     <button
                         disabled={page >= totalPages}
                         onClick={() => setPage((p) => p + 1)}
-                        className="border px-4 py-2 rounded-xl disabled:opacity-50"
+                        className="px-4 py-2 border rounded-xl disabled:opacity-50"
                     >
                         Next
                     </button>

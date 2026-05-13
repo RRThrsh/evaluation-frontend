@@ -10,10 +10,8 @@ import {
     Server,
 } from "lucide-react";
 
-import AdminNavbar from "../../components/admin/AdminNavbar";
 import StatCard from "../../components/admin/StatCard";
 
-// Reusable panel component
 function AdminPanel({ icon: Icon, title, items, iconColor = "text-blue-400" }) {
     return (
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
@@ -75,47 +73,10 @@ export default function AdminHome() {
         []
     );
 
-    const handleSearch = () => {
-        if (!query.trim()) return;
-        console.log("Searching:", query);
-        // later: call API here
-    };
-
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
 
-            <AdminNavbar />
-
-            <main className="mx-auto max-w-7xl px-6 py-10">
-
-                {/* SEARCH */}
-                <div className="mb-8 flex items-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                    <div className="pl-5 text-slate-500">
-                        <Search size={20} />
-                    </div>
-
-                    <input
-                        type="text"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") handleSearch();
-                        }}
-                        placeholder="Search users, logs, settings..."
-                        aria-label="Search admin panel"
-                        className="w-full bg-transparent px-4 py-5 outline-none"
-                    />
-
-                    <button
-                        type="button"
-                        onClick={handleSearch}
-                        className="m-2 rounded-xl bg-blue-500 px-6 py-3 font-semibold transition hover:bg-blue-600 disabled:opacity-50"
-                        disabled={!query.trim()}
-                    >
-                        Search
-                    </button>
-                </div>
-
+            <main className="mx-auto max-w-7xl">
                 {/* STATS */}
                 <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
                     {stats.map((stat) => (

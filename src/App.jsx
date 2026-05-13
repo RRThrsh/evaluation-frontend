@@ -63,13 +63,14 @@ export default function App() {
             />
 
             {/* ADMIN */}
-            <Route path="/admin" element={
+            <Route path="/admin" 
+                element={
                     <ProtectedRoute allowedRoles={[ "admin" ]} >
-                        <AdminHome />
+                        <AdminLayout />
                     </ProtectedRoute>
                 }
             >
-                <Route index element={<AdminLayout />} />
+                <Route index element={<AdminHome />} />
             </Route>
 
             {/* ERRORS */}

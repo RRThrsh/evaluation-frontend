@@ -2,7 +2,6 @@ import { X } from "lucide-react";
 
 export default function EditUserModal({
     open,
-    user,
     formData,
     errors,
     onClose,
@@ -22,7 +21,9 @@ export default function EditUserModal({
             >
                 {/* HEADER */}
                 <div className="mb-6 flex items-center justify-between">
-                    <h2 className="text-xl font-bold">Edit User</h2>
+                    <h2 className="text-xl font-bold">
+                        Edit User
+                    </h2>
 
                     <button
                         type="button"
@@ -36,7 +37,7 @@ export default function EditUserModal({
                 {/* FORM */}
                 <div className="space-y-5">
 
-                    {/* NAME */}
+                    {/* FULL NAME */}
                     <div>
                         <label className="mb-2 block text-sm text-slate-400">
                             Full Name
@@ -44,20 +45,20 @@ export default function EditUserModal({
 
                         <input
                             type="text"
-                            name="name"
-                            value={formData.name}
+                            name="full_name"
+                            value={formData.full_name}
                             onChange={onChange}
                             className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-blue-500"
                         />
 
-                        {errors.name && (
+                        {errors.full_name && (
                             <p className="mt-2 text-sm text-red-400">
-                                {errors.name}
+                                {errors.full_name}
                             </p>
                         )}
                     </div>
 
-                    {/* EMAIL */}
+                    {/* EMAIL (read-only safer for most systems) */}
                     <div>
                         <label className="mb-2 block text-sm text-slate-400">
                             Email
@@ -67,15 +68,9 @@ export default function EditUserModal({
                             type="email"
                             name="email"
                             value={formData.email}
-                            onChange={onChange}
-                            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-blue-500"
+                            disabled
+                            className="w-full cursor-not-allowed rounded-2xl border border-white/10 bg-white/5 px-4 py-3 opacity-60"
                         />
-
-                        {errors.email && (
-                            <p className="mt-2 text-sm text-red-400">
-                                {errors.email}
-                            </p>
-                        )}
                     </div>
 
                     {/* ROLE */}
@@ -90,26 +85,10 @@ export default function EditUserModal({
                             onChange={onChange}
                             className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-blue-500"
                         >
-                            <option value="user">User</option>
-                            <option value="moderator">Moderator</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
-
-                    {/* STATUS */}
-                    <div>
-                        <label className="mb-2 block text-sm text-slate-400">
-                            Status
-                        </label>
-
-                        <select
-                            name="status"
-                            value={formData.status}
-                            onChange={onChange}
-                            className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-blue-500"
-                        >
-                            <option value="active">Active</option>
-                            <option value="banned">Banned</option>
+                            <option value="USER">User</option>
+                            <option value="STAFF">Staff</option>
+                            <option value="MODERATOR">Moderator</option>
+                            <option value="ADMIN">Admin</option>
                         </select>
                     </div>
 

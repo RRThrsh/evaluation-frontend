@@ -1,11 +1,29 @@
 import React from "react";
-import { spinner_styles } from "./spinner.style";
+import { View, ActivityIndicator } from "react-native";
+import { spinnerStyles } from "./spinner.constant";
+import { SpinnerPropTypes } from "./spinner.types";
 
-export default function Spinner({ size = 24 }) {
-    return (
-        <div
-            className={spinner_styles.base}
-            style={{ width: size, height: size }}
+const Spinner = ({
+    size = "md",
+    variant = "default",
+    fullscreen = false,
+}) => {
+    const styles = spinnerStyles(variant, size);
+
+    const content = (
+        <ActivityIndicator
+            size={styles.indicatorSize}
+            color={styles.color}
         />
     );
-}
+
+    if (fullscreen) {
+        return <View className={styles.fullscreen}>{content}</View>;
+    }
+
+    return <View className={styles.container}>{content}</View>;
+};
+
+Spinner.propTypes = SpinnerPropTypes;
+
+export default Spinner;

@@ -1,4 +1,1 @@
-export const spinner_styles = {
-    base:
-        "animate-spin border-4 border-gray-300 border-t-blue-600 rounded-full",
-};
+export const spinnerStyle = {};

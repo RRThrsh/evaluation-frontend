@@ -13,6 +13,9 @@ import StaffHome from "./pages/staff/StaffHome";
 import ModeratorHome from "./pages/moderator/ModeratorHome";
 import AdminHome from "./pages/admin/AdminHome";
 
+// ADMIN PAGE
+import UsersPage from "./pages/admin/UsersPage";
+
 // LAYOUT
 import AdminLayout from "./components/layout/AdminLayout";
 
@@ -71,6 +74,7 @@ export default function App() {
                 }
             >
                 <Route index element={<AdminHome />} />
+                <Route path="users" element={<UsersPage />} />
             </Route>
 
             {/* ERRORS */}

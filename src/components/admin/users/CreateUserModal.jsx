@@ -21,7 +21,9 @@ export default function CreateUserModal({
             >
                 {/* HEADER */}
                 <div className="mb-6 flex items-center justify-between">
-                    <h2 className="text-xl font-bold">Create User</h2>
+                    <h2 className="text-xl font-bold">
+                        Create User
+                    </h2>
 
                     <button
                         type="button"
@@ -35,7 +37,7 @@ export default function CreateUserModal({
                 {/* FORM */}
                 <div className="space-y-5">
 
-                    {/* NAME */}
+                    {/* FULL NAME */}
                     <div>
                         <label className="mb-2 block text-sm text-slate-400">
                             Full Name
@@ -43,16 +45,16 @@ export default function CreateUserModal({
 
                         <input
                             type="text"
-                            name="name"
-                            value={formData.name}
+                            name="full_name"
+                            value={formData.full_name}
                             onChange={onChange}
                             className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-blue-500"
                             placeholder="Enter full name"
                         />
 
-                        {errors.name && (
+                        {errors.full_name && (
                             <p className="mt-2 text-sm text-red-400">
-                                {errors.name}
+                                {errors.full_name}
                             </p>
                         )}
                     </div>
@@ -91,26 +93,10 @@ export default function CreateUserModal({
                             onChange={onChange}
                             className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-blue-500"
                         >
-                            <option value="user">User</option>
-                            <option value="moderator">Moderator</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
-
-                    {/* STATUS */}
-                    <div>
-                        <label className="mb-2 block text-sm text-slate-400">
-                            Status
-                        </label>
-
-                        <select
-                            name="status"
-                            value={formData.status}
-                            onChange={onChange}
-                            className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-blue-500"
-                        >
-                            <option value="active">Active</option>
-                            <option value="banned">Banned</option>
+                            <option value="USER">User</option>
+                            <option value="STAFF">Staff</option>
+                            <option value="MODERATOR">Moderator</option>
+                            <option value="ADMIN">Admin</option>
                         </select>
                     </div>
 

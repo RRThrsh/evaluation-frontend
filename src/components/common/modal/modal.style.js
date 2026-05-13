@@ -1,4 +1,4 @@
-export const MODAL_STYLES = {
+export const modal_styles = {
     overlay:
         "fixed inset-0 bg-black/50 flex items-center justify-center",
     container: "bg-white w-full max-w-md rounded shadow-lg p-4",

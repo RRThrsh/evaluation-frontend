@@ -1,1 +1,1 @@
-export const DROPDOWN_PLACEMENTS = ["top", "bottom"];
+export const dropdown_placements = ["top", "bottom"];

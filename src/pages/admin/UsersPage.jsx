@@ -10,7 +10,6 @@ import {
 import {
     useEffect,
     useMemo,
-    useRef,
     useState,
 } from "react";
 
@@ -22,7 +21,16 @@ export default function UsersPage() {
     const [selectedUser, setSelectedUser] = useState(null);
     const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
-    const modalRef = useRef(null);
+    const [openEditModal, setOpenEditModal] = useState(false);
+
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        role: "user",
+        status: "active",
+    });
+
+    const [errors, setErrors] = useState({});
 
     const perPage = 5;
 
@@ -96,9 +104,12 @@ export default function UsersPage() {
     }, [query]);
 
     useEffect(() => {
+
         const handleEsc = (e) => {
+
             if (e.key === "Escape") {
                 setOpenDeleteModal(false);
+                setOpenEditModal(false);
             }
         };
 
@@ -107,6 +118,7 @@ export default function UsersPage() {
         return () => {
             document.removeEventListener("keydown", handleEsc);
         };
+
     }, []);
 
     const handleOpenDelete = (user) => {
@@ -115,11 +127,78 @@ export default function UsersPage() {
     };
 
     const handleDeleteUser = () => {
+
         setUsers((prev) =>
             prev.filter((u) => u.id !== selectedUser.id)
         );
 
         setOpenDeleteModal(false);
+        setSelectedUser(null);
+    };
+
+    const handleOpenEdit = (user) => {
+
+        setSelectedUser(user);
+
+        setFormData({
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            status: user.status,
+        });
+
+        setErrors({});
+        setOpenEditModal(true);
+    };
+
+    const handleChange = (e) => {
+
+        const { name, value } = e.target;
+
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    const validateForm = () => {
+
+        const newErrors = {};
+
+        if (!formData.name.trim()) {
+            newErrors.name = "Name is required";
+        }
+
+        if (!formData.email.trim()) {
+            newErrors.email = "Email is required";
+        } else if (
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+        ) {
+            newErrors.email = "Invalid email address";
+        }
+
+        setErrors(newErrors);
+
+        return Object.keys(newErrors).length === 0;
+    };
+
+    // SAVE EDIT
+    const handleSaveEdit = () => {
+
+        if (!validateForm()) return;
+
+        setUsers((prev) =>
+            prev.map((user) =>
+                user.id === selectedUser.id
+                    ? {
+                            ...user,
+                            ...formData,
+                        }
+                    : user
+            )
+        );
+
+        setOpenEditModal(false);
         setSelectedUser(null);
     };
 
@@ -174,6 +253,7 @@ export default function UsersPage() {
 
                         <table className="w-full min-w-[700px]">
 
+                            {/* TABLE HEAD */}
                             <thead className="border-b border-white/10 bg-white/5">
 
                                 <tr className="text-left text-sm text-slate-400">
@@ -198,85 +278,114 @@ export default function UsersPage() {
 
                             </thead>
 
+                            {/* TABLE BODY */}
                             <tbody>
 
-                                {paginatedUsers.map((user) => (
+                                {paginatedUsers.length > 0 ? (
 
-                                    <tr
-                                        key={user.id}
-                                        className="border-b border-white/5 hover:bg-white/5"
-                                    >
+                                    paginatedUsers.map((user) => (
 
-                                        {/* USER */}
-                                        <td className="px-6 py-4">
-                                            <div>
-                                                <p className="font-medium">
-                                                    {user.name}
-                                                </p>
+                                        <tr
+                                            key={user.id}
+                                            className="border-b border-white/5 hover:bg-white/5"
+                                        >
 
-                                                <p className="text-sm text-slate-400">
-                                                    {user.email}
-                                                </p>
-                                            </div>
-                                        </td>
+                                            {/* USER */}
+                                            <td className="px-6 py-4">
 
-                                        {/* ROLE */}
-                                        <td className="px-6 py-4">
-                                            <div className="inline-flex items-center gap-2 rounded-xl bg-blue-500/10 px-3 py-1 text-sm text-blue-400">
-                                                <Shield size={14} />
-                                                {user.role}
-                                            </div>
-                                        </td>
+                                                <div>
+                                                    <p className="font-medium">
+                                                        {user.name}
+                                                    </p>
 
-                                        {/* STATUS */}
-                                        <td className="px-6 py-4">
+                                                    <p className="text-sm text-slate-400">
+                                                        {user.email}
+                                                    </p>
+                                                </div>
 
-                                            <span
-                                                className={`rounded-xl px-3 py-1 text-sm ${
-                                                    user.status === "active"
-                                                        ? "bg-green-500/10 text-green-400"
-                                                        : "bg-red-500/10 text-red-400"
-                                                }`}
-                                            >
-                                                {user.status}
-                                            </span>
+                                            </td>
 
-                                        </td>
+                                            {/* ROLE */}
+                                            <td className="px-6 py-4">
 
-                                        {/* ACTIONS */}
-                                        <td className="px-6 py-4">
+                                                <div className="inline-flex items-center gap-2 rounded-xl bg-blue-500/10 px-3 py-1 text-sm text-blue-400">
 
-                                            <div className="flex items-center gap-3">
+                                                    <Shield size={14} />
 
-                                                <button
-                                                    type="button"
-                                                    className="rounded-lg p-2 hover:bg-white/10"
+                                                    {user.role}
+
+                                                </div>
+
+                                            </td>
+
+                                            {/* STATUS */}
+                                            <td className="px-6 py-4">
+
+                                                <span
+                                                    className={`rounded-xl px-3 py-1 text-sm ${
+                                                        user.status === "active"
+                                                            ? "bg-green-500/10 text-green-400"
+                                                            : "bg-red-500/10 text-red-400"
+                                                    }`}
                                                 >
-                                                    <Pencil size={16} />
-                                                </button>
+                                                    {user.status}
+                                                </span>
 
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleOpenDelete(user)}
-                                                    className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                            </td>
 
-                                                <button
-                                                    type="button"
-                                                    className="rounded-lg p-2 hover:bg-white/10"
-                                                >
-                                                    <MoreVertical size={16} />
-                                                </button>
+                                            {/* ACTIONS */}
+                                            <td className="px-6 py-4">
 
-                                            </div>
+                                                <div className="flex items-center gap-3">
 
+                                                    {/* EDIT */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOpenEdit(user)}
+                                                        className="rounded-lg p-2 hover:bg-white/10"
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
+
+                                                    {/* DELETE */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOpenDelete(user)}
+                                                        className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+
+                                                    {/* MORE */}
+                                                    <button
+                                                        type="button"
+                                                        className="rounded-lg p-2 hover:bg-white/10"
+                                                    >
+                                                        <MoreVertical size={16} />
+                                                    </button>
+
+                                                </div>
+
+                                            </td>
+
+                                        </tr>
+
+                                    ))
+
+                                ) : (
+
+                                    <tr>
+
+                                        <td
+                                            colSpan="4"
+                                            className="px-6 py-10 text-center text-slate-400"
+                                        >
+                                            No users found
                                         </td>
 
                                     </tr>
 
-                                ))}
+                                )}
 
                             </tbody>
 
@@ -317,18 +426,17 @@ export default function UsersPage() {
 
             {/* DELETE MODAL */}
             {openDeleteModal && (
+
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
                     onClick={() => setOpenDeleteModal(false)}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
                 >
 
                     <div
-                        ref={modalRef}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-900 p-6 shadow-2xl"
+                        className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-900 p-6"
                     >
 
-                        {/* HEADER */}
                         <div className="mb-4 flex items-center justify-between">
 
                             <h2 className="text-xl font-bold">
@@ -345,7 +453,6 @@ export default function UsersPage() {
 
                         </div>
 
-                        {/* CONTENT */}
                         <p className="text-slate-300">
                             Are you sure you want to delete{" "}
                             <span className="font-semibold text-white">
@@ -358,7 +465,6 @@ export default function UsersPage() {
                             This action cannot be undone.
                         </p>
 
-                        {/* ACTIONS */}
                         <div className="mt-6 flex justify-end gap-3">
 
                             <button
@@ -372,7 +478,7 @@ export default function UsersPage() {
                             <button
                                 type="button"
                                 onClick={handleDeleteUser}
-                                className="rounded-xl bg-red-500 px-5 py-3 font-semibold text-white hover:bg-red-600"
+                                className="rounded-xl bg-red-500 px-5 py-3 font-semibold hover:bg-red-600"
                             >
                                 Delete
                             </button>
@@ -382,6 +488,169 @@ export default function UsersPage() {
                     </div>
 
                 </div>
+
+            )}
+
+            {/* EDIT MODAL */}
+            {openEditModal && (
+
+                <div
+                    onClick={() => setOpenEditModal(false)}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+                >
+
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6"
+                    >
+
+                        {/* HEADER */}
+                        <div className="mb-6 flex items-center justify-between">
+
+                            <h2 className="text-xl font-bold">
+                                Edit User
+                            </h2>
+
+                            <button
+                                type="button"
+                                onClick={() => setOpenEditModal(false)}
+                                className="rounded-lg p-2 hover:bg-white/10"
+                            >
+                                <X size={18} />
+                            </button>
+
+                        </div>
+
+                        {/* FORM */}
+                        <div className="space-y-5">
+
+                            {/* NAME */}
+                            <div>
+
+                                <label className="mb-2 block text-sm text-slate-400">
+                                    Full Name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-blue-500"
+                                />
+
+                                {errors.name && (
+                                    <p className="mt-2 text-sm text-red-400">
+                                        {errors.name}
+                                    </p>
+                                )}
+
+                            </div>
+
+                            {/* EMAIL */}
+                            <div>
+
+                                <label className="mb-2 block text-sm text-slate-400">
+                                    Email
+                                </label>
+
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-blue-500"
+                                />
+
+                                {errors.email && (
+                                    <p className="mt-2 text-sm text-red-400">
+                                        {errors.email}
+                                    </p>
+                                )}
+
+                            </div>
+
+                            {/* ROLE */}
+                            <div>
+
+                                <label className="mb-2 block text-sm text-slate-400">
+                                    Role
+                                </label>
+
+                                <select
+                                    name="role"
+                                    value={formData.role}
+                                    onChange={handleChange}
+                                    className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-blue-500"
+                                >
+                                    <option value="user">
+                                        User
+                                    </option>
+
+                                    <option value="moderator">
+                                        Moderator
+                                    </option>
+
+                                    <option value="admin">
+                                        Admin
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            {/* STATUS */}
+                            <div>
+
+                                <label className="mb-2 block text-sm text-slate-400">
+                                    Status
+                                </label>
+
+                                <select
+                                    name="status"
+                                    value={formData.status}
+                                    onChange={handleChange}
+                                    className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-blue-500"
+                                >
+                                    <option value="active">
+                                        Active
+                                    </option>
+
+                                    <option value="banned">
+                                        Banned
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+                        {/* ACTIONS */}
+                        <div className="mt-8 flex justify-end gap-3">
+
+                            <button
+                                type="button"
+                                onClick={() => setOpenEditModal(false)}
+                                className="rounded-xl border border-white/10 px-5 py-3 hover:bg-white/10"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleSaveEdit}
+                                className="rounded-xl bg-blue-500 px-5 py-3 font-semibold hover:bg-blue-600"
+                            >
+                                Save Changes
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
             )}
         </>
     );

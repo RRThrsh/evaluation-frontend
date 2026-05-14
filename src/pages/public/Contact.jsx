@@ -5,12 +5,10 @@ import { Mail, Phone, MapPin, Send } from "lucide-react";
 
 const Contact = () => {
     return (
-        /* flex-col + min-h-screen keeps the footer at the very bottom */
         <div className="min-h-screen flex flex-col bg-slate-50 font-sans antialiased selection:bg-blue-100">
             
             <Header />
 
-            {/* main flex-grow ensures this area takes up all available vertical space */}
             <main className="flex-grow flex items-center justify-center py-12 lg:py-20 px-6">
                 <div className="w-full max-w-6xl bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/5 overflow-hidden flex flex-col lg:flex-row border border-slate-100">
                     

@@ -12,6 +12,7 @@ import About from "./pages/public/About";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+import Contact from "./pages/public/Contact";
 
 import NotFound from "./pages/error/NotFound";
 import TooManyRequest from "./pages/error/TooManyRequest";
@@ -26,6 +27,7 @@ function App() {
 
                 <Route path="/" element={<Home />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
 
                 {/* Auth Pages */}
                 <Route path="/login" element={<Login />} />

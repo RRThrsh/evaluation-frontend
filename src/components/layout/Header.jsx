@@ -8,25 +8,25 @@ const Header = () => {
 
     return (
         <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-            <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
 
                 {/* Logo */}
                 <Link
                     to="/"
-                    className="text-lg font-semibold tracking-tight text-gray-900 hover:opacity-70 transition"
+                    className="text-xl font-semibold tracking-tight text-gray-900 hover:opacity-70 transition"
                 >
                     Evaluation
                 </Link>
 
                 {/* Desktop Nav */}
                 <nav className="hidden md:flex items-center gap-8">
-                    <Link className="text-sm text-gray-500 hover:text-gray-900 transition" to="/">
+                    <Link className="text-md text-gray-600 hover:text-gray-900 transition" to="/">
                         Home
                     </Link>
-                    <Link className="text-sm text-gray-500 hover:text-gray-900 transition" to="/about">
+                    <Link className="text-md text-gray-600 hover:text-gray-900 transition" to="/about">
                         About
                     </Link>
-                    <Link className="text-sm text-gray-500 hover:text-gray-900 transition" to="/contact">
+                    <Link className="text-md text-gray-600 hover:text-gray-900 transition" to="/contact">
                         Contact
                     </Link>
                 </nav>
@@ -65,9 +65,9 @@ const Header = () => {
                             Contact
                         </Link>
 
-                        <button className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-800 hover:bg-gray-50">
+                        <Button variant="outline">
                             Get Started
-                        </button>
+                        </Button>
                     </nav>
                 </div>
             )}

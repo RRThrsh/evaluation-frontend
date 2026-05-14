@@ -1,24 +1,13 @@
 import React from "react";
+import Header from "../../components/layout/Header";
+import Footer from "../../components/layout/Footer";
 
 const Homepage = () => {
     return (
         <div className="min-h-screen flex flex-col bg-gray-50">
 
             {/* Header */}
-            <header className="w-full px-6 py-4 bg-white border-b shadow-sm flex justify-between items-center">
-                <h1 className="text-xl font-bold text-gray-800">
-                    Evaluation System
-                </h1>
-
-                <div className="space-x-3">
-                    <button className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-                        Login
-                    </button>
-                    <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                        Register
-                    </button>
-                </div>
-            </header>
+            <Header />
 
             {/* Hero Section */}
             <main className="flex flex-1 items-center justify-center px-6">
@@ -45,9 +34,7 @@ const Homepage = () => {
             </main>
 
             {/* Footer */}
-            <footer className="text-center py-4 text-sm text-gray-500 border-t bg-white">
-                © {new Date().getFullYear()} Evaluation System. All rights reserved.
-            </footer>
+            <Footer />
         </div>
     );
 };

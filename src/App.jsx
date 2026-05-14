@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 /*  ==============================================
     COMPONENTS
     ============================================== */
-import Header from "./components/layout/Header";
 
 /*  ==============================================
     PAGES
@@ -22,10 +21,9 @@ import Maintenance from "./pages/error/Maintenance";
 function App() {
     return (
         <BrowserRouter>
-            <Header />
-
             <Routes>
                 {/* Public Pages */}
+
                 <Route path="/" element={<Home />} />
                 <Route path="/about" element={<About />} />
 

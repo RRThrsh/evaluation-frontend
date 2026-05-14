@@ -1,15 +1,13 @@
 import React from "react";
+import Header from "../../components/layout/Header";
+import Footer from "../../components/layout/Footer";
 
 const Contact = () => {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
 
             {/* Header */}
-            <header className="w-full px-6 py-4 bg-white border-b shadow-sm">
-                <h1 className="text-xl font-bold text-gray-800">
-                    Contact Us
-                </h1>
-            </header>
+            <Header />
 
             {/* Content */}
             <main className="flex flex-1 items-center justify-center px-6">
@@ -65,9 +63,7 @@ const Contact = () => {
             </main>
 
             {/* Footer */}
-            <footer className="text-center py-4 text-sm text-gray-500 border-t bg-white">
-                © {new Date().getFullYear()} Evaluation System
-            </footer>
+            <Footer />
         </div>
     );
 };

@@ -6,90 +6,65 @@ const Header = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     return (
-        <header className="sticky top-0 z-50 backdrop-blur-lg bg-[#f8f5ef]/90 border-b border-[#e7dfd2]">
+        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
             <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
 
                 {/* Logo */}
                 <Link
                     to="/"
-                    className="text-2xl font-bold tracking-tight text-[#3e3428] hover:opacity-80 transition"
+                    className="text-lg font-semibold tracking-tight text-gray-900 hover:opacity-70 transition"
                 >
                     Evaluation
                 </Link>
 
                 {/* Desktop Nav */}
                 <nav className="hidden md:flex items-center gap-8">
-                    <Link
-                        to="/"
-                        className="text-sm font-medium text-[#6b5e4f] hover:text-[#3e3428] transition"
-                    >
+                    <Link className="text-sm text-gray-500 hover:text-gray-900 transition" to="/">
                         Home
                     </Link>
-
-                    <Link
-                        to="/about"
-                        className="text-sm font-medium text-[#6b5e4f] hover:text-[#3e3428] transition"
-                    >
+                    <Link className="text-sm text-gray-500 hover:text-gray-900 transition" to="/about">
                         About
                     </Link>
-
-                    <Link
-                        to="/contact"
-                        className="text-sm font-medium text-[#6b5e4f] hover:text-[#3e3428] transition"
-                    >
+                    <Link className="text-sm text-gray-500 hover:text-gray-900 transition" to="/contact">
                         Contact
                     </Link>
                 </nav>
 
-                {/* Desktop CTA */}
+                {/* CTA */}
                 <div className="hidden md:block">
-                    <button className="px-5 py-2.5 rounded-xl bg-[#c8a97e] text-white text-sm font-medium hover:bg-[#b89567] transition-all duration-300 shadow-sm hover:shadow-md">
+                    <button className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 hover:bg-gray-50 transition">
                         Get Started
                     </button>
                 </div>
 
-                {/* Mobile Menu Button */}
+                {/* Mobile Button */}
                 <button
                     onClick={() => setMobileOpen(!mobileOpen)}
-                    className="md:hidden p-2 rounded-lg hover:bg-[#efe7db] transition"
+                    className="md:hidden p-2 rounded-md hover:bg-gray-100 transition"
                 >
                     {mobileOpen ? (
-                        <X size={22} className="text-[#5c4d3d]" />
+                        <X size={22} className="text-gray-800" />
                     ) : (
-                        <Menu size={22} className="text-[#5c4d3d]" />
+                        <Menu size={22} className="text-gray-800" />
                     )}
                 </button>
             </div>
 
             {/* Mobile Menu */}
             {mobileOpen && (
-                <div className="md:hidden border-t border-[#e7dfd2] bg-[#f8f5ef]/95 backdrop-blur-lg">
+                <div className="md:hidden border-t border-gray-100 bg-white">
                     <nav className="flex flex-col px-6 py-4 space-y-4">
-                        <Link
-                            to="/"
-                            className="text-[#6b5e4f] hover:text-[#3e3428] transition"
-                            onClick={() => setMobileOpen(false)}
-                        >
+                        <Link className="text-gray-600 hover:text-gray-900" to="/" onClick={() => setMobileOpen(false)}>
                             Home
                         </Link>
-
-                        <Link
-                            to="/about"
-                            className="text-[#6b5e4f] hover:text-[#3e3428] transition"
-                            onClick={() => setMobileOpen(false)}
-                        >
+                        <Link className="text-gray-600 hover:text-gray-900" to="/about" onClick={() => setMobileOpen(false)}>
                             About
                         </Link>
-
-                        <Link
-                            to="/contact"
-                            className="text-[#6b5e4f] hover:text-[#3e3428] transition"
-                            onClick={() => setMobileOpen(false)}
-                        >
+                        <Link className="text-gray-600 hover:text-gray-900" to="/contact" onClick={() => setMobileOpen(false)}>
                             Contact
                         </Link>
 
-                        <button className="w-full mt-2 px-4 py-3 rounded-xl bg-[#c8a97e] text-white font-medium hover:bg-[#b89567] transition">
+                        <button className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-800 hover:bg-gray-50">
                             Get Started
                         </button>
                     </nav>

@@ -35,12 +35,12 @@ const Footer = () => {
                         <div className="flex items-center gap-2 mb-6">
                             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xl text-white">E</div>
                             <h2 className="text-xl font-bold tracking-tighter text-white">
-                                Student Evaluation
+                                Evaluation
                             </h2>
                         </div>
                         <p className="text-sm leading-relaxed text-slate-400">
                             The official academic assessment portal for modern higher education institutions. 
-                            Dedicated to transparency, growth, and student success.
+                            Dedicated to transparency and growth.
                         </p>
                     </div>
 

@@ -1,29 +1,41 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Header = () => {
     return (
         <header className="w-full bg-white border-b shadow-sm">
             <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-            
+
                 {/* Logo */}
-                <div className="text-xl font-bold text-gray-800">
+                <Link
+                    to="/"
+                    className="text-xl font-bold text-gray-800"
+                >
                     MyBrand
-                </div>
+                </Link>
 
                 {/* Nav */}
                 <nav className="hidden md:flex gap-6 text-sm text-gray-600">
-                    <a href="#" className="hover:text-gray-900">
+                    <Link
+                        to="/"
+                        className="hover:text-gray-900"
+                    >
                         Home
-                    </a>
-                    <a href="#" className="hover:text-gray-900">
-                        Features
-                    </a>
-                    <a href="#" className="hover:text-gray-900">
-                        Pricing
-                    </a>
-                    <a href="#" className="hover:text-gray-900">
+                    </Link>
+
+                    <Link
+                        to="/about"
+                        className="hover:text-gray-900"
+                    >
+                        About
+                    </Link>
+
+                    <Link
+                        to="/contact"
+                        className="hover:text-gray-900"
+                    >
                         Contact
-                    </a>
+                    </Link>
                 </nav>
 
                 {/* CTA Button */}
@@ -33,8 +45,8 @@ const Header = () => {
                     </button>
                 </div>
 
-                {/* Mobile Placeholder (simple) */}
-                <div className="md:hidden text-gray-600">
+                {/* Mobile Menu Icon */}
+                <div className="md:hidden text-gray-600 cursor-pointer">
                     ☰
                 </div>
             </div>

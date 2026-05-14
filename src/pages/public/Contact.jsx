@@ -1,73 +1,126 @@
 import React from "react";
+import Header from "../../components/layout/Header";
+import Footer from "../../components/layout/Footer";
+import { Mail, Phone, MapPin, Send } from "lucide-react";
 
 const Contact = () => {
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        /* flex-col + min-h-screen keeps the footer at the very bottom */
+        <div className="min-h-screen flex flex-col bg-slate-50 font-sans antialiased selection:bg-blue-100">
+            
+            <Header />
 
-            {/* Header */}
-            <header className="w-full px-6 py-4 bg-white border-b shadow-sm">
-                <h1 className="text-xl font-bold text-gray-800">
-                    Contact Us
-                </h1>
-            </header>
-
-            {/* Content */}
-            <main className="flex flex-1 items-center justify-center px-6">
-                <div className="w-full max-w-2xl bg-white border rounded-xl shadow-sm p-6">
-
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-                        Get in Touch
-                    </h2>
-
-                    <p className="text-gray-600 text-center mb-6">
-                        If you have questions about the Evaluation System, feel free to send us a message.
-                    </p>
-
-                    {/* Form */}
-                    <form className="space-y-4">
-
+            {/* main flex-grow ensures this area takes up all available vertical space */}
+            <main className="flex-grow flex items-center justify-center py-12 lg:py-20 px-6">
+                <div className="w-full max-w-6xl bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/5 overflow-hidden flex flex-col lg:flex-row border border-slate-100">
+                    
+                    {/* Left Panel: Contact Info */}
+                    <div className="lg:w-2/5 bg-blue-600 p-8 lg:p-12 text-white flex flex-col justify-between">
                         <div>
-                            <label className="text-sm text-gray-700">Name</label>
-                            <input
-                                type="text"
-                                placeholder="Enter your name"
-                                className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
+                            <h2 className="text-3xl font-bold tracking-tight mb-4">
+                                Contact Academic Support
+                            </h2>
+                            <p className="text-blue-100 leading-relaxed mb-10">
+                                Have questions regarding your evaluation or need technical assistance with the portal? Our team is here to help.
+                            </p>
+
+                            <div className="space-y-8">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-3 bg-blue-500/50 rounded-xl">
+                                        <Mail size={20} />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mb-1">Email Us</p>
+                                        <p className="font-medium">support@university.edu</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-4">
+                                    <div className="p-3 bg-blue-500/50 rounded-xl">
+                                        <Phone size={20} />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mb-1">Call Us</p>
+                                        <p className="font-medium">+1 (555) 012-3456</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-4">
+                                    <div className="p-3 bg-blue-500/50 rounded-xl">
+                                        <MapPin size={20} />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mb-1">Office</p>
+                                        <p className="font-medium text-sm leading-snug">
+                                            Building 4, Registrar Wing<br />
+                                            Academic Heights Campus
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="text-sm text-gray-700">Email</label>
-                            <input
-                                type="email"
-                                placeholder="Enter your email"
-                                className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
+                        {/* Subtle decorative element */}
+                        <div className="mt-12 pt-8 border-t border-blue-500/50">
+                            <p className="text-xs text-blue-200">
+                                Typical response time: 24-48 Business Hours
+                            </p>
                         </div>
+                    </div>
 
-                        <div>
-                            <label className="text-sm text-gray-700">Message</label>
-                            <textarea
-                                rows="4"
-                                placeholder="Write your message..."
-                                className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            ></textarea>
-                        </div>
+                    {/* Right Panel: Form */}
+                    <div className="lg:w-3/5 p-8 lg:p-12 bg-white">
+                        <form className="space-y-6">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">Full Name</label>
+                                    <input
+                                        type="text"
+                                        placeholder="John Doe"
+                                        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">Student ID (Optional)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="STU-12345"
+                                        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                                    />
+                                </div>
+                            </div>
 
-                        <button
-                            type="submit"
-                            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-                        >
-                            Send Message
-                        </button>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 ml-1">Academic Email</label>
+                                <input
+                                    type="email"
+                                    placeholder="j.doe@university.edu"
+                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                                />
+                            </div>
 
-                    </form>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 ml-1">How can we help?</label>
+                                <textarea
+                                    rows="5"
+                                    placeholder="Please describe your inquiry in detail..."
+                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-400 resize-none"
+                                ></textarea>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="group w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-slate-800 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-200"
+                            >
+                                Send Inquiry
+                                <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </main>
 
-            {/* Footer */}
-            <footer className="text-center py-4 text-sm text-gray-500 border-t bg-white">
-                © {new Date().getFullYear()} Evaluation System
-            </footer>
+            <Footer />
         </div>
     );
 };

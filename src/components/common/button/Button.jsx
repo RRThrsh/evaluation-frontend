@@ -1,6 +1,6 @@
 import React from "react";
 import { buttonVariants } from "./button.types";
-import { buttonSizes } from "./button.constants";
+import { buttonSizes } from "./button.constant";
 import { baseButtonStyles, disabledStyles } from "./button.style";
 
 const Spinner = () => (

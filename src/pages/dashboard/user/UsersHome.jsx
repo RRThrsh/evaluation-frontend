@@ -1,68 +1,140 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 
 export default function UsersHome() {
+    const [users] = useState([
+        { id: 1, name: "Juan Dela Cruz", email: "juan@gmail.com", status: "Active" },
+        { id: 2, name: "Maria Santos", email: "maria@gmail.com", status: "Inactive" },
+        { id: 3, name: "Pedro Reyes", email: "pedro@gmail.com", status: "Active" },
+    ]);
+
+    const [search, setSearch] = useState("");
+    const [showModal, setShowModal] = useState(false);
+
+    const filteredUsers = useMemo(() => {
+        return users.filter((u) =>
+            `${u.name} ${u.email} ${u.status}`
+                .toLowerCase()
+                .includes(search.toLowerCase())
+        );
+    }, [search, users]);
+
+    const handleSearch = () => {
+        setShowModal(true);
+    };
+
+    const handleExportPDF = () => {
+        window.print();
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900">
-            {/* Main Content Container */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <main className="max-w-5xl mx-auto px-4 py-10">
 
-                {/* Header Section */}
-                <header className="mb-12">
-                    <h1 className="text-4xl font-extrabold tracking-tight text-indigo-600 sm:text-5xl">
-                        User Dashboard
-                    </h1>
-                    <p className="mt-4 text-lg text-gray-600">
-                        Welcome back! Here is a quick look at what’s happening today.
-                    </p>
-                </header>
+                {/* Header */}
+                <h1 className="text-3xl font-bold text-indigo-600 mb-6">
+                    User Dashboard
+                </h1>
 
-                {/* Stats / Quick Info Grid */}
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {/* Search Bar */}
+                <div className="flex gap-3 mb-6">
+                    <input
+                        type="text"
+                        placeholder="Search users..."
+                        className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
 
-                    {/* Card 1 */}
-                    <div className="bg-white overflow-hidden shadow rounded-lg border border-gray-200 p-6 transition hover:shadow-lg">
-                        <h3 className="text-sm font-medium text-gray-500 truncate">Total Activity</h3>
-                        <p className="mt-1 text-3xl font-semibold text-indigo-600">128</p>
-                    </div>
-
-                    {/* Card 2 */}
-                    <div className="bg-white overflow-hidden shadow rounded-lg border border-gray-200 p-6 transition hover:shadow-lg">
-                        <h3 className="text-sm font-medium text-gray-500 truncate">New Notifications</h3>
-                        <p className="mt-1 text-3xl font-semibold text-emerald-500">12</p>
-                    </div>
-
-                    {/* Card 3 */}
-                    <div className="bg-white overflow-hidden shadow rounded-lg border border-gray-200 p-6 transition hover:shadow-lg">
-                        <h3 className="text-sm font-medium text-gray-500 truncate">Account Status</h3>
-                        <p className="mt-1 text-3xl font-semibold text-gray-900">Active</p>
-                    </div>
-
+                    <button
+                        onClick={handleSearch}
+                        className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                    >
+                        Search
+                    </button>
                 </div>
 
-                {/* Placeholder for Main List/Feed */}
-                <section className="mt-12">
-                    <div className="rounded-xl border-2 border-dashed border-gray-300 p-12 text-center">
-                        <svg
-                            className="mx-auto h-12 w-12 text-gray-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            aria-hidden="true"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                            />
-                        </svg>
-                        <h3 className="mt-2 text-sm font-medium text-gray-900">No content yet</h3>
-                        <p className="mt-1 text-sm text-gray-500">Get started by creating a new project or checking your feed.</p>
-                        <button className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                            Create New
-                        </button>
+                {/* PDF Button (optional global) */}
+                {/*<button
+                    onClick={handleExportPDF}
+                    className="mb-6 px-5 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900"
+                >
+                    Export Page to PDF
+                </button>*/}
+
+                {/* MODAL TABLE POPUP */}
+                {showModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+                        <div className="bg-white w-full max-w-3xl rounded-xl shadow-lg overflow-hidden">
+
+                            {/* Modal Header */}
+                            <div className="flex justify-between items-center px-5 py-4 border-b">
+                                <h2 className="text-lg font-semibold">
+                                    Search Results
+                                </h2>
+
+                                <button
+                                    onClick={() => setShowModal(false)}
+                                    className="text-gray-500 hover:text-red-500 text-xl"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {/* Table */}
+                            <div className="p-5">
+                                <table className="w-full text-left border">
+                                    <thead className="bg-gray-100 text-sm">
+                                        <tr>
+                                            <th className="p-2">ID</th>
+                                            <th className="p-2">Name</th>
+                                            <th className="p-2">Email</th>
+                                            <th className="p-2">Status</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        {filteredUsers.length > 0 ? (
+                                            filteredUsers.map((u) => (
+                                                <tr key={u.id} className="border-t">
+                                                    {/* TODO: change this in a subject format */}
+                                                    <td className="p-2">{u.id}</td>
+                                                    <td className="p-2">{u.name}</td>
+                                                    <td className="p-2">{u.email}</td>
+                                                    <td className="p-2">{u.status}</td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="4" className="p-4 text-center text-gray-500">
+                                                    No results found
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+
+                                {/* Modal Actions */}
+                                <div className="flex justify-end gap-3 mt-4">
+                                    <button
+                                        onClick={handleExportPDF}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                                    >
+                                        Export PDF
+                                    </button>
+
+                                    <button
+                                        onClick={() => setShowModal(false)}
+                                        className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
-                </section>
+                )}
 
             </main>
         </div>

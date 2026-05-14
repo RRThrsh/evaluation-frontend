@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import Button from "../common/button/Button";
 
 const Header = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -32,9 +33,9 @@ const Header = () => {
 
                 {/* CTA */}
                 <div className="hidden md:block">
-                    <button className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 hover:bg-gray-50 transition">
+                    <Button variant="primary">
                         Get Started
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Mobile Button */}

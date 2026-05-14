@@ -17,7 +17,6 @@ export default function Navbar() {
                     <div className="hidden md:flex space-x-6">
                         <a href="#" className="text-gray-600 hover:text-black">Home</a>
                         <a href="#" className="text-gray-600 hover:text-black">About</a>
-                        <a href="#" className="text-gray-600 hover:text-black">Services</a>
                         <a href="#" className="text-gray-600 hover:text-black">Contact</a>
                     </div>
 
@@ -36,7 +35,6 @@ export default function Navbar() {
                 <div className="md:hidden px-4 pb-4 space-y-2">
                     <a href="#" className="block text-gray-600">Home</a>
                     <a href="#" className="block text-gray-600">About</a>
-                    <a href="#" className="block text-gray-600">Services</a>
                     <a href="#" className="block text-gray-600">Contact</a>
                 </div>
             )}

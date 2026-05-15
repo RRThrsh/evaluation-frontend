@@ -1,21 +1,36 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+    const { login } = useAuth();
+    const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log({ email, password });
+        setError("");
+        setLoading(true);
+        try {
+            const data = await login(email, password);
+            const role = data.data?.user?.role;
+            const routes = { admin: "/admin", moderator: "/moderator", staff: "/staff", user: "/users" };
+            navigate(routes[role] || "/");
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 px-6 font-sans antialiased">
-            
-            {/* Subtle background element */}
+
             <div className="absolute top-0 left-0 w-full h-32 bg-blue-600/5 clip-path-slant" />
 
             <div className="w-full max-w-md">
@@ -33,8 +48,14 @@ const Login = () => {
                 </div>
 
                 <div className="bg-white rounded-[2rem] shadow-2xl shadow-blue-900/5 border border-slate-100 p-8 lg:p-10">
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-600 font-medium">
+                            {error}
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        
+
                         {/* Email Field */}
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-slate-700 uppercase tracking-widest ml-1">
@@ -90,10 +111,23 @@ const Login = () => {
                         {/* Submit Button */}
                         <button
                             type="submit"
-                            className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 active:scale-[0.98] transition-all shadow-xl shadow-blue-200 flex items-center justify-center gap-2 mt-2"
+                            disabled={loading}
+                            className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 active:scale-[0.98] transition-all shadow-xl shadow-blue-200 flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <LogIn size={20} />
-                            Sign In
+                            {loading ? (
+                                <span className="flex items-center gap-2">
+                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                    </svg>
+                                    Signing In...
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-2">
+                                    <LogIn size={20} />
+                                    Sign In
+                                </span>
+                            )}
                         </button>
                     </form>
 

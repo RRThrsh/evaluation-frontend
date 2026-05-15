@@ -1,8 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-/*  ==============================================
-    COMPONENTS
-    ============================================== */
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 /*  ==============================================
     PAGES
@@ -21,6 +19,7 @@ import UsersHome from "./pages/dashboard/user/UsersHome";
 import StaffHome from "./pages/dashboard/staff/StaffHome";
 import ModeratorHome from "./pages/dashboard/moderator/ModeratorHome";
 import AdminHome from "./pages/dashboard/admin/AdminHome";
+import Profile from "./pages/dashboard/Profile";
 
 /*  ==============================================
     ERROR PAGES
@@ -32,50 +31,67 @@ import Maintenance from "./pages/error/Maintenance";
 
 function App() {
     return (
-        <BrowserRouter>
-            <Routes>
-                {/* Public Pages */}
+        <AuthProvider>
+            <BrowserRouter>
+                <Routes>
+                    {/* Public Pages */}
+                    <Route path="/" element={<Home />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
 
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
+                    {/* Auth Pages */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route
+                        path="/forgot-password"
+                        element={<ForgotPassword />}
+                    />
 
-                {/* Auth Pages */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route
-                    path="/forgot-password"
-                    element={<ForgotPassword />}
-                />
-                {/* USERS */}
-                <Route>
-                    <Route path="/users" element={<UsersHome />}/>
-                </Route>
+                    {/* USERS */}
+                    <Route path="/users" element={
+                        <ProtectedRoute roles={["user", "admin"]}>
+                            <UsersHome />
+                        </ProtectedRoute>
+                    }/>
 
-                {/* STAFF */}
-                <Route>
-                    <Route path="/staff" element={<StaffHome />}/>
-                </Route>
+                    {/* STAFF */}
+                    <Route path="/staff" element={
+                        <ProtectedRoute roles={["staff", "admin"]}>
+                            <StaffHome />
+                        </ProtectedRoute>
+                    }/>
 
-                {/* MODERATOR */}
-                <Route>
-                    <Route path="/moderator" element={<ModeratorHome />}/>
-                </Route>
+                    {/* MODERATOR */}
+                    <Route path="/moderator" element={
+                        <ProtectedRoute roles={["moderator", "admin"]}>
+                            <ModeratorHome />
+                        </ProtectedRoute>
+                    }/>
 
-                {/* ADMIN */}
-                <Route>
-                    <Route path="/admin" element={<AdminHome />}/>
-                </Route>
+                    {/* ADMIN */}
+                    <Route path="/admin" element={
+                        <ProtectedRoute roles={["admin"]}>
+                            <AdminHome />
+                        </ProtectedRoute>
+                    }/>
 
-                {/* Error Pages */}
-                <Route path="/401" element={<Unauthorized />} />
-                <Route path="/429" element={<TooManyRequest />} />
-                <Route path="/maintenance" element={<Maintenance />} />
+                    {/* PROFILE (all authenticated roles) */}
+                    <Route path="/profile" element={
+                        <ProtectedRoute roles={["user", "staff", "moderator", "admin"]}>
+                            <Profile />
+                        </ProtectedRoute>
+                    }/>
 
-                {/* 404 */}
-                <Route path="*" element={<NotFound />} />
-            </Routes>
-        </BrowserRouter>
+                    {/* Error Pages */}
+                    <Route path="/401" element={<Unauthorized />} />
+                    <Route path="/429" element={<TooManyRequest />} />
+                    <Route path="/maintenance" element={<Maintenance />} />
+
+                    {/* 404 */}
+                    <Route path="*" element={<NotFound />} />
+                </Routes>
+            </BrowserRouter>
+        </AuthProvider>
     );
 }
 

@@ -1,161 +1,179 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import api from "../../../services/api";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function StaffHome() {
-    const [form, setForm] = useState({
-        idNo: "",
-        name: "",
-        requestType: "",
-        details: "",
-    });
+    const { user, logout } = useAuth();
+    const [studentNumber, setStudentNumber] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const [loadingEvals, setLoadingEvals] = useState(true);
+    const [error, setError] = useState("");
+    const [result, setResult] = useState(null);
+    const [evaluations, setEvaluations] = useState([]);
 
-    const [response, setResponse] = useState("");
-    const [loading, setLoading] = useState(false);
+    useEffect(() => {
+        api.get("/api/staff/evaluations")
+            .then((data) => setEvaluations(data.data ?? []))
+            .catch(() => {})
+            .finally(() => setLoadingEvals(false));
+    }, []);
 
-    const handleChange = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value,
-        });
-    };
-
-    const handleSendRequest = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!studentNumber.trim()) return;
 
-        if (!form.idNo || !form.name || !form.requestType) {
-            alert("Please fill in required fields.");
-            return;
-        }
-
-        setLoading(true);
-        setResponse("");
+        setSubmitting(true);
+        setError("");
+        setResult(null);
 
         try {
-            // 🔌 Replace with real API
-            /*
-            const res = await fetch("/api/staff/request", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(form),
+            const data = await api.post("/api/staff/evaluate", {
+                student_number: studentNumber,
             });
-
-            const data = await res.json();
-            setResponse(data.response);
-            */
-
-            // 🧪 Mock response
-            setTimeout(() => {
-                setResponse(
-                    `✔ Request Received\n\nID No: ${form.idNo}\nName: ${form.name}\nType: ${form.requestType}\nDetails: ${form.details}\n\nStatus: Processed Successfully`
-                );
-                setLoading(false);
-            }, 1000);
-
+            setResult(data.data);
+            // Refresh list
+            const evals = await api.get("/api/staff/evaluations");
+            setEvaluations(evals.data ?? []);
+            setStudentNumber("");
         } catch (err) {
-            setResponse("Error: Failed to process request.");
-            setLoading(false);
+            setError(err.message);
+        } finally {
+            setSubmitting(false);
         }
     };
 
     return (
         <div className="min-h-screen bg-slate-50 p-6">
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-4xl mx-auto">
 
-                {/* Title */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-slate-800">
-                        Staff Request System
-                    </h1>
-                    <p className="text-slate-500 text-sm">
-                        Submit structured requests and receive system responses
-                    </p>
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-800">
+                            Evaluation Request
+                        </h1>
+                        <p className="text-slate-500 text-sm">
+                            Submit a student evaluation for moderator review
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Link
+                            to="/profile"
+                            className="text-sm text-slate-400 hover:text-blue-600 transition flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-blue-50 shrink-0"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Profile
+                        </Link>
+                        <button
+                            onClick={logout}
+                            className="text-sm text-slate-400 hover:text-red-500 transition flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-red-50 shrink-0"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Logout
+                        </button>
+                    </div>
                 </div>
 
-                {/* 2 Column Layout */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    {/* 📩 REQUEST FORM */}
+                    {/* SUBMIT FORM */}
                     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
                         <h2 className="text-lg font-semibold text-slate-700 mb-4">
-                            Request Form
+                            Submit Evaluation
                         </h2>
 
-                        <form onSubmit={handleSendRequest} className="space-y-4">
+                        {error && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 font-medium">
+                                {error}
+                            </div>
+                        )}
 
-                            {/* ID NO */}
-                            <input
-                                type="text"
-                                name="idNo"
-                                placeholder="ID No."
-                                value={form.idNo}
-                                onChange={handleChange}
-                                className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
+                        {result && (
+                            <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${
+                                result.status === "Pending"
+                                    ? "bg-yellow-50 border border-yellow-200 text-yellow-700"
+                                    : result.status === "Approved"
+                                    ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
+                                    : "bg-red-50 border border-red-200 text-red-600"
+                            }`}>
+                                Evaluation submitted! Status: <strong>{result.status}</strong>
+                                {result.student && (
+                                    <span> — Student: {result.student.student_number}</span>
+                                )}
+                            </div>
+                        )}
 
-                            {/* NAME */}
-                            <input
-                                type="text"
-                                name="name"
-                                placeholder="Full Name"
-                                value={form.name}
-                                onChange={handleChange}
-                                className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-600 mb-1">
+                                    Student Number
+                                </label>
+                                <input
+                                    type="text"
+                                    value={studentNumber}
+                                    onChange={(e) => setStudentNumber(e.target.value)}
+                                    placeholder="e.g. 2020-0001"
+                                    className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    required
+                                />
+                            </div>
 
-                            {/* REQUEST TYPE */}
-                            <select
-                                name="requestType"
-                                value={form.requestType}
-                                onChange={handleChange}
-                                className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            >
-                                <option value="">Select Request Type</option>
-                                <option value="Leave">Leave Request</option>
-                                <option value="Correction">Data Correction</option>
-                                <option value="Access">System Access</option>
-                                <option value="Other">Other</option>
-                            </select>
-
-                            {/* DETAILS */}
-                            <textarea
-                                name="details"
-                                placeholder="Additional Details (optional)"
-                                value={form.details}
-                                onChange={handleChange}
-                                rows="4"
-                                className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-
-                            {/* SUBMIT */}
                             <button
                                 type="submit"
-                                disabled={loading}
+                                disabled={submitting}
                                 className={`w-full py-2 rounded-lg text-white font-medium transition ${
-                                    loading
+                                    submitting
                                         ? "bg-slate-400"
                                         : "bg-indigo-600 hover:bg-indigo-700"
                                 }`}
                             >
-                                {loading ? "Sending..." : "Submit Request"}
+                                {submitting ? "Submitting..." : "Submit for Evaluation"}
                             </button>
-
                         </form>
                     </div>
 
-                    {/* 📥 RESPONSE SECTION */}
+                    {/* RECENT EVALUATIONS */}
                     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
                         <h2 className="text-lg font-semibold text-slate-700 mb-4">
-                            Response
+                            My Submissions
                         </h2>
 
-                        {response ? (
-                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                                <pre className="text-sm text-slate-700 whitespace-pre-wrap">
-                                    {response}
-                                </pre>
+                        {loadingEvals ? (
+                            <div className="text-slate-400 text-sm italic">Loading...</div>
+                        ) : evaluations.length === 0 ? (
+                            <div className="text-slate-400 text-sm italic">
+                                No submissions yet.
                             </div>
                         ) : (
-                            <div className="text-slate-400 text-sm italic">
-                                No response yet. Submit a request to see output here.
+                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                                {evaluations.map((ev, i) => (
+                                    <div
+                                        key={ev.id ?? i}
+                                        className="border border-slate-100 rounded-lg p-3"
+                                    >
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="text-xs font-bold text-slate-500">
+                                                {ev.student_number || "N/A"}
+                                            </span>
+                                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
+                                                ev.status === "Approved"
+                                                    ? "bg-emerald-100 text-emerald-700"
+                                                    : ev.status === "Rejected"
+                                                    ? "bg-red-100 text-red-600"
+                                                    : "bg-yellow-100 text-yellow-700"
+                                            }`}>
+                                                {ev.status}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-slate-400">
+                                            {new Date(ev.created_at).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>

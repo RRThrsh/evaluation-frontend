@@ -1,141 +1,108 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
+import api from "../../../services/api";
 
 export default function UsersHome() {
-    const [users] = useState([
-        { id: 1, name: "Juan Dela Cruz", email: "juan@gmail.com", status: "Active" },
-        { id: 2, name: "Maria Santos", email: "maria@gmail.com", status: "Inactive" },
-        { id: 3, name: "Pedro Reyes", email: "pedro@gmail.com", status: "Active" },
-    ]);
+    const { user, logout } = useAuth();
+    const [evaluations, setEvaluations] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const [search, setSearch] = useState("");
-    const [showModal, setShowModal] = useState(false);
-
-    const filteredUsers = useMemo(() => {
-        return users.filter((u) =>
-            `${u.name} ${u.email} ${u.status}`
-                .toLowerCase()
-                .includes(search.toLowerCase())
-        );
-    }, [search, users]);
-
-    const handleSearch = () => {
-        setShowModal(true);
-    };
-
-    const handleExportPDF = () => {
-        window.print();
-    };
+    useEffect(() => {
+        api.get("/api/staff/evaluations")
+            .then((data) => setEvaluations(data.data ?? []))
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, []);
 
     return (
-        <div className="min-h-screen bg-gray-50 text-gray-900">
-            <main className="max-w-5xl mx-auto px-4 py-10">
+        <div className="min-h-screen bg-slate-50">
+            <main className="max-w-4xl mx-auto px-4 py-10">
 
-                {/* Header */}
-                <h1 className="text-3xl font-bold text-indigo-600 mb-6">
-                    User Dashboard
-                </h1>
-
-                {/* Search Bar */}
-                <div className="flex gap-3 mb-6">
-                    <input
-                        type="text"
-                        placeholder="Search users..."
-                        className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-
-                    <button
-                        onClick={handleSearch}
-                        className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                    >
-                        Search
-                    </button>
-                </div>
-
-                {/* PDF Button (optional global) */}
-                {/*<button
-                    onClick={handleExportPDF}
-                    className="mb-6 px-5 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900"
-                >
-                    Export Page to PDF
-                </button>*/}
-
-                {/* MODAL TABLE POPUP */}
-                {showModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-                        <div className="bg-white w-full max-w-3xl rounded-xl shadow-lg overflow-hidden">
-
-                            {/* Modal Header */}
-                            <div className="flex justify-between items-center px-5 py-4 border-b">
-                                <h2 className="text-lg font-semibold">
-                                    Search Results
-                                </h2>
-
-                                <button
-                                    onClick={() => setShowModal(false)}
-                                    className="text-gray-500 hover:text-red-500 text-xl"
-                                >
-                                    ✕
-                                </button>
+                {/* PROFILE CARD */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold">
+                                {user?.full_name?.charAt(0) || "U"}
                             </div>
-
-                            {/* Table */}
-                            <div className="p-5">
-                                <table className="w-full text-left border">
-                                    <thead className="bg-gray-100 text-sm">
-                                        <tr>
-                                            <th className="p-2">ID</th>
-                                            <th className="p-2">Name</th>
-                                            <th className="p-2">Email</th>
-                                            <th className="p-2">Status</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        {filteredUsers.length > 0 ? (
-                                            filteredUsers.map((u) => (
-                                                <tr key={u.id} className="border-t">
-                                                    {/* TODO: change this in a subject format */}
-                                                    <td className="p-2">{u.id}</td>
-                                                    <td className="p-2">{u.name}</td>
-                                                    <td className="p-2">{u.email}</td>
-                                                    <td className="p-2">{u.status}</td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan="4" className="p-4 text-center text-gray-500">
-                                                    No results found
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-
-                                {/* Modal Actions */}
-                                <div className="flex justify-end gap-3 mt-4">
-                                    <button
-                                        onClick={handleExportPDF}
-                                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                                    >
-                                        Export PDF
-                                    </button>
-
-                                    <button
-                                        onClick={() => setShowModal(false)}
-                                        className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                                    >
-                                        Close
-                                    </button>
-                                </div>
+                            <div>
+                                <h1 className="text-xl font-bold text-slate-900">
+                                    {user?.full_name || "User"}
+                                </h1>
+                                <p className="text-sm text-slate-500">{user?.email}</p>
+                                <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+                                    {user?.role || "user"}
+                                </span>
                             </div>
-
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Link
+                                to="/profile"
+                                className="text-sm text-slate-400 hover:text-blue-600 transition flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-blue-50"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Profile
+                            </Link>
+                            <button
+                                onClick={logout}
+                                className="text-sm text-slate-400 hover:text-red-500 transition flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-red-50"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Logout
+                            </button>
                         </div>
                     </div>
-                )}
+                </div>
 
+                {/* EVALUATIONS */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h2 className="text-lg font-bold text-slate-800 mb-4">
+                        Evaluation Requests
+                    </h2>
+
+                    {loading ? (
+                        <div className="text-slate-400 text-sm py-8 text-center">Loading...</div>
+                    ) : error ? (
+                        <div className="text-red-500 text-sm py-8 text-center">{error}</div>
+                    ) : evaluations.length === 0 ? (
+                        <div className="text-slate-400 text-sm py-8 text-center">
+                            No evaluation requests found.
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {evaluations.map((ev, i) => (
+                                <div
+                                    key={ev.id ?? i}
+                                    className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100"
+                                >
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-700">
+                                            Student: {ev.student_number || "N/A"}
+                                        </p>
+                                        <p className="text-xs text-slate-400">
+                                            {new Date(ev.created_at).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <span className={`text-[10px] px-3 py-1 rounded-full font-bold uppercase ${
+                                        ev.status === "Approved"
+                                            ? "bg-emerald-100 text-emerald-700"
+                                            : ev.status === "Rejected"
+                                            ? "bg-red-100 text-red-600"
+                                            : "bg-yellow-100 text-yellow-700"
+                                    }`}>
+                                        {ev.status}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </main>
         </div>
     );

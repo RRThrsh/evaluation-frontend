@@ -31,12 +31,14 @@ const Register = () => {
 
         setLoading(true);
         try {
-            await register({
+            const data = await register({
                 full_name: form.name,
                 email: form.email,
                 password: form.password,
             });
-            navigate("/");
+            const role = data.data?.user?.role;
+            const routes = { admin: "/admin", moderator: "/moderator", staff: "/staff", user: "/users" };
+            navigate(routes[role] || "/");
         } catch (err) {
             setError(err.message);
         } finally {

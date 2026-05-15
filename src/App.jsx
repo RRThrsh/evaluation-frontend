@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 /*  ==============================================
     PAGES
@@ -46,24 +47,32 @@ function App() {
                     />
 
                     {/* USERS */}
-                    <Route>
-                        <Route path="/users" element={<UsersHome />}/>
-                    </Route>
+                    <Route path="/users" element={
+                        <ProtectedRoute roles={["user", "admin"]}>
+                            <UsersHome />
+                        </ProtectedRoute>
+                    }/>
 
                     {/* STAFF */}
-                    <Route>
-                        <Route path="/staff" element={<StaffHome />}/>
-                    </Route>
+                    <Route path="/staff" element={
+                        <ProtectedRoute roles={["staff", "admin"]}>
+                            <StaffHome />
+                        </ProtectedRoute>
+                    }/>
 
                     {/* MODERATOR */}
-                    <Route>
-                        <Route path="/moderator" element={<ModeratorHome />}/>
-                    </Route>
+                    <Route path="/moderator" element={
+                        <ProtectedRoute roles={["moderator", "admin"]}>
+                            <ModeratorHome />
+                        </ProtectedRoute>
+                    }/>
 
                     {/* ADMIN */}
-                    <Route>
-                        <Route path="/admin" element={<AdminHome />}/>
-                    </Route>
+                    <Route path="/admin" element={
+                        <ProtectedRoute roles={["admin"]}>
+                            <AdminHome />
+                        </ProtectedRoute>
+                    }/>
 
                     {/* Error Pages */}
                     <Route path="/401" element={<Unauthorized />} />

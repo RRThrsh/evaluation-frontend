@@ -17,8 +17,10 @@ const Login = () => {
         setError("");
         setLoading(true);
         try {
-            await login(email, password);
-            navigate("/");
+            const data = await login(email, password);
+            const role = data.data?.user?.role;
+            const routes = { admin: "/admin", moderator: "/moderator", staff: "/staff", user: "/users" };
+            navigate(routes[role] || "/");
         } catch (err) {
             setError(err.message);
         } finally {

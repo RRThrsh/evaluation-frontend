@@ -24,6 +24,11 @@ async function request(endpoint, options = {}) {
 
   const data = await res.json().catch(() => ({}));
 
+  if (res.status === 429) {
+    window.location.href = "/429";
+    throw new ApiError(429, "Too many requests");
+  }
+
   if (!res.ok) {
     throw new ApiError(res.status, data.message || data.error || `Request failed (${res.status})`);
   }

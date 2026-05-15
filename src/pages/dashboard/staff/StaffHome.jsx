@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import api from "../../../services/api";
 
 export default function StaffHome() {
     const [form, setForm] = useState({
@@ -10,6 +11,7 @@ export default function StaffHome() {
 
     const [response, setResponse] = useState("");
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
     const handleChange = (e) => {
         setForm({
@@ -28,30 +30,14 @@ export default function StaffHome() {
 
         setLoading(true);
         setResponse("");
+        setError("");
 
         try {
-            // 🔌 Replace with real API
-            /*
-            const res = await fetch("/api/staff/request", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(form),
-            });
-
-            const data = await res.json();
-            setResponse(data.response);
-            */
-
-            // 🧪 Mock response
-            setTimeout(() => {
-                setResponse(
-                    `✔ Request Received\n\nID No: ${form.idNo}\nName: ${form.name}\nType: ${form.requestType}\nDetails: ${form.details}\n\nStatus: Processed Successfully`
-                );
-                setLoading(false);
-            }, 1000);
-
+            const data = await api.post("/api/staff/request", form);
+            setResponse(data.message || JSON.stringify(data));
         } catch (err) {
-            setResponse("Error: Failed to process request.");
+            setError(err.message);
+        } finally {
             setLoading(false);
         }
     };
@@ -73,11 +59,17 @@ export default function StaffHome() {
                 {/* 2 Column Layout */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    {/* 📩 REQUEST FORM */}
+                    {/* REQUEST FORM */}
                     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
                         <h2 className="text-lg font-semibold text-slate-700 mb-4">
                             Request Form
                         </h2>
+
+                        {error && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 font-medium">
+                                {error}
+                            </div>
+                        )}
 
                         <form onSubmit={handleSendRequest} className="space-y-4">
 
@@ -141,7 +133,7 @@ export default function StaffHome() {
                         </form>
                     </div>
 
-                    {/* 📥 RESPONSE SECTION */}
+                    {/* RESPONSE SECTION */}
                     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
                         <h2 className="text-lg font-semibold text-slate-700 mb-4">
                             Response

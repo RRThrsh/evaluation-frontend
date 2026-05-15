@@ -1,14 +1,19 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import api from "../../../services/api";
 
 export default function UsersHome() {
-    const [users] = useState([
-        { id: 1, name: "Juan Dela Cruz", email: "juan@gmail.com", status: "Active" },
-        { id: 2, name: "Maria Santos", email: "maria@gmail.com", status: "Inactive" },
-        { id: 3, name: "Pedro Reyes", email: "pedro@gmail.com", status: "Active" },
-    ]);
-
+    const [users, setUsers] = useState([]);
     const [search, setSearch] = useState("");
     const [showModal, setShowModal] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        api.get("/api/users")
+            .then((data) => setUsers(data.users ?? data))
+            .catch((err) => setError(err.message))
+            .finally(() => setLoading(false));
+    }, []);
 
     const filteredUsers = useMemo(() => {
         return users.filter((u) =>
@@ -53,13 +58,46 @@ export default function UsersHome() {
                     </button>
                 </div>
 
-                {/* PDF Button (optional global) */}
-                {/*<button
-                    onClick={handleExportPDF}
-                    className="mb-6 px-5 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900"
-                >
-                    Export Page to PDF
-                </button>*/}
+                {error && (
+                    <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 font-medium">
+                        {error}
+                    </div>
+                )}
+
+                {loading ? (
+                    <div className="text-center text-slate-400 py-10">Loading users...</div>
+                ) : (
+                    <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-100 text-sm">
+                                <tr>
+                                    <th className="p-3">ID</th>
+                                    <th className="p-3">Name</th>
+                                    <th className="p-3">Email</th>
+                                    <th className="p-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.length > 0 ? (
+                                    users.map((u, i) => (
+                                        <tr key={u.id ?? i} className="border-t">
+                                            <td className="p-3">{u.id}</td>
+                                            <td className="p-3">{u.name}</td>
+                                            <td className="p-3">{u.email}</td>
+                                            <td className="p-3">{u.status}</td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="4" className="p-4 text-center text-gray-500">
+                                            No users found
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
 
                 {/* MODAL TABLE POPUP */}
                 {showModal && (
@@ -95,9 +133,8 @@ export default function UsersHome() {
 
                                     <tbody>
                                         {filteredUsers.length > 0 ? (
-                                            filteredUsers.map((u) => (
-                                                <tr key={u.id} className="border-t">
-                                                    {/* TODO: change this in a subject format */}
+                                            filteredUsers.map((u, i) => (
+                                                <tr key={u.id ?? i} className="border-t">
                                                     <td className="p-2">{u.id}</td>
                                                     <td className="p-2">{u.name}</td>
                                                     <td className="p-2">{u.email}</td>

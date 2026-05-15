@@ -1,8 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-/*  ==============================================
-    COMPONENTS
-    ============================================== */
+import { AuthProvider } from "./context/AuthContext";
 
 /*  ==============================================
     PAGES
@@ -32,50 +29,52 @@ import Maintenance from "./pages/error/Maintenance";
 
 function App() {
     return (
-        <BrowserRouter>
-            <Routes>
-                {/* Public Pages */}
+        <AuthProvider>
+            <BrowserRouter>
+                <Routes>
+                    {/* Public Pages */}
+                    <Route path="/" element={<Home />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
 
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
+                    {/* Auth Pages */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route
+                        path="/forgot-password"
+                        element={<ForgotPassword />}
+                    />
 
-                {/* Auth Pages */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route
-                    path="/forgot-password"
-                    element={<ForgotPassword />}
-                />
-                {/* USERS */}
-                <Route>
-                    <Route path="/users" element={<UsersHome />}/>
-                </Route>
+                    {/* USERS */}
+                    <Route>
+                        <Route path="/users" element={<UsersHome />}/>
+                    </Route>
 
-                {/* STAFF */}
-                <Route>
-                    <Route path="/staff" element={<StaffHome />}/>
-                </Route>
+                    {/* STAFF */}
+                    <Route>
+                        <Route path="/staff" element={<StaffHome />}/>
+                    </Route>
 
-                {/* MODERATOR */}
-                <Route>
-                    <Route path="/moderator" element={<ModeratorHome />}/>
-                </Route>
+                    {/* MODERATOR */}
+                    <Route>
+                        <Route path="/moderator" element={<ModeratorHome />}/>
+                    </Route>
 
-                {/* ADMIN */}
-                <Route>
-                    <Route path="/admin" element={<AdminHome />}/>
-                </Route>
+                    {/* ADMIN */}
+                    <Route>
+                        <Route path="/admin" element={<AdminHome />}/>
+                    </Route>
 
-                {/* Error Pages */}
-                <Route path="/401" element={<Unauthorized />} />
-                <Route path="/429" element={<TooManyRequest />} />
-                <Route path="/maintenance" element={<Maintenance />} />
+                    {/* Error Pages */}
+                    <Route path="/401" element={<Unauthorized />} />
+                    <Route path="/429" element={<TooManyRequest />} />
+                    <Route path="/maintenance" element={<Maintenance />} />
 
-                {/* 404 */}
-                <Route path="*" element={<NotFound />} />
-            </Routes>
-        </BrowserRouter>
+                    {/* 404 */}
+                    <Route path="*" element={<NotFound />} />
+                </Routes>
+            </BrowserRouter>
+        </AuthProvider>
     );
 }
 

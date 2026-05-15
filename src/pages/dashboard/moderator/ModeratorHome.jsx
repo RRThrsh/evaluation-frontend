@@ -1,35 +1,31 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import api from "../../../services/api";
 
 export default function ModeratorHome() {
-    const [requests, setRequests] = useState([
-        {
-            id: "REQ-1001",
-            userId: "882",
-            name: "Juan Dela Cruz",
-            type: "Leave Request",
-            details: "Requesting leave for 3 days due to personal reasons",
-            status: "Pending",
-        },
-        {
-            id: "REQ-1002",
-            userId: "991",
-            name: "Maria Santos",
-            type: "Data Correction",
-            details: "Need correction on attendance record",
-            status: "Pending",
-        },
-    ]);
-
+    const [requests, setRequests] = useState([]);
     const [selectedRequest, setSelectedRequest] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const handleAction = (id, action) => {
-        setRequests((prev) =>
-            prev.map((req) =>
-                req.id === id ? { ...req, status: action } : req
-            )
-        );
+    useEffect(() => {
+        api.get("/api/moderator/requests")
+            .then((data) => setRequests(data.requests ?? data))
+            .catch((err) => setError(err.message))
+            .finally(() => setLoading(false));
+    }, []);
 
-        setSelectedRequest(null); // close modal after action
+    const handleAction = async (id, action) => {
+        try {
+            await api.post(`/api/moderator/requests/${id}/action`, { action });
+            setRequests((prev) =>
+                prev.map((req) =>
+                    req.id === id ? { ...req, status: action } : req
+                )
+            );
+            setSelectedRequest(null);
+        } catch (err) {
+            alert(err.message);
+        }
     };
 
     return (
@@ -58,49 +54,65 @@ export default function ModeratorHome() {
                     </p>
                 </div>
 
+                {error && (
+                    <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 font-medium">
+                        {error}
+                    </div>
+                )}
+
                 {/* REQUEST LIST */}
-                <div className="bg-white border rounded-xl shadow-sm divide-y">
+                {loading ? (
+                    <div className="text-center text-zinc-400 py-10">Loading requests...</div>
+                ) : (
+                    <div className="bg-white border rounded-xl shadow-sm divide-y">
 
-                    {requests.map((req) => (
-                        <div
-                            key={req.id}
-                            onClick={() => setSelectedRequest(req)}
-                            className="p-5 flex justify-between items-center cursor-pointer hover:bg-zinc-50 transition"
-                        >
+                        {requests.length > 0 ? (
+                            requests.map((req, i) => (
+                                <div
+                                    key={req.id ?? i}
+                                    onClick={() => setSelectedRequest(req)}
+                                    className="p-5 flex justify-between items-center cursor-pointer hover:bg-zinc-50 transition"
+                                >
 
-                            {/* LEFT */}
-                            <div>
-                                <div className="flex gap-2 items-center">
-                                    <span className="text-xs font-bold bg-zinc-100 px-2 py-1 rounded">
-                                        {req.id}
-                                    </span>
+                                    {/* LEFT */}
+                                    <div>
+                                        <div className="flex gap-2 items-center">
+                                            <span className="text-xs font-bold bg-zinc-100 px-2 py-1 rounded">
+                                                {req.id}
+                                            </span>
 
-                                    <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${
-                                        req.status === "Pending"
-                                            ? "bg-yellow-100 text-yellow-700"
-                                            : req.status === "Approved"
-                                            ? "bg-emerald-100 text-emerald-700"
-                                            : "bg-rose-100 text-rose-600"
-                                    }`}>
-                                        {req.status}
+                                            <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${
+                                                req.status === "Pending"
+                                                    ? "bg-yellow-100 text-yellow-700"
+                                                    : req.status === "Approved"
+                                                    ? "bg-emerald-100 text-emerald-700"
+                                                    : "bg-rose-100 text-rose-600"
+                                            }`}>
+                                                {req.status}
+                                            </span>
+                                        </div>
+
+                                        <p className="text-sm text-zinc-700 mt-1">
+                                            {req.type} — {req.name}
+                                        </p>
+                                    </div>
+
+                                    <span className="text-xs text-zinc-400">
+                                        Click to review →
                                     </span>
                                 </div>
-
-                                <p className="text-sm text-zinc-700 mt-1">
-                                    {req.type} — {req.name}
-                                </p>
+                            ))
+                        ) : (
+                            <div className="p-10 text-center text-zinc-400">
+                                No requests found.
                             </div>
+                        )}
 
-                            <span className="text-xs text-zinc-400">
-                                Click to review →
-                            </span>
-                        </div>
-                    ))}
-
-                </div>
+                    </div>
+                )}
             </main>
 
-            {/* 🔥 MODAL */}
+            {/* MODAL */}
             {selectedRequest && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
 

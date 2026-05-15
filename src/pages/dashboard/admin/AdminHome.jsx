@@ -1,7 +1,73 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import api from "../../../services/api";
 
 export default function AdminHome() {
     const [broadcast, setBroadcast] = useState("");
+    const [stats, setStats] = useState(null);
+    const [logs, setLogs] = useState([]);
+    const [controls, setControls] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        Promise.all([
+            api.get("/api/admin/stats"),
+            api.get("/api/admin/logs"),
+            api.get("/api/admin/controls"),
+        ])
+            .then(([statsData, logsData, controlsData]) => {
+                setStats(statsData);
+                setLogs(logsData.logs ?? logsData);
+                setControls(controlsData.controls ?? controlsData);
+            })
+            .catch((err) => setError(err.message))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const handleBroadcast = async () => {
+        if (!broadcast.trim()) return;
+        try {
+            await api.post("/api/admin/broadcast", { message: broadcast });
+            setBroadcast("");
+            alert("Broadcast sent successfully.");
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
+    const toggleControl = async (label, currentState) => {
+        const newState = currentState === "Enabled" ? "Disabled" : "Enabled";
+        try {
+            await api.post("/api/admin/controls/toggle", { label, state: newState });
+            setControls((prev) =>
+                prev.map((c) =>
+                    c.label === label ? { ...c, state: newState } : c
+                )
+            );
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+                <p className="text-slate-400">Loading admin panel...</p>
+            </div>
+        );
+    }
+
+    const statItems = stats
+        ? [
+              { label: "Users", value: stats.users ?? "—" },
+              { label: "Staff Online", value: stats.staffOnline ?? "—" },
+              { label: "Pending Requests", value: stats.pendingRequests ?? "—" },
+              { label: "System Load", value: stats.systemLoad ?? "—" },
+          ]
+        : [];
+
+    const logItems = logs.length > 0 ? logs : [];
+    const controlItems = controls.length > 0 ? controls : [];
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -20,17 +86,20 @@ export default function AdminHome() {
                 </div>
             </nav>
 
+            {error && (
+                <div className="max-w-7xl mx-auto mt-4 px-6">
+                    <div className="p-3 bg-rose-500/20 border border-rose-500/30 rounded-lg text-sm text-rose-400 font-medium">
+                        {error}
+                    </div>
+                </div>
+            )}
+
             <main className="max-w-7xl mx-auto p-6 space-y-8">
 
                 {/* SYSTEM OVERVIEW */}
                 <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-                    {[
-                        { label: "Users", value: "1,204" },
-                        { label: "Staff Online", value: "38" },
-                        { label: "Pending Requests", value: "14" },
-                        { label: "System Load", value: "42%" },
-                    ].map((stat, i) => (
+                    {statItems.map((stat, i) => (
                         <div
                             key={i}
                             className="bg-slate-900 border border-slate-800 rounded-xl p-5"
@@ -62,31 +131,31 @@ export default function AdminHome() {
                         </div>
 
                         <div className="divide-y divide-slate-800">
+                            {logItems.length > 0 ? (
+                                logItems.map((log, i) => (
+                                    <div
+                                        key={i}
+                                        className="p-4 flex justify-between hover:bg-slate-800/50"
+                                    >
+                                        <div>
+                                            <p className="text-sm font-medium text-slate-200">
+                                                {log.user}
+                                            </p>
+                                            <p className="text-xs text-slate-500">
+                                                {log.action}
+                                            </p>
+                                        </div>
 
-                            {[
-                                { time: "23:10", user: "Admin", action: "USER_SUSPENDED" },
-                                { time: "22:45", user: "Moderator", action: "REQUEST_APPROVED" },
-                                { time: "21:12", user: "Staff", action: "REQUEST_SENT" },
-                            ].map((log, i) => (
-                                <div
-                                    key={i}
-                                    className="p-4 flex justify-between hover:bg-slate-800/50"
-                                >
-                                    <div>
-                                        <p className="text-sm font-medium text-slate-200">
-                                            {log.user}
-                                        </p>
-                                        <p className="text-xs text-slate-500">
-                                            {log.action}
-                                        </p>
+                                        <span className="text-xs text-slate-500">
+                                            {log.time}
+                                        </span>
                                     </div>
-
-                                    <span className="text-xs text-slate-500">
-                                        {log.time}
-                                    </span>
+                                ))
+                            ) : (
+                                <div className="p-6 text-center text-slate-500 text-sm">
+                                    No logs available
                                 </div>
-                            ))}
-
+                            )}
                         </div>
                     </div>
 
@@ -108,7 +177,10 @@ export default function AdminHome() {
                                 rows={4}
                             />
 
-                            <button className="w-full mt-3 bg-white text-indigo-600 font-bold py-2 rounded-lg hover:bg-indigo-50 transition">
+                            <button
+                                onClick={handleBroadcast}
+                                className="w-full mt-3 bg-white text-indigo-600 font-bold py-2 rounded-lg hover:bg-indigo-50 transition"
+                            >
                                 Send Broadcast
                             </button>
                         </div>
@@ -120,29 +192,28 @@ export default function AdminHome() {
                             </h3>
 
                             <div className="space-y-3">
+                                {controlItems.length > 0 ? (
+                                    controlItems.map((item, i) => (
+                                        <div key={i} className="flex justify-between items-center">
+                                            <span className="text-sm text-slate-300">
+                                                {item.label}
+                                            </span>
 
-                                {[
-                                    { label: "Staff Access", state: "Enabled" },
-                                    { label: "Moderator Access", state: "Enabled" },
-                                    { label: "Maintenance Mode", state: "Disabled" },
-                                ].map((item, i) => (
-                                    <div key={i} className="flex justify-between items-center">
-                                        <span className="text-sm text-slate-300">
-                                            {item.label}
-                                        </span>
-
-                                        <span
-                                            className={`text-[10px] px-2 py-1 rounded font-bold ${
-                                                item.state === "Enabled"
-                                                    ? "bg-emerald-500/20 text-emerald-400"
-                                                    : "bg-rose-500/20 text-rose-400"
-                                            }`}
-                                        >
-                                            {item.state}
-                                        </span>
-                                    </div>
-                                ))}
-
+                                            <button
+                                                onClick={() => toggleControl(item.label, item.state)}
+                                                className={`text-[10px] px-2 py-1 rounded font-bold cursor-pointer hover:opacity-80 ${
+                                                    item.state === "Enabled"
+                                                        ? "bg-emerald-500/20 text-emerald-400"
+                                                        : "bg-rose-500/20 text-rose-400"
+                                                }`}
+                                            >
+                                                {item.state}
+                                            </button>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-slate-500">No controls available</p>
+                                )}
                             </div>
                         </div>
 
@@ -152,7 +223,19 @@ export default function AdminHome() {
                                 Emergency Control
                             </h3>
 
-                            <button className="w-full mt-3 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition">
+                            <button
+                                onClick={async () => {
+                                    if (window.confirm("Are you sure you want to shutdown the system?")) {
+                                        try {
+                                            await api.post("/api/admin/shutdown");
+                                            alert("System shutdown initiated.");
+                                        } catch (err) {
+                                            alert(err.message);
+                                        }
+                                    }
+                                }}
+                                className="w-full mt-3 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition"
+                            >
                                 SHUTDOWN SYSTEM
                             </button>
                         </div>

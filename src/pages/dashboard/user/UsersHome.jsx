@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import api from "../../../services/api";
 
 export default function UsersHome() {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const [evaluations, setEvaluations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -21,18 +22,40 @@ export default function UsersHome() {
 
                 {/* PROFILE CARD */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold">
-                            {user?.full_name?.charAt(0) || "U"}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold">
+                                {user?.full_name?.charAt(0) || "U"}
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-bold text-slate-900">
+                                    {user?.full_name || "User"}
+                                </h1>
+                                <p className="text-sm text-slate-500">{user?.email}</p>
+                                <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+                                    {user?.role || "user"}
+                                </span>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-xl font-bold text-slate-900">
-                                {user?.full_name || "User"}
-                            </h1>
-                            <p className="text-sm text-slate-500">{user?.email}</p>
-                            <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
-                                {user?.role || "user"}
-                            </span>
+                        <div className="flex items-center gap-2">
+                            <Link
+                                to="/profile"
+                                className="text-sm text-slate-400 hover:text-blue-600 transition flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-blue-50"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Profile
+                            </Link>
+                            <button
+                                onClick={logout}
+                                className="text-sm text-slate-400 hover:text-red-500 transition flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-red-50"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Logout
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
 import DeleteModal from "../../../components/admin/DeleteModal";
 import SkeletonRows from "../../../components/admin/SkeletonRows";
+import CourseManager from "../../../components/admin/CourseManager";
+import SubjectManager from "../../../components/admin/SubjectManager";
+import StudentManager from "../../../components/admin/StudentManager";
 
 const SENSITIVE_TABLES = ["users"];
 
@@ -35,7 +39,8 @@ const SvgIcon = ({ path, className = "w-4 h-4" }) => (
 );
 
 export default function AdminHome() {
-    const { user } = useAuth();
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
     const [activeGroup, setActiveGroup] = useState(null);
@@ -188,6 +193,35 @@ export default function AdminHome() {
                         active={activeTab === "database"}
                         onClick={() => { setActiveTab("database"); setSidebarOpen(false); }}
                     />
+                    <NavItem
+                        icon={<SvgIcon path="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />}
+                        label="Profile"
+                        active={false}
+                        onClick={() => { navigate("/profile"); setSidebarOpen(false); }}
+                    />
+
+                    <div className="pt-3 pb-1 px-3">
+                        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-semibold">Management</p>
+                    </div>
+
+                    <NavItem
+                        icon={<SvgIcon path="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />}
+                        label="Courses"
+                        active={activeTab === "courses"}
+                        onClick={() => { setActiveTab("courses"); setSelectedTable(null); setSidebarOpen(false); }}
+                    />
+                    <NavItem
+                        icon={<SvgIcon path="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />}
+                        label="Subjects"
+                        active={activeTab === "subjects"}
+                        onClick={() => { setActiveTab("subjects"); setSelectedTable(null); setSidebarOpen(false); }}
+                    />
+                    <NavItem
+                        icon={<SvgIcon path="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />}
+                        label="Students"
+                        active={activeTab === "students"}
+                        onClick={() => { setActiveTab("students"); setSelectedTable(null); setSidebarOpen(false); }}
+                    />
 
                     {/* Table groups (only shown when Database is active) */}
                     {activeTab === "database" && (
@@ -238,9 +272,14 @@ export default function AdminHome() {
 
                 {/* Bottom */}
                 <div className="px-3 pb-4 pt-3 border-t border-slate-800 hidden md:block">
-                    <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
-                        <SvgIcon path="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" className="w-3.5 h-3.5" />
-                        <span className="truncate">{user?.full_name ?? "Admin"}</span>
+                    <div className="flex items-center justify-between px-3 py-2 text-xs text-slate-500">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <SvgIcon path="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{user?.full_name ?? "Admin"}</span>
+                        </div>
+                        <button onClick={logout} className="text-slate-500 hover:text-red-400 transition" title="Logout">
+                            <SvgIcon path="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" className="w-3.5 h-3.5" />
+                        </button>
                     </div>
                 </div>
             </aside>
@@ -374,6 +413,15 @@ export default function AdminHome() {
                             </div>
                         </div>
                     )}
+
+                    {/* COURSES */}
+                    {activeTab === "courses" && <CourseManager />}
+
+                    {/* SUBJECTS */}
+                    {activeTab === "subjects" && <SubjectManager />}
+
+                    {/* STUDENTS */}
+                    {activeTab === "students" && <StudentManager />}
 
                     {/* DATABASE */}
                     {activeTab === "database" && (

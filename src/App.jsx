@@ -19,6 +19,7 @@ import UsersHome from "./pages/dashboard/user/UsersHome";
 import StaffHome from "./pages/dashboard/staff/StaffHome";
 import ModeratorHome from "./pages/dashboard/moderator/ModeratorHome";
 import AdminHome from "./pages/dashboard/admin/AdminHome";
+import Profile from "./pages/dashboard/Profile";
 
 /*  ==============================================
     ERROR PAGES
@@ -71,6 +72,13 @@ function App() {
                     <Route path="/admin" element={
                         <ProtectedRoute roles={["admin"]}>
                             <AdminHome />
+                        </ProtectedRoute>
+                    }/>
+
+                    {/* PROFILE (all authenticated roles) */}
+                    <Route path="/profile" element={
+                        <ProtectedRoute roles={["user", "staff", "moderator", "admin"]}>
+                            <Profile />
                         </ProtectedRoute>
                     }/>
 

@@ -16,9 +16,9 @@ export default function AdminHome() {
             api.get("/api/admin/controls"),
         ])
             .then(([statsData, logsData, controlsData]) => {
-                setStats(statsData);
-                setLogs(logsData.logs ?? logsData);
-                setControls(controlsData.controls ?? controlsData);
+                setStats(statsData.data);
+                setLogs(logsData.data?.logs ?? logsData.data ?? []);
+                setControls(controlsData.data?.controls ?? controlsData.data ?? []);
             })
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false));

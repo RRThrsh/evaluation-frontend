@@ -32,7 +32,7 @@ const Register = () => {
         setLoading(true);
         try {
             await register({
-                name: form.name,
+                full_name: form.name,
                 email: form.email,
                 password: form.password,
             });

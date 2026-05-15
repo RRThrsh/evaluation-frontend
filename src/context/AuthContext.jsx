@@ -15,22 +15,26 @@ export function AuthProvider({ children }) {
     }
     api
       .get("/api/auth/me")
-      .then((data) => setUser(data.user ?? data))
+      .then((data) => setUser(data.data))
       .catch(() => localStorage.removeItem("token"))
       .finally(() => setLoading(false));
   }, []);
 
   const login = useCallback(async (email, password) => {
     const data = await api.post("/api/auth/login", { email, password });
-    localStorage.setItem("token", data.token);
-    setUser(data.user);
+    localStorage.setItem("token", data.data.token);
+    setUser(data.data.user);
     return data;
   }, []);
 
   const register = useCallback(async (formData) => {
-    const data = await api.post("/api/auth/register", formData);
-    localStorage.setItem("token", data.token);
-    setUser(data.user);
+    await api.post("/api/auth/register", formData);
+    const data = await api.post("/api/auth/login", {
+      email: formData.email,
+      password: formData.password,
+    });
+    localStorage.setItem("token", data.data.token);
+    setUser(data.data.user);
     return data;
   }, []);
 

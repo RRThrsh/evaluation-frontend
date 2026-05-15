@@ -10,7 +10,7 @@ export default function UsersHome() {
 
     useEffect(() => {
         api.get("/api/users")
-            .then((data) => setUsers(data.users ?? data))
+            .then((data) => setUsers(data.data ?? data))
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false));
     }, []);
@@ -82,7 +82,7 @@ export default function UsersHome() {
                                     users.map((u, i) => (
                                         <tr key={u.id ?? i} className="border-t">
                                             <td className="p-3">{u.id}</td>
-                                            <td className="p-3">{u.name}</td>
+                                            <td className="p-3">{u.full_name ?? u.name}</td>
                                             <td className="p-3">{u.email}</td>
                                             <td className="p-3">{u.status}</td>
                                         </tr>
@@ -136,7 +136,7 @@ export default function UsersHome() {
                                             filteredUsers.map((u, i) => (
                                                 <tr key={u.id ?? i} className="border-t">
                                                     <td className="p-2">{u.id}</td>
-                                                    <td className="p-2">{u.name}</td>
+                                                    <td className="p-2">{u.full_name ?? u.name}</td>
                                                     <td className="p-2">{u.email}</td>
                                                     <td className="p-2">{u.status}</td>
                                                 </tr>

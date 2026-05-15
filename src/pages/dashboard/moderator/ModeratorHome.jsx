@@ -8,15 +8,15 @@ export default function ModeratorHome() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        api.get("/api/moderator/requests")
-            .then((data) => setRequests(data.requests ?? data))
+        api.get("/api/moderator/evaluations")
+            .then((data) => setRequests(data.data ?? data))
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false));
     }, []);
 
     const handleAction = async (id, action) => {
         try {
-            await api.post(`/api/moderator/requests/${id}/action`, { action });
+            await api.post(`/api/moderator/evaluations/${id}/action`, { action });
             setRequests((prev) =>
                 prev.map((req) =>
                     req.id === id ? { ...req, status: action } : req
@@ -93,7 +93,7 @@ export default function ModeratorHome() {
                                         </div>
 
                                         <p className="text-sm text-zinc-700 mt-1">
-                                            {req.type} — {req.name}
+                                            {req.reason ?? req.type} — {req.student_number ?? req.name}
                                         </p>
                                     </div>
 
@@ -135,10 +135,10 @@ export default function ModeratorHome() {
                         {/* CONTENT */}
                         <div className="space-y-2 text-sm text-zinc-700">
                             <p><strong>ID:</strong> {selectedRequest.id}</p>
-                            <p><strong>User:</strong> {selectedRequest.userId}</p>
-                            <p><strong>Name:</strong> {selectedRequest.name}</p>
-                            <p><strong>Type:</strong> {selectedRequest.type}</p>
-                            <p><strong>Details:</strong> {selectedRequest.details}</p>
+                            <p><strong>Student:</strong> {selectedRequest.student_number}</p>
+                            <p><strong>Year Level:</strong> {selectedRequest.year_level ?? "—"}</p>
+                            <p><strong>Requested By:</strong> {selectedRequest.requested_by_name ?? selectedRequest.requested_by}</p>
+                            <p><strong>Reason:</strong> {selectedRequest.reason}</p>
                         </div>
 
                         {/* ACTIONS */}
@@ -164,11 +164,11 @@ export default function ModeratorHome() {
 
                             <button
                                 onClick={() =>
-                                    handleAction(selectedRequest.id, "Escalated")
+                                    handleAction(selectedRequest.id, "Rejected")
                                 }
                                 className="flex-1 bg-rose-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-rose-700"
                             >
-                                Ban
+                                Reject
                             </button>
 
                         </div>

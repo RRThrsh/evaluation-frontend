@@ -94,7 +94,9 @@ export default function AdminHome() {
 
     const [deleting, setDeleting] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
-    const [viewRow, setViewRow] = useState(null);
+    const [editRow, setEditRow] = useState(null);
+    const [editFormData, setEditFormData] = useState({});
+    const [saving, setSaving] = useState(false);
 
     const [stats, setStats] = useState(null);
     const [controls, setControls] = useState([]);
@@ -150,6 +152,24 @@ export default function AdminHome() {
             setError(err.message);
         } finally {
             setTableLoading(false);
+        }
+    };
+
+    const handleEditSave = async () => {
+        if (!editRow) return;
+        setSaving(true);
+        try {
+            const res = await api.put(
+                `/api/admin/tables/${selectedTable}/${editRow.id}`,
+                editFormData
+            );
+            showToast("Record updated successfully");
+            setEditRow(null);
+            await loadTable(selectedTable);
+        } catch (err) {
+            showToast(err.message, "error");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -858,12 +878,15 @@ export default function AdminHome() {
 
                                                             <td className="px-5 py-4 text-right">
                                                                 <div className="flex items-center justify-end gap-2">
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            setViewRow(
+                                                                     <button
+                                                                        onClick={() => {
+                                                                            setEditRow(
                                                                                 row
-                                                                            )
-                                                                        }
+                                                                            );
+                                                                            setEditFormData(
+                                                                                { ...row }
+                                                                            );
+                                                                        }}
                                                                         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-blue-600"
                                                                     >
                                                                         <SvgIcon
@@ -916,11 +939,11 @@ export default function AdminHome() {
                 deleting={deleting}
             />
 
-            {/* VIEW ROW MODAL */}
-            {viewRow && (
+            {/* EDIT ROW MODAL */}
+            {editRow && (
                 <div
                     className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 backdrop-blur-sm pt-10 pb-10"
-                    onClick={() => setViewRow(null)}
+                    onClick={() => setEditRow(null)}
                 >
                     <div
                         className="relative w-full max-w-2xl mx-4 rounded-3xl border border-white/60 bg-white shadow-2xl"
@@ -930,13 +953,13 @@ export default function AdminHome() {
                             <div className="flex items-center gap-3">
                                 <div className="rounded-2xl bg-blue-50 p-2.5 text-blue-600">
                                     <SvgIcon
-                                        path="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7"
+                                        path="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                         className="w-4 h-4"
                                     />
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-900">
-                                        Row Details
+                                        Edit Row
                                     </h3>
                                     <p className="text-xs text-slate-400">
                                         {selectedTable}
@@ -944,7 +967,7 @@ export default function AdminHome() {
                                 </div>
                             </div>
                             <button
-                                onClick={() => setViewRow(null)}
+                                onClick={() => setEditRow(null)}
                                 className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
                             >
                                 <SvgIcon
@@ -955,19 +978,82 @@ export default function AdminHome() {
                         </div>
 
                         <div className="px-6 py-5 space-y-3 max-h-[65vh] overflow-y-auto">
-                            {tableData.columns.map((col) => (
+                            {tableData.columns
+                                .filter((col) =>
+                                    selectedTable === "users" && col === "password_hash"
+                                        ? false
+                                        : true
+                                )
+                                .map((col) => (
                                 <div
                                     key={col}
                                     className="flex items-start gap-4 rounded-2xl bg-slate-50 px-4 py-3"
                                 >
                                     <span className="w-40 shrink-0 text-xs font-bold uppercase tracking-wider text-slate-500 pt-0.5">
-                                        {col}
+                                        {col === "role" && selectedTable === "users"
+                                            ? "Role (Admin only)"
+                                            : col}
                                     </span>
-                                    <span className="text-sm text-slate-800 break-all">
-                                        {formatCell(viewRow[col])}
-                                    </span>
+                                    {col === "id" || (selectedTable === "users" && col !== "role") ? (
+                                        <span className="text-sm text-slate-800 break-all">
+                                            {formatCell(editRow[col])}
+                                        </span>
+                                    ) : col === "role" && selectedTable === "users" ? (
+                                        <select
+                                            value={editFormData[col] ?? ""}
+                                            onChange={(e) =>
+                                                setEditFormData((prev) => ({
+                                                    ...prev,
+                                                    [col]: e.target.value,
+                                                }))
+                                            }
+                                            className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                                        >
+                                            <option value="user">user</option>
+                                            <option value="staff">staff</option>
+                                            <option value="moderator">moderator</option>
+                                            <option value="admin">admin</option>
+                                        </select>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={
+                                                editFormData[col] ?? ""
+                                            }
+                                            onChange={(e) =>
+                                                setEditFormData(
+                                                    (prev) => ({
+                                                        ...prev,
+                                                        [col]:
+                                                            e.target
+                                                                .value,
+                                                    })
+                                                )
+                                            }
+                                            className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                        />
+                                    )}
                                 </div>
                             ))}
+                        </div>
+
+                        <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+                            <button
+                                onClick={() => setEditRow(null)}
+                                className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                                disabled={saving}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleEditSave}
+                                disabled={saving}
+                                className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:scale-[1.02] disabled:opacity-50"
+                            >
+                                {saving
+                                    ? "Saving..."
+                                    : "Save Changes"}
+                            </button>
                         </div>
                     </div>
                 </div>

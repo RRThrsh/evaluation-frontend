@@ -25,7 +25,6 @@ services:
       - DB_PORT=5432
       - DB_NAME=auth
       - DB_USER=postgres
-      - DB_PASSWORD=${DB_PASSWORD:-postgres}
       - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
     depends_on:
@@ -39,7 +38,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

@@ -7,6 +7,7 @@ services:
         VITE_API_URL: ""
     ports:
       - "80:80"
+    restart: unless-stopped
     depends_on:
       - backend
 
@@ -15,15 +16,17 @@ services:
       context: ../evaluation-backend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3001:3000"
+    env_file:
+      - ../evaluation-backend/.env
     environment:
       - NODE_ENV=production
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=auth
       - DB_USER=postgres
-      - DB_PASSWORD=${DB_PASSWORD:-postgres}
       - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,7 +38,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

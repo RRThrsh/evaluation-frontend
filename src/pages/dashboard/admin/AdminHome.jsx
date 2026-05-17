@@ -105,6 +105,8 @@ export default function AdminHome() {
     const [error, setError] = useState("");
     const [tables, setTables] = useState([]);
     const [toast, setToast] = useState(null);
+    const [pendingUsers, setPendingUsers] = useState([]);
+    const [pendingUsersLoading, setPendingUsersLoading] = useState(false);
 
     const showToast = (message, type = "success") => {
         setToast({ message, type });
@@ -136,6 +138,35 @@ export default function AdminHome() {
             })
             .catch((err) => setError(err.message));
     }, []);
+
+    useEffect(() => {
+        if (activeTab !== "users") return;
+        setPendingUsersLoading(true);
+        api.get("/api/admin/pending-users")
+            .then((data) => setPendingUsers(data.data ?? []))
+            .catch((err) => setError(err.message))
+            .finally(() => setPendingUsersLoading(false));
+    }, [activeTab]);
+
+    const handleApprove = async (userId) => {
+        try {
+            await api.patch(`/api/admin/users/${userId}/status`, { status: "approved" });
+            setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+            showToast("User approved");
+        } catch (err) {
+            showToast(err.message, "error");
+        }
+    };
+
+    const handleReject = async (userId) => {
+        try {
+            await api.patch(`/api/admin/users/${userId}/status`, { status: "rejected" });
+            setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+            showToast("User rejected");
+        } catch (err) {
+            showToast(err.message, "error");
+        }
+    };
 
     const loadTable = async (tableName) => {
         setSelectedTable(tableName);
@@ -388,6 +419,18 @@ export default function AdminHome() {
                         active={activeTab === "students"}
                         onClick={() => {
                             setActiveTab("students");
+                            setSelectedTable(null);
+                        }}
+                    />
+
+                    <NavItem
+                        icon={
+                            <SvgIcon path="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        }
+                        label="Users"
+                        active={activeTab === "users"}
+                        onClick={() => {
+                            setActiveTab("users");
                             setSelectedTable(null);
                         }}
                     />
@@ -757,6 +800,48 @@ export default function AdminHome() {
                     {/* STUDENTS */}
                     {activeTab === "students" && (
                         <StudentManager />
+                    )}
+
+                    {/* USERS */}
+                    {activeTab === "users" && (
+                        <div className="rounded-3xl border border-white/70 bg-white/90 shadow-sm p-6">
+                            <h3 className="text-lg font-bold text-slate-900 mb-4">
+                                Pending User Approvals
+                            </h3>
+
+                            {pendingUsersLoading ? (
+                                <div className="text-sm text-slate-400 py-8 text-center">Loading...</div>
+                            ) : pendingUsers.length === 0 ? (
+                                <div className="text-sm text-slate-400 py-8 text-center">
+                                    No pending users
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {pendingUsers.map((u) => (
+                                        <div key={u.id} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/50 px-5 py-4">
+                                            <div>
+                                                <p className="text-sm font-medium text-slate-800">{u.full_name}</p>
+                                                <p className="text-xs text-slate-400">{u.email} &middot; {u.role}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleApprove(u.id)}
+                                                    className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-600 transition"
+                                                >
+                                                    Approve
+                                                </button>
+                                                <button
+                                                    onClick={() => handleReject(u.id)}
+                                                    className="rounded-xl border border-red-200 px-4 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 transition"
+                                                >
+                                                    Reject
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     )}
 
                     {/* DATABASE */}

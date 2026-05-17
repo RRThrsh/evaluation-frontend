@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { sanitizeInput } from "../../utils/sanitize";
 
 const Login = () => {
+    const [searchParams] = useSearchParams();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -12,14 +14,16 @@ const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
+    const registered = searchParams.get("registered");
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
         setLoading(true);
         try {
-            const data = await login(email, password);
+            const data = await login(sanitizeInput(email), password);
             const role = data.data?.user?.role;
-            const routes = { admin: "/admin", moderator: "/moderator", staff: "/staff", user: "/users" };
+            const routes = { admin: "/admin", moderator: "/moderator", staff: "/staff" };
             navigate(routes[role] || "/");
         } catch (err) {
             setError(err.message);
@@ -48,6 +52,12 @@ const Login = () => {
                 </div>
 
                 <div className="bg-white rounded-[2rem] shadow-2xl shadow-blue-900/5 border border-slate-100 p-8 lg:p-10">
+                    {registered && (
+                        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-2xl text-sm text-blue-600 font-medium">
+                            Account created. Awaiting admin approval.
+                        </div>
+                    )}
+
                     {error && (
                         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-600 font-medium">
                             {error}

@@ -1,10 +1,38 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import Footer from "../../components/layout/Footer";
-import { ClipboardCheck, Activity, ShieldCheck, ArrowRight } from "lucide-react";
+import { ClipboardCheck, Activity, ShieldCheck, ArrowRight, Search } from "lucide-react";
+import api from "../../services/api";
+import { sanitizeInput } from "../../utils/sanitize";
 
 const Homepage = () => {
+    const [studentNumber, setStudentNumber] = useState("");
+    const [result, setResult] = useState(null);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchError, setSearchError] = useState("");
+
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        const sanitized = sanitizeInput(studentNumber);
+        if (!sanitized) return;
+        setSearchLoading(true);
+        setSearchError("");
+        setResult(null);
+        try {
+            const data = await api.get(`/api/students/lookup/${encodeURIComponent(sanitized)}`);
+            if (data?.success && data?.data) {
+                setResult(data.data);
+            } else {
+                setSearchError("Student not found");
+            }
+        } catch (err) {
+            setSearchError(err.status === 404 ? "No student found with that number" : err.message || "Search failed");
+        } finally {
+            setSearchLoading(false);
+        }
+    };
+
     return (
         <div className="antialiased text-slate-900 font-sans selection:bg-blue-100">
             <Header />
@@ -43,6 +71,79 @@ const Homepage = () => {
                                 Sign In
                             </Link>
                         </div>
+                    </div>
+                </section>
+
+                {/* STUDENT SEARCH */}
+                <section className="py-16 bg-white">
+                    <div className="max-w-2xl mx-auto px-6 text-center">
+                        <span className="inline-block px-4 py-1.5 mb-4 text-xs font-bold tracking-widest text-blue-700 uppercase bg-blue-100/50 rounded-full">
+                            <Search size={12} className="inline mr-1" />
+                            Student Lookup
+                        </span>
+                        <h2 className="text-2xl lg:text-3xl font-extrabold mb-2 text-slate-900">
+                            Check Student Information
+                        </h2>
+                        <p className="text-slate-500 text-sm mb-6">
+                            Enter a student number to look up basic details
+                        </p>
+
+                        <form onSubmit={handleSearch} className="flex gap-2 max-w-md mx-auto">
+                            <input
+                                type="number"
+                                value={studentNumber}
+                                onChange={(e) => setStudentNumber(e.target.value)}
+                                placeholder="Student number"
+                                className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <button
+                                type="submit"
+                                disabled={searchLoading || !studentNumber}
+                                className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                            >
+                                {searchLoading ? "..." : "Search"}
+                            </button>
+                        </form>
+
+                        {searchError && (
+                            <div className="mt-4 text-red-500 text-sm text-center bg-red-50 rounded-lg py-3 max-w-md mx-auto">{searchError}</div>
+                        )}
+
+                        {result && (
+                            <div className="mt-4 bg-slate-50 rounded-lg border border-slate-200 p-4 text-sm text-left max-w-md mx-auto">
+                                <p><span className="text-slate-400">Number:</span> <span className="font-medium">{result.student_number}</span></p>
+                                <p className="mt-1"><span className="text-slate-400">Year Level:</span> <span className="font-medium">{result.year_level || "N/A"}</span></p>
+
+                                {result.subjects && result.subjects.length > 0 && (
+                                    <div className="mt-3 pt-3 border-t border-slate-200">
+                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Currently Taken Subjects</p>
+                                        <div className="space-y-1.5">
+                                            {result.subjects.map((sub, i) => (
+                                                <div key={i} className="flex items-center justify-between bg-white rounded-md px-3 py-2 border border-slate-100">
+                                                    <div>
+                                                        <p className="font-medium text-slate-800">{sub.subject_code}</p>
+                                                        <p className="text-xs text-slate-400">{sub.subject_name}</p>
+                                                    </div>
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${
+                                                        sub.status === "APPROVED"
+                                                            ? "bg-emerald-100 text-emerald-700"
+                                                            : sub.status === "REJECTED"
+                                                            ? "bg-red-100 text-red-600"
+                                                            : "bg-yellow-100 text-yellow-700"
+                                                    }`}>
+                                                        {sub.status}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {(!result.subjects || result.subjects.length === 0) && (
+                                    <p className="mt-2 text-xs text-slate-400">No subjects currently enrolled.</p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </section>
 
@@ -117,8 +218,8 @@ const Homepage = () => {
                             {[
                                 {
                                     title: "Students",
-                                    desc: "Track evaluation status and academic progress.",
-                                    link: "/users",
+                                    desc: "Look up student information using the search above.",
+                                    link: "#student-lookup",
                                     color: "border-blue-200 bg-blue-50/50",
                                     textColor: "text-blue-700",
                                 },

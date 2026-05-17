@@ -9,15 +9,15 @@ function EvaluationReport({ evaluation, onBack }) {
   const {
     student,
     summary,
-    failed_subjects,
-    current_subjects,
-    passed_subjects,
+    current_semester_subjects,
     next_semester_subjects,
+    failed_subjects,
+    unresolved_failed_subjects,
+    retake_subjects,
     prerequisite_checks,
     recommendations,
     overall,
     decision,
-    graded_subjects,
   } = evaluation;
 
   const badgeColor =
@@ -31,6 +31,23 @@ function EvaluationReport({ evaluation, onBack }) {
     decision === "APPROVED"
       ? "bg-emerald-100 text-emerald-700"
       : "bg-red-100 text-red-700";
+
+  const statusColor = (status) => ({
+    enrolled: "bg-blue-50",
+    passed: "bg-emerald-50",
+    failed: "bg-red-50",
+    pending: "bg-zinc-50",
+  }[status] || "bg-zinc-50");
+
+  const statusBadge = (status) => {
+    const colors = {
+      enrolled: "bg-blue-200 text-blue-800",
+      passed: "bg-emerald-200 text-emerald-800",
+      failed: "bg-red-200 text-red-800",
+      pending: "bg-zinc-200 text-zinc-600",
+    };
+    return colors[status] || "bg-zinc-200 text-zinc-600";
+  };
 
   return (
     <div className="space-y-6">
@@ -59,70 +76,122 @@ function EvaluationReport({ evaluation, onBack }) {
       <div className={`p-4 rounded-lg border ${badgeColor}`}>
         <div className="flex items-center justify-between">
           <span className="font-bold text-lg uppercase">{overall}</span>
-          <span className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${decisionColor}`}>
-            {decision}
-          </span>
+          {decision && (
+            <span className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${decisionColor}`}>
+              {decision}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-4 gap-3">
-        {[
-          { label: "Total Subjects", value: summary.total_subjects, color: "bg-zinc-100" },
-          { label: "Currently Enrolled", value: summary.current_enrolled, color: "bg-blue-50 text-blue-700" },
-          { label: "Passed", value: summary.passed, color: "bg-emerald-50 text-emerald-700" },
-          { label: "Failed", value: summary.failed, color: "bg-red-50 text-red-700" },
-        ].map((s) => (
-          <div key={s.label} className={`${s.color} border rounded-lg p-3 text-center`}>
-            <div className="text-2xl font-bold">{s.value}</div>
-            <div className="text-xs mt-1">{s.label}</div>
-          </div>
-        ))}
+      {/* SECTION 1 - Current Semester Subjects (TOP) */}
+      <div className="border-l-4 border-blue-500 pl-3">
+        <h3 className="font-bold text-sm text-blue-600 mb-2 uppercase tracking-wide">Current Semester — Subjects Taken</h3>
       </div>
+      {current_semester_subjects && current_semester_subjects.length > 0 ? (
+        <div className="divide-y border rounded-lg text-sm">
+          {current_semester_subjects.map((cs, i) => (
+            <div key={i} className={`p-3 flex justify-between items-center ${statusColor(cs.status)}`}>
+              <div>
+                <span className="font-medium">{cs.subject_code}</span>
+                <span className="text-zinc-400 ml-1">{cs.subject_name}</span>
+                <span className="text-zinc-400 ml-1">({cs.subject_type})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {cs.grade && <span className="font-bold">{cs.grade}</span>}
+                <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase ${statusBadge(cs.status)}`}>{cs.status}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-sm text-zinc-400 italic p-3 bg-zinc-50 rounded-lg">No current semester subjects</div>
+      )}
 
-      {/* Currently Enrolled (no grade yet) */}
-      {current_subjects && current_subjects.length > 0 && (
+      {/* SECTION 2 - Next Semester Subjects (MIDDLE) */}
+      <div className="border-l-4 border-emerald-500 pl-3 mt-6">
+        <h3 className="font-bold text-sm text-emerald-600 mb-2 uppercase tracking-wide">Next Semester — Subjects to Take</h3>
+      </div>
+      {next_semester_subjects && next_semester_subjects.length > 0 ? (
+        <div className="divide-y border rounded-lg text-sm">
+          {next_semester_subjects.map((ns, i) => (
+            <div key={i} className={`p-3 flex items-center justify-between ${ns.is_retake ? "bg-amber-50" : ""}`}>
+              <div>
+                <span className="font-medium">{ns.subject_code}</span>
+                <span className="text-zinc-400 text-xs ml-2">({ns.subject_type})</span>
+                {ns.prerequisite && (
+                  <span className="text-zinc-400 text-xs ml-2">prereq: {ns.prerequisite}</span>
+                )}
+                {ns.is_retake && (
+                  <span className="text-amber-600 text-xs ml-2 font-bold">[RETAKE]</span>
+                )}
+              </div>
+              {ns.prerequisite && (
+                <span className={`text-xs font-bold px-2 py-1 rounded ${
+                  ns.prereq_failed ? "bg-red-100 text-red-700" : ns.prereq_met ? "bg-emerald-100 text-emerald-700" : "bg-yellow-100 text-yellow-700"
+                }`}>
+                  {ns.prereq_failed ? "FAILED" : ns.prereq_met ? "OK" : "PENDING"}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-sm text-zinc-400 italic p-3 bg-zinc-50 rounded-lg">No next semester subjects</div>
+      )}
+
+      {/* SECTION 3 - Failed Subjects / Retakes (BOTTOM) */}
+      {(unresolved_failed_subjects?.length > 0 || retake_subjects?.length > 0) && (
+        <>
+          <div className="border-l-4 border-red-500 pl-3 mt-6">
+            <h3 className="font-bold text-sm text-red-600 mb-2 uppercase tracking-wide">Failed Subjects — Needs to Retake</h3>
+          </div>
+          <div className="divide-y border border-red-200 rounded-lg text-sm">
+            {retake_subjects && retake_subjects.length > 0 && retake_subjects.map((rs, i) => (
+              <div key={`retake-${i}`} className="p-3 flex justify-between bg-amber-50">
+                <div>
+                  <span className="font-medium">{rs.subject_code} — {rs.subject_name}</span>
+                  <span className="text-amber-600 text-xs ml-2 font-bold">[OFFERED NEXT SEM]</span>
+                </div>
+                <span className="text-amber-600 font-bold">{rs.grade}</span>
+              </div>
+            ))}
+            {unresolved_failed_subjects && unresolved_failed_subjects.length > 0 && unresolved_failed_subjects.map((fs, i) => (
+              <div key={`unresolved-${i}`} className="p-3 flex justify-between bg-red-50">
+                <div>
+                  <span className="font-medium">{fs.subject_code} — {fs.subject_name}</span>
+                  <span className="text-red-600 text-xs ml-2 font-bold">[NOT OFFERED NEXT SEM]</span>
+                </div>
+                <span className="text-red-600 font-bold">{fs.grade}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Failed Subjects from current semester (that need retake) */}
+      {failed_subjects && failed_subjects.length > 0 && (
         <div>
-          <h3 className="font-bold text-sm text-blue-600 mb-2 uppercase tracking-wide">Currently Enrolled</h3>
-          <div className="divide-y border border-blue-200 rounded-lg text-sm">
-            {current_subjects.map((cs, i) => (
-              <div key={i} className="p-3 flex justify-between bg-blue-50">
-                <span className="font-medium">{cs.subject_code} — {cs.subject_name}</span>
-                <span className="text-blue-600">{cs.subject_type}</span>
+          <div className="border-l-4 border-orange-500 pl-3 mt-6">
+            <h3 className="font-bold text-sm text-orange-600 mb-2 uppercase tracking-wide">Current Semester Fails — Needs to Retake</h3>
+          </div>
+          <div className="divide-y border border-orange-200 rounded-lg text-sm">
+            {failed_subjects.map((fs, i) => (
+              <div key={i} className="p-3 flex justify-between bg-orange-50">
+                <span className="font-medium">{fs.subject_code} — {fs.subject_name}</span>
+                <span className="text-orange-600 font-bold">{fs.grade}</span>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Graded / Completed Subjects */}
-      <div>
-        <h3 className="font-bold text-sm text-zinc-600 mb-2 uppercase tracking-wide">
-          Completed Subjects (with grades)
-        </h3>
-        <div className="divide-y border rounded-lg text-sm max-h-48 overflow-y-auto">
-          {graded_subjects && graded_subjects.length > 0 ? graded_subjects.map((gs, i) => (
-            <div key={i} className={`p-3 flex justify-between ${gs.result === "pass" ? "bg-emerald-50" : gs.result === "fail" ? "bg-red-50" : ""}`}>
-              <div>
-                <span className="font-medium">{gs.subject_code}</span>
-                <span className="text-zinc-400 ml-1">{gs.subject_name}</span>
-              </div>
-              <span className={`font-bold ${gs.result === "pass" ? "text-emerald-600" : gs.result === "fail" ? "text-red-600" : "text-zinc-500"}`}>
-                {gs.grade || "—"}
-              </span>
-            </div>
-          )) : (
-            <div className="p-3 text-zinc-400 text-sm">No completed subjects</div>
-          )}
-        </div>
-      </div>
-
       {/* Prerequisite Checks */}
-      {prerequisite_checks.length > 0 && (
-        <div>
-          <h3 className="font-bold text-sm text-zinc-600 mb-2 uppercase tracking-wide">
-            Prerequisite Checks
-          </h3>
+      {prerequisite_checks && prerequisite_checks.length > 0 && (
+        <div className="mt-6">
+          <div className="border-l-4 border-zinc-500 pl-3">
+            <h3 className="font-bold text-sm text-zinc-600 mb-2 uppercase tracking-wide">Prerequisite Checks</h3>
+          </div>
           <div className="divide-y border rounded-lg text-sm">
             {prerequisite_checks.map((pc, i) => (
               <div key={i} className="p-3 flex items-center justify-between">
@@ -145,84 +214,6 @@ function EvaluationReport({ evaluation, onBack }) {
           </div>
         </div>
       )}
-
-      {/* Next Semester Subjects */}
-      {next_semester_subjects.length > 0 && (
-        <div>
-          <h3 className="font-bold text-sm text-zinc-600 mb-2 uppercase tracking-wide">
-            Next Semester Subjects
-          </h3>
-          <div className="divide-y border rounded-lg text-sm">
-            {next_semester_subjects.map((ns, i) => (
-              <div key={i} className="p-3 flex items-center justify-between">
-                <div>
-                  <span className="font-medium">{ns.subject_code}</span>
-                  <span className="text-zinc-400 text-xs ml-2">({ns.subject_type})</span>
-                  {ns.prerequisite && (
-                    <span className="text-zinc-400 text-xs ml-2">prereq: {ns.prerequisite}</span>
-                  )}
-                </div>
-                {ns.prerequisite && (
-                  <span className={`text-xs font-bold px-2 py-1 rounded ${
-                    ns.prereq_failed ? "bg-red-100 text-red-700" : ns.prereq_met ? "bg-emerald-100 text-emerald-700" : "bg-yellow-100 text-yellow-700"
-                  }`}>
-                    {ns.prereq_failed ? "FAILED" : ns.prereq_met ? "OK" : "PENDING"}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Failed Subjects */}
-      {failed_subjects.length > 0 && (
-        <div>
-          <h3 className="font-bold text-sm text-red-600 mb-2 uppercase tracking-wide">
-            Failed Subjects
-          </h3>
-          <div className="divide-y border border-red-200 rounded-lg text-sm">
-            {failed_subjects.map((fs, i) => (
-              <div key={i} className="p-3 flex justify-between bg-red-50">
-                <span className="font-medium">{fs.subject_code} — {fs.subject_name}</span>
-                <span className="text-red-600 font-bold">{fs.grade}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Current Subjects */}
-      {current_subjects.length > 0 && (
-        <div>
-          <h3 className="font-bold text-sm text-blue-600 mb-2 uppercase tracking-wide">
-            Currently Enrolled (Awaiting Grade)
-          </h3>
-          <div className="divide-y border border-blue-200 rounded-lg text-sm">
-            {current_subjects.map((cs, i) => (
-              <div key={i} className="p-3 bg-blue-50">
-                <span className="font-medium">{cs.subject_code} — {cs.subject_name}</span>
-                <span className="text-blue-600 text-xs ml-2">({cs.subject_type})</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Recommendations */}
-      <div className="bg-zinc-50 border rounded-lg p-4">
-        <h3 className="font-bold text-sm text-zinc-600 mb-2 uppercase tracking-wide">
-          Recommendations
-        </h3>
-        <ul className="space-y-1 text-sm">
-          {recommendations.map((r, i) => (
-            <li key={i} className="flex items-start gap-2">
-              <span className="text-zinc-400 mt-0.5">•</span>
-              <span>{r}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
     </div>
   );
 }
@@ -235,18 +226,69 @@ export default function ModeratorHome() {
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState("pending");
   const [confirmAction, setConfirmAction] = useState(null);
+  const [editingSubjects, setEditingSubjects] = useState(false);
+  const [subjectData, setSubjectData] = useState({ taken: [], available: [] });
+  const [selectedSubjectToAdd, setSelectedSubjectToAdd] = useState("");
 
-  useEffect(() => {
-    const endpoint = tab === "all"
-      ? "/api/moderator/evaluations/all"
-      : "/api/moderator/evaluations";
-    api.get(endpoint)
+  const fetchRequests = () => {
+    api.get("/api/moderator/evaluations")
       .then((data) => setRequests(data.data ?? data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [tab]);
+  };
+
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  const fetchStudentSubjects = async (studentId) => {
+    try {
+      const data = await api.get(`/api/moderator/students/${studentId}/subjects`);
+      setSubjectData(data.data ?? data);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleAddSubject = async (studentId) => {
+    if (!selectedSubjectToAdd) return;
+    try {
+      await api.post(`/api/moderator/students/${studentId}/subjects`, {
+        subject_id: selectedSubjectToAdd,
+        status: "PENDING",
+      });
+      setSelectedSubjectToAdd("");
+      await fetchStudentSubjects(studentId);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleUpdateSubject = async (studentId, subjectRecordId, updates) => {
+    try {
+      await api.patch(`/api/moderator/students/${studentId}/subjects/${subjectRecordId}`, updates);
+      await fetchStudentSubjects(studentId);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteSubject = async (studentId, subjectRecordId) => {
+    try {
+      await api.delete(`/api/moderator/students/${studentId}/subjects/${subjectRecordId}`);
+      await fetchStudentSubjects(studentId);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const toggleEditSubjects = async (studentId) => {
+    if (!editingSubjects) {
+      await fetchStudentSubjects(studentId);
+    }
+    setEditingSubjects(!editingSubjects);
+  };
 
   const handleEvaluate = async (id) => {
     setEvaluating(true);
@@ -267,8 +309,7 @@ export default function ModeratorHome() {
       await api.post(`/api/moderator/evaluations/${id}/override`, { action });
       setSelectedRequest(null);
       setEvaluation(null);
-      const refresh = await api.get("/api/moderator/evaluations");
-      setRequests(refresh.data ?? refresh);
+      fetchRequests();
     } catch (err) {
       alert(err.message);
     } finally {
@@ -278,19 +319,21 @@ export default function ModeratorHome() {
 
   const openRequest = async (req) => {
     setSelectedRequest(req);
-    if (req.evaluation_result) {
-      const parsed = typeof req.evaluation_result === "string"
-        ? JSON.parse(req.evaluation_result)
-        : req.evaluation_result;
-      setEvaluation(parsed);
-    } else {
-      setEvaluation(null);
-      // Auto-fetch student grades preview
-      try {
-        const data = await api.get(`/api/moderator/students/${req.student_id}/evaluate`);
-        setEvaluation(data.data);
-      } catch (err) {
-        // silently fail
+    setEvaluation(null);
+    try {
+      const data = await api.get(`/api/moderator/students/${req.student_id}/evaluate`);
+      // Include the stored decision in fresh evaluation data
+      if (req.evaluation_result) {
+        data.data.decision = req.status;
+      }
+      setEvaluation(data.data);
+    } catch (err) {
+      // Fallback to stored result if preview fails
+      if (req.evaluation_result) {
+        const parsed = typeof req.evaluation_result === "string"
+          ? JSON.parse(req.evaluation_result)
+          : req.evaluation_result;
+        setEvaluation(parsed);
       }
     }
   };
@@ -298,13 +341,7 @@ export default function ModeratorHome() {
   const closeModal = () => {
     setSelectedRequest(null);
     setEvaluation(null);
-    // Refresh the list
-    const endpoint = tab === "all"
-      ? "/api/moderator/evaluations/all"
-      : "/api/moderator/evaluations";
-    api.get(endpoint)
-      .then((data) => setRequests(data.data ?? data))
-      .catch(() => {});
+    fetchRequests();
   };
 
   const handleConfirmAction = async () => {
@@ -353,29 +390,11 @@ export default function ModeratorHome() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-zinc-800">
-              {tab === "all" ? "All Requests" : "Incoming Requests"}
+              Evaluation Requests
             </h1>
             <p className="text-sm text-zinc-500">
-              {tab === "all" ? "View all evaluation history" : "Click a request to evaluate"}
+              Click a request to view evaluation result
             </p>
-          </div>
-          <div className="flex gap-1 bg-zinc-100 rounded-lg p-1">
-            <button
-              onClick={() => setTab("pending")}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${
-                tab === "pending" ? "bg-white shadow-sm text-zinc-900" : "text-zinc-500 hover:text-zinc-700"
-              }`}
-            >
-              Pending
-            </button>
-            <button
-              onClick={() => setTab("all")}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${
-                tab === "all" ? "bg-white shadow-sm text-zinc-900" : "text-zinc-500 hover:text-zinc-700"
-              }`}
-            >
-              All
-            </button>
           </div>
         </div>
 
@@ -467,6 +486,88 @@ export default function ModeratorHome() {
 
             {!evaluation && selectedRequest.status === "PENDING" && (
               <div className="text-center text-zinc-400 py-10 text-sm">Loading student grades...</div>
+            )}
+
+            {/* Edit Subjects Section (moderator only) */}
+            <div className="mt-4 pt-4 border-t">
+              <button
+                onClick={() => toggleEditSubjects(selectedRequest.student_id)}
+                className="w-full py-2 rounded-lg text-sm font-medium bg-zinc-100 text-zinc-700 hover:bg-zinc-200 flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                {editingSubjects ? "Close Subject Editor" : "Edit Student Subjects"}
+              </button>
+            </div>
+
+            {editingSubjects && (
+              <div className="mt-4 space-y-3">
+                <h3 className="font-bold text-sm text-zinc-700 uppercase tracking-wide">Subject Editor</h3>
+
+                {/* Add new subject */}
+                <div className="flex gap-2">
+                  <select
+                    value={selectedSubjectToAdd}
+                    onChange={(e) => setSelectedSubjectToAdd(e.target.value)}
+                    className="flex-1 border border-zinc-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">Select subject to add...</option>
+                    {subjectData.available.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.subject_code} — {s.subject_name} (Y{s.year_level} Sem{s.semester})
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleAddSubject(selectedRequest.student_id)}
+                    disabled={!selectedSubjectToAdd}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 disabled:bg-zinc-300"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {/* Current taken subjects */}
+                <div className="divide-y border rounded-lg text-sm max-h-60 overflow-y-auto">
+                  {subjectData.taken.length === 0 && (
+                    <div className="p-3 text-zinc-400 text-center">No subjects taken yet</div>
+                  )}
+                  {subjectData.taken.map((s) => (
+                    <div key={s.id} className="p-3 flex items-center gap-2">
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium">{s.subject_code}</span>
+                        <span className="text-zinc-400 ml-1 text-xs">{s.subject_name}</span>
+                        <span className="text-zinc-400 ml-1 text-xs">Y{s.year_level} S{s.semester}</span>
+                      </div>
+                      <select
+                        value={s.status}
+                        onChange={(e) => handleUpdateSubject(selectedRequest.student_id, s.id, { status: e.target.value })}
+                        className="text-xs border border-zinc-200 rounded px-1 py-0.5"
+                      >
+                        <option value="PENDING">PENDING</option>
+                        <option value="APPROVED">APPROVED</option>
+                        <option value="REJECTED">REJECTED</option>
+                      </select>
+                      <input
+                        type="text"
+                        defaultValue={s.grade || ""}
+                        onBlur={(e) => {
+                          if (e.target.value !== (s.grade || "")) {
+                            handleUpdateSubject(selectedRequest.student_id, s.id, { grade: e.target.value || null });
+                          }
+                        }}
+                        placeholder="Grade"
+                        className="w-16 text-xs border border-zinc-200 rounded px-1 py-0.5 text-center"
+                      />
+                      <button
+                        onClick={() => handleDeleteSubject(selectedRequest.student_id, s.id)}
+                        className="text-red-500 hover:text-red-700 text-xs font-bold px-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* Action Buttons */}

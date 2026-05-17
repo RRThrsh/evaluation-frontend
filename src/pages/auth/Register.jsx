@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, Lock, Eye, EyeOff, UserPlus } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { sanitizeInput } from "../../utils/sanitize";
 
 const Register = () => {
     const [form, setForm] = useState({
@@ -31,14 +32,12 @@ const Register = () => {
 
         setLoading(true);
         try {
-            const data = await register({
-                full_name: form.name,
-                email: form.email,
+            await register({
+                full_name: sanitizeInput(form.name),
+                email: sanitizeInput(form.email),
                 password: form.password,
             });
-            const role = data.data?.user?.role;
-            const routes = { admin: "/admin", moderator: "/moderator", staff: "/staff", user: "/users" };
-            navigate(routes[role] || "/");
+            navigate("/login?registered=1");
         } catch (err) {
             setError(err.message);
         } finally {

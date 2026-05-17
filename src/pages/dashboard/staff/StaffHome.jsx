@@ -305,14 +305,8 @@ export default function StaffHome() {
                 {result.student && (
                   <span> — Student: {result.student.student_number}</span>
                 )}
-                <div className="mt-2">
-                  <button
-                    onClick={() => handleSendPdf(result.student.student_number)}
-                    disabled={sendingPdf}
-                    className="text-xs bg-white border border-current rounded px-2 py-1 hover:bg-black/5 disabled:opacity-50"
-                  >
-                    {sendingPdf ? "Sending..." : "Send PDF to Student Email"}
-                  </button>
+                <div className="mt-2 text-xs text-zinc-400">
+                  Awaiting moderator response to send PDF
                 </div>
               </div>
             )}
@@ -441,13 +435,20 @@ export default function StaffHome() {
             )}
 
             <div className="mt-6 space-y-2">
-              <button
-                onClick={() => handleSendPdf(selectedEval.student_number, () => setSelectedEval(null))}
-                disabled={sendingPdf}
-                className="w-full py-2 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400"
-              >
-                {sendingPdf ? "Sending..." : "Send PDF to Student Email"}
-              </button>
+              {selectedEval.status !== "PENDING" && (
+                <button
+                  onClick={() => handleSendPdf(selectedEval.student_number, () => setSelectedEval(null))}
+                  disabled={sendingPdf}
+                  className="w-full py-2 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400"
+                >
+                  {sendingPdf ? "Sending..." : "Send PDF to Student Email"}
+                </button>
+              )}
+              {selectedEval.status === "PENDING" && (
+                <div className="w-full py-2 rounded-lg text-sm text-center text-zinc-400 bg-zinc-50 border">
+                  Awaiting moderator response
+                </div>
+              )}
               <button
                 onClick={() => setSelectedEval(null)}
                 className="w-full py-2 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200"

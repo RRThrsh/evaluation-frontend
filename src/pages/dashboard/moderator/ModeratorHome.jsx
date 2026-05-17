@@ -423,8 +423,10 @@ export default function ModeratorHome() {
                       <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${
                         req.status === "PENDING"
                           ? "bg-yellow-100 text-yellow-700"
-                          : req.status === "APPROVED"
+                          : req.status === "APPROVED" || req.status === "ENROLLED"
                           ? "bg-emerald-100 text-emerald-700"
+                          : req.status === "FOR_ENROLLMENT"
+                          ? "bg-blue-100 text-blue-700"
                           : "bg-rose-100 text-rose-600"
                       }`}>
                         {req.status}
@@ -610,9 +612,9 @@ export default function ModeratorHome() {
             <h3 className="text-lg font-bold text-slate-800 mb-2">Confirm Action</h3>
             <p className="text-sm text-slate-600 mb-6">
               Are you sure you want to {confirmAction.action === "approve" ? "approve" : "reject"} this evaluation?
-              {confirmAction.action === "approve" && (
+                  {confirmAction.action === "approve" && (
                 <span className="block mt-1 text-amber-600 font-medium">
-                  The student will proceed based on the evaluation result.
+                  The student will be sent to admin for enrollment confirmation.
                 </span>
               )}
             </p>

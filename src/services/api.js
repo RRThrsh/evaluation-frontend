@@ -33,6 +33,7 @@ async function request(endpoint, options = {}) {
     throw new ApiError(res.status, data.message || data.error || `Request failed (${res.status})`);
   }
 
+  await new Promise((r) => setTimeout(r, 3000));
   return data;
 }
 

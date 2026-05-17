@@ -107,6 +107,10 @@ export default function AdminHome() {
     const [toast, setToast] = useState(null);
     const [pendingUsers, setPendingUsers] = useState([]);
     const [pendingUsersLoading, setPendingUsersLoading] = useState(false);
+    const [pendingEnrollments, setPendingEnrollments] = useState([]);
+    const [pendingEnrollmentsLoading, setPendingEnrollmentsLoading] = useState(false);
+    const [enrollmentDetail, setEnrollmentDetail] = useState(null);
+    const [enrollmentDetailLoading, setEnrollmentDetailLoading] = useState(false);
 
     const showToast = (message, type = "success") => {
         setToast({ message, type });
@@ -146,6 +150,15 @@ export default function AdminHome() {
             .then((data) => setPendingUsers(data.data ?? []))
             .catch((err) => setError(err.message))
             .finally(() => setPendingUsersLoading(false));
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (activeTab !== "enrollment") return;
+        setPendingEnrollmentsLoading(true);
+        api.get("/api/admin/enrollments/pending")
+            .then((data) => setPendingEnrollments(data.data ?? []))
+            .catch((err) => setError(err.message))
+            .finally(() => setPendingEnrollmentsLoading(false));
     }, [activeTab]);
 
     const handleApprove = async (userId) => {
@@ -431,6 +444,18 @@ export default function AdminHome() {
                         active={activeTab === "users"}
                         onClick={() => {
                             setActiveTab("users");
+                            setSelectedTable(null);
+                        }}
+                    />
+
+                    <NavItem
+                        icon={
+                            <SvgIcon path="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13M3 21h18M3 10h18M3 16h18" />
+                        }
+                        label="Enrollment"
+                        active={activeTab === "enrollment"}
+                        onClick={() => {
+                            setActiveTab("enrollment");
                             setSelectedTable(null);
                         }}
                     />
@@ -837,6 +862,123 @@ export default function AdminHome() {
                                                     Reject
                                                 </button>
                                             </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ENROLLMENT */}
+                    {activeTab === "enrollment" && (
+                        <div className="rounded-3xl border border-white/70 bg-white/90 shadow-sm p-6">
+                            <h3 className="text-lg font-bold text-slate-900 mb-4">
+                                Pending Enrollments
+                            </h3>
+
+                            {pendingEnrollmentsLoading ? (
+                                <div className="text-sm text-slate-400 py-8 text-center">Loading...</div>
+                            ) : pendingEnrollments.length === 0 ? (
+                                <div className="text-sm text-slate-400 py-8 text-center">
+                                    No pending enrollment requests
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {pendingEnrollments.map((req) => (
+                                        <div key={req.id} className="rounded-2xl border border-slate-100 bg-slate-50/50 px-5 py-4">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-sm font-medium text-slate-800">
+                                                        {req.student_number} — {req.first_name} {req.last_name}
+                                                    </p>
+                                                    <p className="text-xs text-slate-400">
+                                                        Year {req.year_level} &middot; Requested by: {req.requested_by_name}
+                                                    </p>
+                                                </div>
+                                                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase bg-blue-100 text-blue-700">
+                                                    For Enrollment
+                                                </span>
+                                            </div>
+
+                                            {enrollmentDetail === req.id ? (
+                                                <div className="mt-4 pt-4 border-t border-slate-200">
+                                                    {enrollmentDetailLoading ? (
+                                                        <p className="text-sm text-slate-400">Loading evaluation data...</p>
+                                                    ) : (
+                                                        <>
+                                                            <div className="text-sm text-slate-600 space-y-1 mb-4">
+                                                                <p><span className="text-slate-400">Email:</span> {req.student_email}</p>
+                                                                <p><span className="text-slate-400">Reviewed by:</span> {req.reviewed_by_name || "—"}</p>
+                                                                {req.evaluation_result && (
+                                                                    <div className="mt-3 p-3 bg-white rounded-xl border border-slate-200">
+                                                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Evaluation Result</p>
+                                                                        <p className="text-xs text-slate-600">
+                                                                            Overall: <span className={`font-semibold ${req.evaluation_result.overall === "disqualified" ? "text-red-600" : req.evaluation_result.overall === "conditional" ? "text-amber-600" : "text-emerald-600"}`}>
+                                                                                {req.evaluation_result.overall?.toUpperCase()}
+                                                                            </span>
+                                                                        </p>
+                                                                        <p className="text-xs text-slate-600 mt-1">
+                                                                            Current failed: {req.evaluation_result.summary?.current_failed || 0} &middot;
+                                                                            Retakes: {req.evaluation_result.summary?.retake_subjects || 0} &middot;
+                                                                            Next subjects: {req.evaluation_result.summary?.next_semester_subjects || 0}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await api.post(`/api/admin/enrollments/${req.id}/confirm`);
+                                                                            setPendingEnrollments((prev) => prev.filter((r) => r.id !== req.id));
+                                                                            setEnrollmentDetail(null);
+                                                                            showToast("Student enrolled successfully");
+                                                                        } catch (err) {
+                                                                            showToast(err.message, "error");
+                                                                        }
+                                                                    }}
+                                                                    className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-600 transition"
+                                                                >
+                                                                    Confirm Enrollment
+                                                                </button>
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await api.post(`/api/admin/enrollments/${req.id}/reject`);
+                                                                            setPendingEnrollments((prev) => prev.filter((r) => r.id !== req.id));
+                                                                            setEnrollmentDetail(null);
+                                                                            showToast("Enrollment rejected");
+                                                                        } catch (err) {
+                                                                            showToast(err.message, "error");
+                                                                        }
+                                                                    }}
+                                                                    className="rounded-xl border border-red-200 px-4 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 transition"
+                                                                >
+                                                                    Reject Enrollment
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={async () => {
+                                                        setEnrollmentDetail(req.id);
+                                                        setEnrollmentDetailLoading(true);
+                                                        try {
+                                                            // Load fresh evaluation data
+                                                            await api.get(`/api/moderator/students/${req.student_id}/evaluate`);
+                                                        } catch (e) {
+                                                            // Preview may fail if student data changed, that's ok
+                                                        } finally {
+                                                            setEnrollmentDetailLoading(false);
+                                                        }
+                                                    }}
+                                                    className="mt-3 text-xs font-medium text-blue-600 hover:text-blue-700 transition"
+                                                >
+                                                    View Details →
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

@@ -295,11 +295,13 @@ export default function StaffHome() {
 
             {result && (
               <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${
-                  result.status === "PENDING"
-                    ? "bg-yellow-50 border border-yellow-200 text-yellow-700"
-                    : result.status === "APPROVED"
-                    ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
-                    : "bg-red-50 border border-red-200 text-red-600"
+                    result.status === "PENDING"
+                        ? "bg-yellow-50 border border-yellow-200 text-yellow-700"
+                        : result.status === "APPROVED" || result.status === "ENROLLED"
+                        ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
+                        : result.status === "FOR_ENROLLMENT"
+                        ? "bg-blue-50 border border-blue-200 text-blue-700"
+                        : "bg-red-50 border border-red-200 text-red-600"
               }`}>
                 Evaluation submitted! Status: <strong>{result.status}</strong>
                 {result.student && (
@@ -365,10 +367,12 @@ export default function StaffHome() {
                         {ev.student_number || "N/A"}
                       </span>
                       <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
-                          ev.status === "APPROVED"
+                          ev.status === "APPROVED" || ev.status === "ENROLLED"
                             ? "bg-emerald-100 text-emerald-700"
                             : ev.status === "REJECTED"
                             ? "bg-red-100 text-red-600"
+                            : ev.status === "FOR_ENROLLMENT"
+                            ? "bg-blue-100 text-blue-700"
                             : "bg-yellow-100 text-yellow-700"
                       }`}>
                         {ev.status}
@@ -410,7 +414,7 @@ export default function StaffHome() {
               <p>
                 <strong>Status: </strong>
                 <span className={`font-bold uppercase ${
-                  selectedEval.status === "APPROVED" ? "text-emerald-600" : selectedEval.status === "REJECTED" ? "text-red-600" : "text-yellow-600"
+                  selectedEval.status === "APPROVED" || selectedEval.status === "ENROLLED" ? "text-emerald-600" : selectedEval.status === "REJECTED" ? "text-red-600" : selectedEval.status === "FOR_ENROLLMENT" ? "text-blue-600" : "text-yellow-600"
                 }`}>
                   {selectedEval.status}
                 </span>
@@ -435,16 +439,16 @@ export default function StaffHome() {
             )}
 
             <div className="mt-6 space-y-2">
-              {selectedEval.status !== "PENDING" && (
+              {(selectedEval.status === "FOR_ENROLLMENT" || selectedEval.status === "ENROLLED" || selectedEval.status === "REJECTED") && (
                 <button
-                  onClick={() => handleSendPdf(selectedEval.student_number, () => setSelectedEval(null))}
+                  onClick={() => handleSendPdf(selectedEval.student_number)}
                   disabled={sendingPdf}
-                  className="w-full py-2 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400"
+                  className="mt-2 w-full py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {sendingPdf ? "Sending..." : "Send PDF to Student Email"}
                 </button>
               )}
-              {selectedEval.status === "PENDING" && (
+              {(selectedEval.status === "PENDING" || selectedEval.status === "APPROVED") && (
                 <div className="w-full py-2 rounded-lg text-sm text-center text-zinc-400 bg-zinc-50 border">
                   Awaiting moderator response
                 </div>

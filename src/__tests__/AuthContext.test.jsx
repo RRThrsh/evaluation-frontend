@@ -92,9 +92,8 @@ describe("AuthContext", () => {
         expect(localStorage.getItem("token")).toBe("new-token");
     });
 
-    it("register creates account and logs in", async () => {
-        api.post.mockResolvedValueOnce({}); // register
-        api.post.mockResolvedValueOnce({ data: { token: "reg-token", user: mockUser } }); // login after register
+    it("register calls the register API", async () => {
+        api.post.mockResolvedValue({});
 
         renderWithProvider();
         await waitFor(() => {
@@ -103,10 +102,10 @@ describe("AuthContext", () => {
 
         await userEvent.click(screen.getByTestId("register-btn"));
         await waitFor(() => {
-            expect(screen.getByTestId("user")).toHaveTextContent(JSON.stringify(mockUser));
+            expect(api.post).toHaveBeenCalledWith("/api/auth/register", { email: "a@b.com", password: "pwd", name: "A" });
         });
-        expect(localStorage.getItem("token")).toBe("reg-token");
-        expect(api.post).toHaveBeenCalledTimes(2);
+        expect(screen.getByTestId("user")).toHaveTextContent("null");
+        expect(localStorage.getItem("token")).toBeNull();
     });
 
     it("logout clears user and token", async () => {

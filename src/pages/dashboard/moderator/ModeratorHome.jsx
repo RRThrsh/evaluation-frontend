@@ -18,6 +18,8 @@ function EvaluationReport({ evaluation, onBack }) {
     recommendations,
     overall,
     decision,
+    is_regular,
+    is_irregular_candidate,
   } = evaluation;
 
   const badgeColor =
@@ -75,7 +77,19 @@ function EvaluationReport({ evaluation, onBack }) {
       {/* Overall Status */}
       <div className={`p-4 rounded-lg border ${badgeColor}`}>
         <div className="flex items-center justify-between">
-          <span className="font-bold text-lg uppercase">{overall}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-lg uppercase">{overall}</span>
+            {evaluation.is_regular && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-700 border border-emerald-300">
+                Regular
+              </span>
+            )}
+            {evaluation.is_irregular_candidate && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold uppercase bg-purple-100 text-purple-700 border border-purple-300">
+                Irregular Candidate
+              </span>
+            )}
+          </div>
           {decision && (
             <span className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${decisionColor}`}>
               {decision}
@@ -351,8 +365,23 @@ export default function ModeratorHome() {
     if (action === "approve") {
       await handleEvaluate(id);
       closeModal();
+    } else if (action === "irregular") {
+      await handleMarkIrregular(id);
+      closeModal();
     } else if (action === "reject") {
       await handleOverride(id, "REJECTED");
+    }
+  };
+
+  const handleMarkIrregular = async (id) => {
+    setEvaluating(true);
+    try {
+      await api.post(`/api/moderator/evaluations/${id}/irregular`);
+      await loadRequests();
+    } catch (err) {
+      alert(err.message || "Failed to mark as irregular");
+    } finally {
+      setEvaluating(false);
     }
   };
 
@@ -408,61 +437,109 @@ export default function ModeratorHome() {
         {loading ? (
           <div className="text-center text-zinc-400 py-10">Loading requests...</div>
         ) : (
-          <div className="bg-white border rounded-xl shadow-sm divide-y">
+          <div className="space-y-8">
 
-            {requests.length > 0 ? (
-              requests.map((req, i) => (
-                <div
-                  key={req.id ?? i}
-                  onClick={() => openRequest(req)}
-                  className="p-5 flex justify-between items-center cursor-pointer hover:bg-zinc-50 transition"
-                >
-                  {/* LEFT */}
-                  <div>
-                    <div className="flex gap-2 items-center">
-                      <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${
-                        req.status === "PENDING"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : req.status === "APPROVED" || req.status === "ENROLLED"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : req.status === "FOR_ENROLLMENT"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-rose-100 text-rose-600"
-                      }`}>
-                        {req.status}
-                      </span>
-                      {req.status !== "PENDING" && req.evaluation_result && (
-                        <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${
-                          (req.evaluation_result.overall === "qualified" || req.evaluation_result.overall === "conditional")
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-red-50 text-red-600"
-                        }`}>
-                          {req.evaluation_result.overall}
+            {/* NEW REQUESTS */}
+            <div>
+              <h2 className="text-sm font-bold text-zinc-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-yellow-400" />
+                New Requests
+                <span className="text-xs text-zinc-400 font-normal normal-case">
+                  ({requests.filter(r => r.status === "PENDING").length})
+                </span>
+              </h2>
+              {requests.filter(r => r.status === "PENDING").length > 0 ? (
+                <div className="bg-white border rounded-xl shadow-sm divide-y">
+                  {requests.filter(r => r.status === "PENDING").map((req, i) => (
+                    <div
+                      key={req.id ?? i}
+                      onClick={() => openRequest(req)}
+                      className="p-5 flex justify-between items-center cursor-pointer hover:bg-zinc-50 transition"
+                    >
+                      <div>
+                        <div className="flex gap-2 items-center">
+                          <span className="text-[10px] px-2 py-1 rounded font-bold uppercase bg-yellow-100 text-yellow-700">
+                            {req.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-zinc-700 mt-1">
+                          {req.student_number || "N/A"} — {req.reason ?? req.type}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-zinc-400">
+                          {new Date(req.created_at).toLocaleDateString()}
                         </span>
-                      )}
+                        <span className="text-xs text-blue-500 font-medium ml-2">
+                          Click to evaluate →
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-sm text-zinc-700 mt-1">
-                      {req.student_number || "N/A"} — {req.reason ?? req.type}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-400">
-                      {new Date(req.created_at).toLocaleDateString()}
-                    </span>
-                    {req.status === "PENDING" && (
-                      <span className="text-xs text-blue-500 font-medium ml-2">
-                        Click to evaluate →
-                      </span>
-                    )}
-                  </div>
+                  ))}
                 </div>
-              ))
-            ) : (
-              <div className="p-10 text-center text-zinc-400">
-                No requests found.
-              </div>
-            )}
+              ) : (
+                <div className="bg-white border rounded-xl shadow-sm p-8 text-center text-zinc-400 text-sm">
+                  No new requests.
+                </div>
+              )}
+            </div>
+
+            {/* REVIEWED */}
+            <div>
+              <h2 className="text-sm font-bold text-zinc-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-zinc-400" />
+                Reviewed
+                <span className="text-xs text-zinc-400 font-normal normal-case">
+                  ({requests.filter(r => r.status !== "PENDING").length})
+                </span>
+              </h2>
+              {requests.filter(r => r.status !== "PENDING").length > 0 ? (
+                <div className="bg-white border rounded-xl shadow-sm divide-y">
+                  {requests.filter(r => r.status !== "PENDING").map((req, i) => (
+                    <div
+                      key={req.id ?? i}
+                      onClick={() => openRequest(req)}
+                      className="p-5 flex justify-between items-center cursor-pointer hover:bg-zinc-50 transition"
+                    >
+                      <div>
+                        <div className="flex gap-2 items-center">
+                          <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${
+                            req.status === "APPROVED" || req.status === "ENROLLED" || req.status === "IRREGULAR_ENROLLED"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : req.status === "FOR_ENROLLMENT"
+                              ? "bg-blue-100 text-blue-700"
+                              : req.status === "IRREGULAR"
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-rose-100 text-rose-600"
+                          }`}>
+                            {req.status}
+                          </span>
+                          {req.evaluation_result && (
+                            <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${
+                              (req.evaluation_result.overall === "qualified" || req.evaluation_result.overall === "conditional")
+                                ? "bg-emerald-50 text-emerald-600"
+                                : "bg-red-50 text-red-600"
+                            }`}>
+                              {req.evaluation_result.overall}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-zinc-700 mt-1">
+                          {req.student_number || "N/A"} — {req.reason ?? req.type}
+                        </p>
+                      </div>
+                      <span className="text-xs text-zinc-400">
+                        {new Date(req.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white border rounded-xl shadow-sm p-8 text-center text-zinc-400 text-sm">
+                  No reviewed requests yet.
+                </div>
+              )}
+            </div>
 
           </div>
         )}
@@ -583,6 +660,15 @@ export default function ModeratorHome() {
                   >
                     {evaluating ? "Processing..." : "Save Evaluation & Approve"}
                   </button>
+                  {evaluation?.is_irregular_candidate && (
+                    <button
+                      onClick={() => setConfirmAction({ id: selectedRequest.id, action: "irregular" })}
+                      disabled={evaluating}
+                      className="flex-1 bg-purple-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {evaluating ? "Processing..." : "Mark as Irregular"}
+                    </button>
+                  )}
                   <button
                     onClick={() => setConfirmAction({ id: selectedRequest.id, action: "reject" })}
                     disabled={evaluating}
@@ -611,10 +697,15 @@ export default function ModeratorHome() {
           <div className="bg-white w-full max-w-sm rounded-xl shadow-lg p-6 text-center">
             <h3 className="text-lg font-bold text-slate-800 mb-2">Confirm Action</h3>
             <p className="text-sm text-slate-600 mb-6">
-              Are you sure you want to {confirmAction.action === "approve" ? "approve" : "reject"} this evaluation?
+              Are you sure you want to {confirmAction.action === "approve" ? "approve" : confirmAction.action === "irregular" ? "mark as irregular" : "reject"} this evaluation?
                   {confirmAction.action === "approve" && (
                 <span className="block mt-1 text-amber-600 font-medium">
                   The student will be sent to admin for enrollment confirmation.
+                </span>
+              )}
+                  {confirmAction.action === "irregular" && (
+                <span className="block mt-1 text-purple-600 font-medium">
+                  The student will be sent to admin as an Irregular enrollment.
                 </span>
               )}
             </p>
@@ -622,7 +713,7 @@ export default function ModeratorHome() {
               <button
                 onClick={handleConfirmAction}
                 className={`flex-1 py-2 rounded-lg text-sm font-bold text-white ${
-                  confirmAction.action === "approve" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-rose-600 hover:bg-rose-700"
+                  confirmAction.action === "approve" ? "bg-indigo-600 hover:bg-indigo-700" : confirmAction.action === "irregular" ? "bg-purple-600 hover:bg-purple-700" : "bg-rose-600 hover:bg-rose-700"
                 }`}
               >
                 Yes

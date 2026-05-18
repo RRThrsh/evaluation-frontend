@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 
-const YEARS = [1, 2, 3, 4];
 const GENDERS = ["Male", "Female", "Other"];
 
 export default function StudentManager() {
     const [students, setStudents] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [courses, setCourses] = useState([]);
+    const [config, setConfig] = useState({ max_year_level: 4, passing_grade: 75 });
+    const YEARS = Array.from({ length: Number(config.max_year_level) }, (_, i) => i + 1);
     const [loading, setLoading] = useState(true);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [studentSubjects, setStudentSubjects] = useState([]);
@@ -38,6 +39,8 @@ export default function StudentManager() {
 
     const load = async () => {
         try {
+            const cfgRes = await api.get("/api/config");
+            if (cfgRes?.data) setConfig({ max_year_level: Number(cfgRes.data.max_year_level) || 4, passing_grade: Number(cfgRes.data.passing_grade) || 75 });
             const [sData, subjData, cData] = await Promise.all([
                 api.get("/api/admin/students"),
                 api.get("/api/admin/subjects"),
@@ -546,7 +549,7 @@ export default function StudentManager() {
                                                                 onBlur={(e) => {
                                                                     const val = e.target.value;
                                                                     if (val) {
-                                                                        handleGrade(ss.id, Number(val), Number(val) >= 75 ? "APPROVED" : "REJECTED");
+                                                                        handleGrade(ss.id, Number(val), Number(val) >= Number(config.passing_grade) ? "APPROVED" : "REJECTED");
                                                                     }
                                                                     setEditingGradeId(null);
                                                                 }}

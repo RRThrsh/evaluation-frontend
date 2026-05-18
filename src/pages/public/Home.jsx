@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import Footer from "../../components/layout/Footer";
@@ -11,6 +11,13 @@ const Homepage = () => {
     const [result, setResult] = useState(null);
     const [searchLoading, setSearchLoading] = useState(false);
     const [searchError, setSearchError] = useState("");
+    const [academicYear, setAcademicYear] = useState("");
+
+    useEffect(() => {
+        api.get("/api/config").then((d) => {
+            if (d?.data?.academic_year_label) setAcademicYear(d.data.academic_year_label);
+        }).catch(() => {});
+    }, []);
 
     const handleSearch = async (e) => {
         e.preventDefault();
@@ -43,7 +50,7 @@ const Homepage = () => {
                     <div className="max-w-7xl mx-auto px-6 text-center">
                         <span className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 text-sm font-bold tracking-widest text-blue-700 uppercase bg-blue-100/50 rounded-full">
                             <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span>
-                            Academic Year 2025-2026
+                            Academic Year {academicYear || "Loading..."}
                         </span>
 
                         <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight mb-8 text-slate-900">
@@ -168,21 +175,21 @@ const Homepage = () => {
                                     icon: <ClipboardCheck size={28} />,
                                     color: "bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white",
                                     title: "1. Staff Submits",
-                                    desc: "Staff enter a student number to submit an evaluation request. The system checks student eligibility and creates a pending request.",
+                                    desc: "Staff enter a student number to submit an evaluation request. The system creates a pending request and notifies the moderator.",
                                     role: "For Staff",
                                 },
                                 {
                                     icon: <Activity size={28} />,
                                     color: "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white",
-                                    title: "2. Moderator Reviews",
-                                    desc: "Moderators review the evaluation details, verify the information, and approve or reject the request with one click.",
+                                    title: "2. Moderator Evaluates",
+                                    desc: "Moderators review grades, check prerequisites, and classify students as Regular, Conditional, or Irregular. Requests are sent for enrollment approval.",
                                     role: "For Moderators",
                                 },
                                 {
                                     icon: <ShieldCheck size={28} />,
                                     color: "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white",
-                                    title: "3. Completed",
-                                    desc: "Approved evaluations are finalized. Students can view their status, and admins can monitor the entire system in real time.",
+                                    title: "3. Admin Confirms",
+                                    desc: "Admins review and confirm enrollment. Students are enrolled in the next semester's curriculum subjects. The whole system is visible in real time.",
                                     role: "For Everyone",
                                 },
                             ].map((item, i) => (

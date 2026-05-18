@@ -297,10 +297,12 @@ export default function StaffHome() {
               <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${
                     result.status === "PENDING"
                         ? "bg-yellow-50 border border-yellow-200 text-yellow-700"
-                        : result.status === "APPROVED" || result.status === "ENROLLED"
+                        : result.status === "APPROVED" || result.status === "ENROLLED" || result.status === "IRREGULAR_ENROLLED"
                         ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
                         : result.status === "FOR_ENROLLMENT"
                         ? "bg-blue-50 border border-blue-200 text-blue-700"
+                        : result.status === "IRREGULAR"
+                        ? "bg-purple-50 border border-purple-200 text-purple-700"
                         : "bg-red-50 border border-red-200 text-red-600"
               }`}>
                 Evaluation submitted! Status: <strong>{result.status}</strong>
@@ -355,34 +357,84 @@ export default function StaffHome() {
                 No submissions yet.
               </div>
             ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {evaluations.map((ev, i) => (
-                  <div
-                    key={ev.id ?? i}
-                    onClick={() => setSelectedEval(ev)}
-                    className="border border-slate-100 rounded-lg p-3 cursor-pointer hover:bg-slate-50 transition"
-                  >
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs font-bold text-slate-500">
-                        {ev.student_number || "N/A"}
+              <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
+                {/* PENDING */}
+                {evaluations.filter(e => e.status === "PENDING").length > 0 && (
+                  <div>
+                    <h3 className="text-[11px] font-bold text-yellow-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                      Pending
+                      <span className="text-[10px] text-zinc-400 font-normal normal-case">
+                        ({evaluations.filter(e => e.status === "PENDING").length})
                       </span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
-                          ev.status === "APPROVED" || ev.status === "ENROLLED"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : ev.status === "REJECTED"
-                            ? "bg-red-100 text-red-600"
-                            : ev.status === "FOR_ENROLLMENT"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-yellow-100 text-yellow-700"
-                      }`}>
-                        {ev.status}
-                      </span>
+                    </h3>
+                    <div className="space-y-2">
+                      {evaluations.filter(e => e.status === "PENDING").map((ev, i) => (
+                        <div
+                          key={ev.id ?? i}
+                          onClick={() => setSelectedEval(ev)}
+                          className="border border-yellow-100 bg-yellow-50/30 rounded-lg p-3 cursor-pointer hover:bg-yellow-50 transition"
+                        >
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-xs font-bold text-slate-500">
+                              {ev.student_number || "N/A"}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-yellow-100 text-yellow-700">
+                              {ev.status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400">
+                            {new Date(ev.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                    <p className="text-xs text-slate-400">
-                      {new Date(ev.created_at).toLocaleDateString()}
-                    </p>
                   </div>
-                ))}
+                )}
+
+                {/* REVIEWED */}
+                {evaluations.filter(e => e.status !== "PENDING").length > 0 && (
+                  <div>
+                    <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+                      Reviewed
+                      <span className="text-[10px] text-zinc-400 font-normal normal-case">
+                        ({evaluations.filter(e => e.status !== "PENDING").length})
+                      </span>
+                    </h3>
+                    <div className="space-y-2">
+                      {evaluations.filter(e => e.status !== "PENDING").map((ev, i) => (
+                        <div
+                          key={ev.id ?? i}
+                          onClick={() => setSelectedEval(ev)}
+                          className="border border-slate-100 rounded-lg p-3 cursor-pointer hover:bg-slate-50 transition"
+                        >
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-xs font-bold text-slate-500">
+                              {ev.student_number || "N/A"}
+                            </span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
+                                ev.status === "APPROVED" || ev.status === "ENROLLED" || ev.status === "IRREGULAR_ENROLLED"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : ev.status === "REJECTED"
+                                  ? "bg-red-100 text-red-600"
+                                  : ev.status === "FOR_ENROLLMENT"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : ev.status === "IRREGULAR"
+                                  ? "bg-purple-100 text-purple-700"
+                                  : "bg-yellow-100 text-yellow-700"
+                            }`}>
+                              {ev.status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400">
+                            {new Date(ev.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -414,7 +466,7 @@ export default function StaffHome() {
               <p>
                 <strong>Status: </strong>
                 <span className={`font-bold uppercase ${
-                  selectedEval.status === "APPROVED" || selectedEval.status === "ENROLLED" ? "text-emerald-600" : selectedEval.status === "REJECTED" ? "text-red-600" : selectedEval.status === "FOR_ENROLLMENT" ? "text-blue-600" : "text-yellow-600"
+                  selectedEval.status === "APPROVED" || selectedEval.status === "ENROLLED" || selectedEval.status === "IRREGULAR_ENROLLED" ? "text-emerald-600" : selectedEval.status === "REJECTED" ? "text-red-600" : selectedEval.status === "FOR_ENROLLMENT" ? "text-blue-600" : selectedEval.status === "IRREGULAR" ? "text-purple-600" : "text-yellow-600"
                 }`}>
                   {selectedEval.status}
                 </span>
@@ -439,7 +491,7 @@ export default function StaffHome() {
             )}
 
             <div className="mt-6 space-y-2">
-              {(selectedEval.status === "FOR_ENROLLMENT" || selectedEval.status === "ENROLLED" || selectedEval.status === "REJECTED") && (
+              {(selectedEval.status === "FOR_ENROLLMENT" || selectedEval.status === "ENROLLED" || selectedEval.status === "IRREGULAR" || selectedEval.status === "IRREGULAR_ENROLLED" || selectedEval.status === "REJECTED") && (
                 <button
                   onClick={() => handleSendPdf(selectedEval.student_number)}
                   disabled={sendingPdf}

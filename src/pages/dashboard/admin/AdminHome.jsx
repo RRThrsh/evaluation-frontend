@@ -7,6 +7,7 @@ import SkeletonRows from "../../../components/admin/SkeletonRows";
 import CourseManager from "../../../components/admin/CourseManager";
 import SubjectManager from "../../../components/admin/SubjectManager";
 import StudentManager from "../../../components/admin/StudentManager";
+import AcademicConfigManager from "../../../components/admin/AcademicConfigManager";
 
 const SENSITIVE_TABLES = ["users"];
 
@@ -456,6 +457,19 @@ export default function AdminHome() {
                         active={activeTab === "enrollment"}
                         onClick={() => {
                             setActiveTab("enrollment");
+                            setSelectedTable(null);
+                        }}
+                    />
+
+                    {/* ACADEMIC CONFIG */}
+                    <NavItem
+                        icon={
+                            <SvgIcon path="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        }
+                        label="Academic Config"
+                        active={activeTab === "academic_config"}
+                        onClick={() => {
+                            setActiveTab("academic_config");
                             setSelectedTable(null);
                         }}
                     />
@@ -984,6 +998,10 @@ export default function AdminHome() {
                                 </div>
                             )}
                         </div>
+                    )}
+
+                    {activeTab === "academic_config" && (
+                        <AcademicConfigManager />
                     )}
 
                     {/* DATABASE */}

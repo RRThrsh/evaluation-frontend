@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 
-const YEARS = [1, 2, 3, 4];
-const SEMESTERS = [1, 2];
-
 export default function SubjectManager() {
     const [subjects, setSubjects] = useState([]);
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [config, setConfig] = useState({ max_year_level: 4, semesters_per_year: 2 });
+    const YEARS = Array.from({ length: Number(config.max_year_level) }, (_, i) => i + 1);
+    const SEMESTERS = Array.from({ length: Number(config.semesters_per_year) }, (_, i) => i + 1);
     const [editing, setEditing] = useState(null);
     const [form, setForm] = useState({
         subject_code: "", subject_name: "", year_level: 1, semester: 1,
@@ -23,12 +23,14 @@ export default function SubjectManager() {
 
     const load = async () => {
         try {
-            const [subjData, courseData] = await Promise.all([
+            const [subjData, courseData, cfgRes] = await Promise.all([
                 api.get("/api/admin/subjects"),
                 api.get("/api/admin/courses"),
+                api.get("/api/config"),
             ]);
             setSubjects(subjData.data ?? []);
             setCourses(courseData.data ?? []);
+            if (cfgRes?.data) setConfig({ max_year_level: Number(cfgRes.data.max_year_level) || 4, semesters_per_year: Number(cfgRes.data.semesters_per_year) || 2 });
         } catch (err) {
             showToast(err.message, "error");
         } finally {

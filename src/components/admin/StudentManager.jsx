@@ -49,10 +49,14 @@ export default function StudentManager() {
 
     useEffect(() => { load(); }, []);
 
-    const openCreateForm = () => {
+    const openCreateForm = async () => {
         setForm({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, course_id: "" });
         setEditingStudent(null);
         setShowForm(true);
+        try {
+            const res = await api.get("/api/admin/students/next-number");
+            if (res?.data?.student_number) setForm((prev) => ({ ...prev, student_number: res.data.student_number }));
+        } catch {}
     };
 
     const openEditForm = (student) => {
@@ -75,8 +79,8 @@ export default function StudentManager() {
 
     const handleSaveStudent = async (e) => {
         e.preventDefault();
-        if (!editingStudent && (!form.email.trim() || !form.student_number.trim() || !form.first_name.trim() || !form.last_name.trim())) {
-            showToast("Email, student number, first name, and last name are required", "error");
+        if (!editingStudent && (!form.email.trim() || !form.first_name.trim() || !form.last_name.trim())) {
+            showToast("Email, first name, and last name are required", "error");
             return;
         }
         if (editingStudent && (!form.first_name.trim() || !form.last_name.trim())) {

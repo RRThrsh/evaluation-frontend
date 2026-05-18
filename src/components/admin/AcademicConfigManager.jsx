@@ -3,11 +3,12 @@ import api from "../../services/api";
 
 const SECTIONS = [
   {
-    title: "Academic Period",
+    title: "Academic Period & Student ID",
     icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
     fields: [
       { key: "academic_year_label", label: "Academic Year", type: "text", placeholder: "e.g. 2025-2026", desc: "Displayed on public pages" },
       { key: "semesters_per_year", label: "Semesters Per Year", type: "number", placeholder: "2", desc: "Number of semesters in an academic year" },
+      { key: "student_number_prefix", label: "Student Number Prefix", type: "text", placeholder: "2025", desc: "4-digit prefix used when auto-generating student numbers" },
     ],
   },
   {

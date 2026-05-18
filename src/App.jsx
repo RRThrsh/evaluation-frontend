@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ClickSoundProvider from "./components/common/ClickSoundProvider";
 
 /*  ==============================================
     PAGES
@@ -30,6 +31,7 @@ import Maintenance from "./pages/error/Maintenance";
 
 function App() {
     return (
+        <ClickSoundProvider>
         <AuthProvider>
             <BrowserRouter>
                 <Routes>
@@ -84,6 +86,7 @@ function App() {
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
+        </ClickSoundProvider>
     );
 }
 

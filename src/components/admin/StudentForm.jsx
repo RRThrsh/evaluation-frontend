@@ -16,10 +16,9 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
               placeholder="student@example.com" required={!editingStudent} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Student Number</label>
-            <input value={form.student_number} onChange={(e) => setForm({ ...form, student_number: e.target.value })}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 uppercase"
-              placeholder="2020-0001" required={!editingStudent} disabled={!!editingStudent} />
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">Student Number {!editingStudent && <span className="text-blue-500 font-normal">(auto-generated)</span>}</label>
+            <input value={form.student_number} readOnly
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-slate-50 text-slate-500 uppercase cursor-not-allowed" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>

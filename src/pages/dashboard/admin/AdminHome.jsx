@@ -5,9 +5,7 @@ import { useAuth } from "../../../context/AuthContext";
 import AdminSidebar from "../../../components/admin/AdminSidebar";
 import AdminHeader from "../../../components/admin/AdminHeader";
 import StatsCards from "../../../components/admin/StatsCards";
-import BroadcastPanel from "../../../components/admin/BroadcastPanel";
-import ControlsPanel from "../../../components/admin/ControlsPanel";
-import EmergencyPanel from "../../../components/admin/EmergencyPanel";
+import DashboardOverview from "../../../components/admin/DashboardOverview";
 import PendingUsers from "../../../components/admin/PendingUsers";
 import PendingEnrollments from "../../../components/admin/PendingEnrollments";
 import DatabaseViewer from "../../../components/admin/DatabaseViewer";
@@ -19,6 +17,7 @@ import UserManager from "../../../components/admin/UserManager";
 import AuditLogViewer from "../../../components/admin/AuditLogViewer";
 import RoleManager from "../../../components/admin/RoleManager";
 import EnrollmentHistory from "../../../components/admin/EnrollmentHistory";
+import CompletedEnrollments from "../../../components/admin/CompletedEnrollments";
 import ModeratorCourses from "../../../components/admin/ModeratorCourses";
 import SvgIcon from "../../../components/common/SvgIcon";
 
@@ -200,11 +199,14 @@ export default function AdminHome() {
           {stats && <StatsCards stats={stats} />}
 
           {activeTab === "overview" && (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              <BroadcastPanel broadcast={broadcast} setBroadcast={setBroadcast} onSend={handleBroadcast} />
-              <ControlsPanel controls={controls} onToggle={toggleControl} />
-              <EmergencyPanel onShutdown={handleShutdown} />
-            </div>
+            <DashboardOverview
+              broadcast={broadcast}
+              setBroadcast={setBroadcast}
+              onSend={handleBroadcast}
+              controls={controls}
+              onToggle={toggleControl}
+              onShutdown={handleShutdown}
+            />
           )}
 
           {activeTab === "courses" && <CourseManager />}
@@ -225,6 +227,7 @@ export default function AdminHome() {
           )}
 
           {activeTab === "academic_config" && <AcademicConfigManager />}
+          {activeTab === "completed-enrollments" && <CompletedEnrollments />}
           {activeTab === "moderator-courses" && <ModeratorCourses />}
 
           {activeTab === "database" && (

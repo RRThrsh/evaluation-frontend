@@ -1,4 +1,5 @@
 import SvgIcon from "../common/SvgIcon";
+import NotificationBell from "../common/NotificationBell";
 
 export default function AdminHeader({ sidebarOpen, setSidebarOpen, activeTab, error }) {
   return (
@@ -13,9 +14,12 @@ export default function AdminHeader({ sidebarOpen, setSidebarOpen, activeTab, er
             <p className="text-xs text-slate-500">Manage and monitor your system</p>
           </div>
         </div>
-        <div className="hidden md:flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-medium text-slate-600">System Online</span>
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <div className="hidden md:flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-medium text-slate-600">System Online</span>
+          </div>
         </div>
       </div>
       {error && (

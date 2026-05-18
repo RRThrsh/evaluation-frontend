@@ -1,166 +1,240 @@
-import React, { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../../../services/api";
+import { useAuth } from "../../../context/AuthContext";
+import AdminSidebar from "../../../components/admin/AdminSidebar";
+import AdminHeader from "../../../components/admin/AdminHeader";
+import StatsCards from "../../../components/admin/StatsCards";
+import DashboardOverview from "../../../components/admin/DashboardOverview";
+import PendingUsers from "../../../components/admin/PendingUsers";
+import PendingEnrollments from "../../../components/admin/PendingEnrollments";
+import DatabaseViewer from "../../../components/admin/DatabaseViewer";
+import CourseManager from "../../../components/admin/CourseManager";
+import SubjectManager from "../../../components/admin/SubjectManager";
+import StudentManager from "../../../components/admin/StudentManager";
+import AcademicConfigManager from "../../../components/admin/AcademicConfigManager";
+import UserManager from "../../../components/admin/UserManager";
+import AuditLogViewer from "../../../components/admin/AuditLogViewer";
+import RoleManager from "../../../components/admin/RoleManager";
+import EnrollmentHistory from "../../../components/admin/EnrollmentHistory";
+import CompletedEnrollments from "../../../components/admin/CompletedEnrollments";
+import ModeratorCourses from "../../../components/admin/ModeratorCourses";
+import SvgIcon from "../../../components/common/SvgIcon";
+
+const TABLE_GROUPS = [
+  { name: "Academic", tables: ["students", "subjects", "student_subjects", "student_units", "subject_requests"] },
+  { name: "System", tables: ["academic_config"] },
+];
 
 export default function AdminHome() {
-    const [broadcast, setBroadcast] = useState("");
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
-    return (
-        <div className="min-h-screen bg-slate-950 text-slate-100">
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [activeGroup, setActiveGroup] = useState(null);
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [tableData, setTableData] = useState(null);
+  const [tableLoading, setTableLoading] = useState(false);
 
-            {/* TOP BAR */}
-            <nav className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></div>
-                    <h1 className="font-bold tracking-wider uppercase text-sm">
-                        Admin Control Hub
-                    </h1>
-                </div>
+  const [stats, setStats] = useState(null);
+  const [controls, setControls] = useState([]);
+  const [broadcast, setBroadcast] = useState("");
+  const [error, setError] = useState("");
+  const [tables, setTables] = useState([]);
+  const [toast, setToast] = useState(null);
 
-                <div className="text-xs text-slate-400">
-                    System: <span className="text-emerald-400 font-bold">ONLINE</span>
-                </div>
-            </nav>
+  const [pendingUsers, setPendingUsers] = useState([]);
+  const [pendingUsersLoading, setPendingUsersLoading] = useState(false);
+  const [pendingEnrollments, setPendingEnrollments] = useState([]);
+  const [pendingEnrollmentsLoading, setPendingEnrollmentsLoading] = useState(false);
 
-            <main className="max-w-7xl mx-auto p-6 space-y-8">
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
-                {/* SYSTEM OVERVIEW */}
-                <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
+  const navigateTab = (key) => {
+    setActiveTab(key);
+    setSelectedTable(null);
+    setSidebarOpen(false);
+  };
 
-                    {[
-                        { label: "Users", value: "1,204" },
-                        { label: "Staff Online", value: "38" },
-                        { label: "Pending Requests", value: "14" },
-                        { label: "System Load", value: "42%" },
-                    ].map((stat, i) => (
-                        <div
-                            key={i}
-                            className="bg-slate-900 border border-slate-800 rounded-xl p-5"
-                        >
-                            <p className="text-xs text-slate-500 uppercase tracking-widest">
-                                {stat.label}
-                            </p>
-                            <p className="text-2xl font-bold mt-2 text-indigo-400">
-                                {stat.value}
-                            </p>
-                        </div>
-                    ))}
+  useEffect(() => {
+    Promise.all([api.get("/api/admin/stats"), api.get("/api/admin/controls"), api.get("/api/admin/tables")])
+      .then(([statsData, controlsData, tablesData]) => {
+        setStats(statsData.data);
+        setControls(controlsData.data?.controls ?? []);
+        const tbls = tablesData.data ?? [];
+        setTables(tbls);
+        const first = TABLE_GROUPS.find((g) => g.tables.some((t) => tbls.includes(t)));
+        if (first) setActiveGroup(first.name);
+      })
+      .catch((err) => setError(err.message));
+  }, []);
 
-                </section>
+  useEffect(() => {
+    if (activeTab !== "users") return;
+    setPendingUsersLoading(true);
+    api.get("/api/admin/pending-users")
+      .then((data) => setPendingUsers(data.data ?? []))
+      .catch((err) => setError(err.message))
+      .finally(() => setPendingUsersLoading(false));
+  }, [activeTab]);
 
-                {/* MAIN CONTROL GRID */}
-                <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  useEffect(() => {
+    if (activeTab !== "enrollment") return;
+    loadEnrollments();
+  }, [activeTab]);
 
-                    {/* LEFT: SYSTEM LOGS */}
-                    <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+  const loadEnrollments = async () => {
+    setPendingEnrollmentsLoading(true);
+    try {
+      const data = await api.get("/api/admin/enrollments/pending");
+      setPendingEnrollments(data.data ?? []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setPendingEnrollmentsLoading(false);
+    }
+  };
 
-                        <div className="p-4 border-b border-slate-800 flex justify-between items-center">
-                            <h2 className="font-semibold">System Activity Logs</h2>
+  const handleApprove = async (userId) => {
+    try {
+      await api.patch(`/api/admin/users/${userId}/status`, { status: "approved" });
+      setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+      showToast("User approved");
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
 
-                            <input
-                                placeholder="Search logs..."
-                                className="bg-slate-950 border border-slate-800 px-3 py-1 rounded-md text-xs focus:outline-none focus:border-indigo-500"
-                            />
-                        </div>
+  const handleReject = async (userId) => {
+    try {
+      await api.patch(`/api/admin/users/${userId}/status`, { status: "rejected" });
+      setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+      showToast("User rejected");
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
 
-                        <div className="divide-y divide-slate-800">
+  const loadTable = async (tableName) => {
+    setSelectedTable(tableName);
+    setTableLoading(true);
+    setTableData(null);
+    try {
+      const data = await api.get(`/api/admin/tables/${tableName}?limit=100`);
+      setTableData(data.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setTableLoading(false);
+    }
+  };
 
-                            {[
-                                { time: "23:10", user: "Admin", action: "USER_SUSPENDED" },
-                                { time: "22:45", user: "Moderator", action: "REQUEST_APPROVED" },
-                                { time: "21:12", user: "Staff", action: "REQUEST_SENT" },
-                            ].map((log, i) => (
-                                <div
-                                    key={i}
-                                    className="p-4 flex justify-between hover:bg-slate-800/50"
-                                >
-                                    <div>
-                                        <p className="text-sm font-medium text-slate-200">
-                                            {log.user}
-                                        </p>
-                                        <p className="text-xs text-slate-500">
-                                            {log.action}
-                                        </p>
-                                    </div>
+  const handleBroadcast = async () => {
+    if (!broadcast.trim()) return;
+    try {
+      await api.post("/api/admin/broadcast", { message: broadcast });
+      showToast("Broadcast sent");
+      setBroadcast("");
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
 
-                                    <span className="text-xs text-slate-500">
-                                        {log.time}
-                                    </span>
-                                </div>
-                            ))}
+  const toggleControl = async (label, state) => {
+    const newState = state === "Enabled" ? "Disabled" : "Enabled";
+    try {
+      await api.post("/api/admin/controls/toggle", { label, state: newState });
+      setControls((prev) => prev.map((c) => c.label === label ? { ...c, state: newState } : c));
+      showToast(`${label}: ${newState}`);
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
 
-                        </div>
-                    </div>
+  const handleShutdown = async () => {
+    if (!window.confirm("Shut down the entire system? This cannot be undone.")) return;
+    try {
+      await api.post("/api/admin/shutdown");
+      showToast("Shutdown initiated");
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
 
-                    {/* RIGHT: CONTROL PANEL */}
-                    <div className="space-y-6">
+  const availableGroups = useMemo(() => TABLE_GROUPS.filter((g) => g.tables.some((t) => tables.includes(t))), [tables]);
 
-                        {/* BROADCAST PANEL */}
-                        <div className="bg-indigo-600 rounded-xl p-5">
-                            <h3 className="font-bold">System Broadcast</h3>
-                            <p className="text-xs text-indigo-100 mt-1 mb-3">
-                                Send message to all roles (Staff + Moderator)
-                            </p>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100">
+      {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" />}
 
-                            <textarea
-                                value={broadcast}
-                                onChange={(e) => setBroadcast(e.target.value)}
-                                className="w-full bg-indigo-700 text-white p-3 rounded-lg text-sm placeholder-indigo-200 focus:outline-none"
-                                placeholder="Type announcement..."
-                                rows={4}
-                            />
+      <AdminSidebar
+        activeTab={activeTab}
+        onNavigate={navigateTab}
+        availableGroups={availableGroups}
+        activeGroup={activeGroup}
+        setActiveGroup={setActiveGroup}
+        selectedTable={selectedTable}
+        onSelectTable={loadTable}
+        user={user}
+        logout={logout}
+      />
 
-                            <button className="w-full mt-3 bg-white text-indigo-600 font-bold py-2 rounded-lg hover:bg-indigo-50 transition">
-                                Send Broadcast
-                            </button>
-                        </div>
+      <div className="md:ml-72">
+        <AdminHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} activeTab={activeTab} error={error} />
 
-                        {/* SYSTEM CONTROLS */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-                            <h3 className="text-xs uppercase tracking-widest text-slate-500 mb-4">
-                                System Controls
-                            </h3>
+        {toast && (
+          <div className="fixed top-5 right-5 z-50">
+            <div className={`flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-3 ${toast.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"}`}>
+              <SvgIcon path={toast.type === "success" ? "M5 13l4 4L19 7" : "M6 18L18 6M6 6l12 12"} className="w-5 h-5" />
+              <span className="text-sm font-medium">{toast.message}</span>
+            </div>
+          </div>
+        )}
 
-                            <div className="space-y-3">
+        <main className="p-4 md:p-8 space-y-8">
+          {stats && <StatsCards stats={stats} />}
 
-                                {[
-                                    { label: "Staff Access", state: "Enabled" },
-                                    { label: "Moderator Access", state: "Enabled" },
-                                    { label: "Maintenance Mode", state: "Disabled" },
-                                ].map((item, i) => (
-                                    <div key={i} className="flex justify-between items-center">
-                                        <span className="text-sm text-slate-300">
-                                            {item.label}
-                                        </span>
+          {activeTab === "overview" && (
+            <DashboardOverview
+              broadcast={broadcast}
+              setBroadcast={setBroadcast}
+              onSend={handleBroadcast}
+              controls={controls}
+              onToggle={toggleControl}
+              onShutdown={handleShutdown}
+            />
+          )}
 
-                                        <span
-                                            className={`text-[10px] px-2 py-1 rounded font-bold ${
-                                                item.state === "Enabled"
-                                                    ? "bg-emerald-500/20 text-emerald-400"
-                                                    : "bg-rose-500/20 text-rose-400"
-                                            }`}
-                                        >
-                                            {item.state}
-                                        </span>
-                                    </div>
-                                ))}
+          {activeTab === "courses" && <CourseManager />}
+          {activeTab === "subjects" && <SubjectManager />}
+          {activeTab === "students" && <StudentManager />}
 
-                            </div>
-                        </div>
+          {activeTab === "users" && (
+            <PendingUsers users={pendingUsers} loading={pendingUsersLoading} onApprove={handleApprove} onReject={handleReject} />
+          )}
 
-                        {/* EMERGENCY */}
-                        <div className="border border-rose-500/30 bg-rose-500/10 rounded-xl p-5">
-                            <h3 className="text-rose-400 font-bold text-xs uppercase">
-                                Emergency Control
-                            </h3>
+          {activeTab === "all-users" && <UserManager />}
+          {activeTab === "audit-logs" && <AuditLogViewer />}
+          {activeTab === "roles" && <RoleManager />}
+          {activeTab === "enrollment-history" && <EnrollmentHistory />}
 
-                            <button className="w-full mt-3 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition">
-                                SHUTDOWN SYSTEM
-                            </button>
-                        </div>
+          {activeTab === "enrollment" && (
+            <PendingEnrollments enrollments={pendingEnrollments} loading={pendingEnrollmentsLoading} onUpdate={loadEnrollments} />
+          )}
 
-                    </div>
+          {activeTab === "academic_config" && <AcademicConfigManager />}
+          {activeTab === "completed-enrollments" && <CompletedEnrollments />}
+          {activeTab === "moderator-courses" && <ModeratorCourses />}
 
-                </section>
-            </main>
-        </div>
-    );
+          {activeTab === "database" && (
+            <DatabaseViewer selectedTable={selectedTable} tableData={tableData} tableLoading={tableLoading} onLoadTable={loadTable} />
+          )}
+        </main>
+      </div>
+    </div>
+  );
 }

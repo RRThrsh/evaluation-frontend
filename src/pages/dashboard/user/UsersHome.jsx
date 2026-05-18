@@ -1,142 +1,66 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
+import api from "../../../services/api";
 
 export default function UsersHome() {
-    const [users] = useState([
-        { id: 1, name: "Juan Dela Cruz", email: "juan@gmail.com", status: "Active" },
-        { id: 2, name: "Maria Santos", email: "maria@gmail.com", status: "Inactive" },
-        { id: 3, name: "Pedro Reyes", email: "pedro@gmail.com", status: "Active" },
-    ]);
+    const [studentNumber, setStudentNumber] = useState("");
+    const [result, setResult] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-    const [search, setSearch] = useState("");
-    const [showModal, setShowModal] = useState(false);
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        if (!studentNumber) return;
 
-    const filteredUsers = useMemo(() => {
-        return users.filter((u) =>
-            `${u.name} ${u.email} ${u.status}`
-                .toLowerCase()
-                .includes(search.toLowerCase())
-        );
-    }, [search, users]);
+        setLoading(true);
+        setError("");
+        setResult(null);
 
-    const handleSearch = () => {
-        setShowModal(true);
-    };
-
-    const handleExportPDF = () => {
-        window.print();
+        try {
+            const data = await api.get(`/api/students/lookup/${studentNumber}`);
+            if (data?.success && data?.data) {
+                setResult(data.data);
+            } else {
+                setError("Student not found");
+            }
+        } catch (err) {
+            setError(err.status === 404 ? "No student found with that number" : err.message || "Search failed");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 text-gray-900">
-            <main className="max-w-5xl mx-auto px-4 py-10">
-
-                {/* Header */}
-                <h1 className="text-3xl font-bold text-indigo-600 mb-6">
-                    User Dashboard
-                </h1>
-
-                {/* Search Bar */}
-                <div className="flex gap-3 mb-6">
+        <div className="min-h-screen bg-slate-50 flex items-start justify-center pt-20">
+            <div className="w-full max-w-md mx-auto px-4">
+                <form onSubmit={handleSearch} className="flex gap-2">
                     <input
-                        type="text"
-                        placeholder="Search users..."
-                        className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        type="number"
+                        value={studentNumber}
+                        onChange={(e) => setStudentNumber(e.target.value)}
+                        placeholder="Student number"
+                        className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-
                     <button
-                        onClick={handleSearch}
-                        className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                        type="submit"
+                        disabled={loading || !studentNumber}
+                        className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
                     >
-                        Search
+                        {loading ? "..." : "Search"}
                     </button>
-                </div>
+                </form>
 
-                {/* PDF Button (optional global) */}
-                {/*<button
-                    onClick={handleExportPDF}
-                    className="mb-6 px-5 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900"
-                >
-                    Export Page to PDF
-                </button>*/}
-
-                {/* MODAL TABLE POPUP */}
-                {showModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-                        <div className="bg-white w-full max-w-3xl rounded-xl shadow-lg overflow-hidden">
-
-                            {/* Modal Header */}
-                            <div className="flex justify-between items-center px-5 py-4 border-b">
-                                <h2 className="text-lg font-semibold">
-                                    Search Results
-                                </h2>
-
-                                <button
-                                    onClick={() => setShowModal(false)}
-                                    className="text-gray-500 hover:text-red-500 text-xl"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-
-                            {/* Table */}
-                            <div className="p-5">
-                                <table className="w-full text-left border">
-                                    <thead className="bg-gray-100 text-sm">
-                                        <tr>
-                                            <th className="p-2">ID</th>
-                                            <th className="p-2">Name</th>
-                                            <th className="p-2">Email</th>
-                                            <th className="p-2">Status</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        {filteredUsers.length > 0 ? (
-                                            filteredUsers.map((u) => (
-                                                <tr key={u.id} className="border-t">
-                                                    {/* TODO: change this in a subject format */}
-                                                    <td className="p-2">{u.id}</td>
-                                                    <td className="p-2">{u.name}</td>
-                                                    <td className="p-2">{u.email}</td>
-                                                    <td className="p-2">{u.status}</td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan="4" className="p-4 text-center text-gray-500">
-                                                    No results found
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-
-                                {/* Modal Actions */}
-                                <div className="flex justify-end gap-3 mt-4">
-                                    <button
-                                        onClick={handleExportPDF}
-                                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                                    >
-                                        Export PDF
-                                    </button>
-
-                                    <button
-                                        onClick={() => setShowModal(false)}
-                                        className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                                    >
-                                        Close
-                                    </button>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
+                {error && (
+                    <div className="mt-4 text-red-500 text-sm text-center bg-red-50 rounded-lg py-3">{error}</div>
                 )}
 
-            </main>
+                {result && (
+                    <div className="mt-4 bg-white rounded-lg border border-slate-200 p-4 text-sm">
+                        <p><span className="text-slate-400">Name:</span> <span className="font-medium">{result.first_name} {result.last_name}</span></p>
+                        <p className="mt-1"><span className="text-slate-400">Number:</span> <span className="font-medium">{result.student_number}</span></p>
+                        <p className="mt-1"><span className="text-slate-400">Year:</span> <span className="font-medium">{result.year_level || "N/A"}</span></p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

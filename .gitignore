@@ -1,2 +1,14 @@
 node_modules/
 .env
+.env.local
+dist/
+build/
+.opencode/
+coverage/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*.log

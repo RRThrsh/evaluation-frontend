@@ -1,167 +1,111 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import api from "../../../services/api";
+import { useAuth } from "../../../context/AuthContext";
+import StaffHeader from "../../../components/staff/StaffHeader";
+import SubmitForm from "../../../components/staff/SubmitForm";
+import SubmissionsList from "../../../components/staff/SubmissionsList";
+import DetailModal from "../../../components/staff/DetailModal";
+import ConfirmModal from "../../../components/common/ConfirmModal";
 
 export default function StaffHome() {
-    const [form, setForm] = useState({
-        idNo: "",
-        name: "",
-        requestType: "",
-        details: "",
-    });
+  const { user } = useAuth();
+  const [studentNumber, setStudentNumber] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [loadingEvals, setLoadingEvals] = useState(true);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState(null);
+  const [evaluations, setEvaluations] = useState([]);
+  const [selectedEval, setSelectedEval] = useState(null);
+  const [confirmSubmit, setConfirmSubmit] = useState(false);
+  const [sendingPdf, setSendingPdf] = useState(false);
+  const [sendSuccess, setSendSuccess] = useState("");
 
-    const [response, setResponse] = useState("");
-    const [loading, setLoading] = useState(false);
+  const fetchEvaluations = () => {
+    api.get("/api/staff/evaluations")
+      .then((data) => setEvaluations(data.data ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingEvals(false));
+  };
 
-    const handleChange = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value,
-        });
-    };
+  useEffect(() => { fetchEvaluations(); }, []);
 
-    const handleSendRequest = async (e) => {
-        e.preventDefault();
+  const handleSubmitClick = (e) => {
+    e.preventDefault();
+    if (!studentNumber.trim()) return;
+    setConfirmSubmit(true);
+  };
 
-        if (!form.idNo || !form.name || !form.requestType) {
-            alert("Please fill in required fields.");
-            return;
-        }
+  const handleSendPdf = async (studentNumberToSend, closeAfter) => {
+    setSendingPdf(true);
+    setSendSuccess("");
+    setError("");
+    try {
+      await api.post("/api/staff/evaluate/send-pdf", { student_number: studentNumberToSend });
+      setSendSuccess("PDF sent to student email");
+      if (closeAfter) closeAfter();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSendingPdf(false);
+    }
+  };
 
-        setLoading(true);
-        setResponse("");
+  const handleConfirmSubmit = async () => {
+    setConfirmSubmit(false);
+    setSubmitting(true);
+    setError("");
+    setResult(null);
+    try {
+      const data = await api.post("/api/staff/evaluate", { student_number: studentNumber });
+      setResult(data.data);
+      const evals = await api.get("/api/staff/evaluations");
+      setEvaluations(evals.data ?? []);
+      setStudentNumber("");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-        try {
-            // 🔌 Replace with real API
-            /*
-            const res = await fetch("/api/staff/request", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(form),
-            });
+  return (
+    <div className="min-h-screen bg-slate-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        <StaffHeader />
 
-            const data = await res.json();
-            setResponse(data.response);
-            */
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <SubmitForm
+            studentNumber={studentNumber}
+            setStudentNumber={setStudentNumber}
+            submitting={submitting}
+            error={error}
+            result={result}
+            sendSuccess={sendSuccess}
+            onSubmit={handleSubmitClick}
+          />
 
-            // 🧪 Mock response
-            setTimeout(() => {
-                setResponse(
-                    `✔ Request Received\n\nID No: ${form.idNo}\nName: ${form.name}\nType: ${form.requestType}\nDetails: ${form.details}\n\nStatus: Processed Successfully`
-                );
-                setLoading(false);
-            }, 1000);
-
-        } catch (err) {
-            setResponse("Error: Failed to process request.");
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-slate-50 p-6">
-            <div className="max-w-6xl mx-auto">
-
-                {/* Title */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-slate-800">
-                        Staff Request System
-                    </h1>
-                    <p className="text-slate-500 text-sm">
-                        Submit structured requests and receive system responses
-                    </p>
-                </div>
-
-                {/* 2 Column Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                    {/* 📩 REQUEST FORM */}
-                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                        <h2 className="text-lg font-semibold text-slate-700 mb-4">
-                            Request Form
-                        </h2>
-
-                        <form onSubmit={handleSendRequest} className="space-y-4">
-
-                            {/* ID NO */}
-                            <input
-                                type="text"
-                                name="idNo"
-                                placeholder="ID No."
-                                value={form.idNo}
-                                onChange={handleChange}
-                                className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-
-                            {/* NAME */}
-                            <input
-                                type="text"
-                                name="name"
-                                placeholder="Full Name"
-                                value={form.name}
-                                onChange={handleChange}
-                                className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-
-                            {/* REQUEST TYPE */}
-                            <select
-                                name="requestType"
-                                value={form.requestType}
-                                onChange={handleChange}
-                                className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            >
-                                <option value="">Select Request Type</option>
-                                <option value="Leave">Leave Request</option>
-                                <option value="Correction">Data Correction</option>
-                                <option value="Access">System Access</option>
-                                <option value="Other">Other</option>
-                            </select>
-
-                            {/* DETAILS */}
-                            <textarea
-                                name="details"
-                                placeholder="Additional Details (optional)"
-                                value={form.details}
-                                onChange={handleChange}
-                                rows="4"
-                                className="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-
-                            {/* SUBMIT */}
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className={`w-full py-2 rounded-lg text-white font-medium transition ${
-                                    loading
-                                        ? "bg-slate-400"
-                                        : "bg-indigo-600 hover:bg-indigo-700"
-                                }`}
-                            >
-                                {loading ? "Sending..." : "Submit Request"}
-                            </button>
-
-                        </form>
-                    </div>
-
-                    {/* 📥 RESPONSE SECTION */}
-                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                        <h2 className="text-lg font-semibold text-slate-700 mb-4">
-                            Response
-                        </h2>
-
-                        {response ? (
-                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                                <pre className="text-sm text-slate-700 whitespace-pre-wrap">
-                                    {response}
-                                </pre>
-                            </div>
-                        ) : (
-                            <div className="text-slate-400 text-sm italic">
-                                No response yet. Submit a request to see output here.
-                            </div>
-                        )}
-                    </div>
-
-                </div>
-            </div>
+          <SubmissionsList evaluations={evaluations} onSelect={setSelectedEval} />
         </div>
-    );
+      </div>
+
+      {selectedEval && (
+        <DetailModal
+          evalData={selectedEval}
+          onClose={() => setSelectedEval(null)}
+          onSendPdf={() => handleSendPdf(selectedEval.student_number, () => setSelectedEval(null))}
+          sendingPdf={sendingPdf}
+        />
+      )}
+
+      {confirmSubmit && (
+        <ConfirmModal
+          title="Confirm Submission"
+          message={<>Are you sure you want to submit an evaluation request for <strong>{studentNumber}</strong>?</>}
+          confirmLabel="Yes"
+          onConfirm={handleConfirmSubmit}
+          onCancel={() => setConfirmSubmit(false)}
+        />
+      )}
+    </div>
+  );
 }

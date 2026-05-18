@@ -1,170 +1,160 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import api from "../../../services/api";
+import ModeratorHeader from "../../../components/moderator/ModeratorHeader";
+import RequestList from "../../../components/moderator/RequestList";
+import DetailModal from "../../../components/moderator/DetailModal";
 
 export default function ModeratorHome() {
-    const [requests, setRequests] = useState([
-        {
-            id: "REQ-1001",
-            userId: "882",
-            name: "Juan Dela Cruz",
-            type: "Leave Request",
-            details: "Requesting leave for 3 days due to personal reasons",
-            status: "Pending",
-        },
-        {
-            id: "REQ-1002",
-            userId: "991",
-            name: "Maria Santos",
-            type: "Data Correction",
-            details: "Need correction on attendance record",
-            status: "Pending",
-        },
-    ]);
+  const [requests, setRequests] = useState([]);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [evaluation, setEvaluation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [evaluating, setEvaluating] = useState(false);
+  const [error, setError] = useState("");
+  const [editingSubjects, setEditingSubjects] = useState(false);
+  const [subjectData, setSubjectData] = useState({ taken: [], available: [] });
+  const [selectedSubjectToAdd, setSelectedSubjectToAdd] = useState("");
 
-    const [selectedRequest, setSelectedRequest] = useState(null);
+  const fetchRequests = () => {
+    api.get("/api/moderator/evaluations")
+      .then((data) => setRequests(data.data ?? data))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  };
 
-    const handleAction = (id, action) => {
-        setRequests((prev) =>
-            prev.map((req) =>
-                req.id === id ? { ...req, status: action } : req
-            )
-        );
+  useEffect(() => { fetchRequests(); }, []);
 
-        setSelectedRequest(null); // close modal after action
-    };
+  const pending = requests.filter(r => r.status === "PENDING");
+  const reviewed = requests.filter(r => r.status !== "PENDING");
 
-    return (
-        <div className="min-h-screen bg-zinc-50 text-zinc-900">
+  const fetchStudentSubjects = async (studentId) => {
+    const data = await api.get(`/api/moderator/students/${studentId}/subjects`);
+    setSubjectData(data.data ?? data);
+  };
 
-            {/* NAVBAR */}
-            <nav className="bg-white border-b border-zinc-200 px-6 py-3 flex justify-between items-center">
-                <span className="font-bold text-zinc-700">
-                    MODERATOR CONTROL CENTER
-                </span>
+  const handleAddSubject = async (studentId) => {
+    if (!selectedSubjectToAdd) return;
+    await api.post(`/api/moderator/students/${studentId}/subjects`, { subject_id: selectedSubjectToAdd, status: "PENDING" });
+    setSelectedSubjectToAdd("");
+    await fetchStudentSubjects(studentId);
+  };
 
-                <span className="text-sm text-zinc-500">
-                    Pending: {requests.filter(r => r.status === "Pending").length}
-                </span>
-            </nav>
+  const handleUpdateSubject = async (studentId, subjectRecordId, updates) => {
+    await api.patch(`/api/moderator/students/${studentId}/subjects/${subjectRecordId}`, updates);
+    await fetchStudentSubjects(studentId);
+  };
 
-            <main className="max-w-6xl mx-auto p-6">
+  const handleDeleteSubject = async (studentId, subjectRecordId) => {
+    await api.delete(`/api/moderator/students/${studentId}/subjects/${subjectRecordId}`);
+    await fetchStudentSubjects(studentId);
+  };
 
-                {/* HEADER */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-zinc-800">
-                        Incoming Requests
-                    </h1>
-                    <p className="text-sm text-zinc-500">
-                        Click a request to review
-                    </p>
-                </div>
+  const toggleEditSubjects = async (studentId) => {
+    if (!editingSubjects) await fetchStudentSubjects(studentId);
+    setEditingSubjects(!editingSubjects);
+  };
 
-                {/* REQUEST LIST */}
-                <div className="bg-white border rounded-xl shadow-sm divide-y">
+  const handleEvaluate = async (id) => {
+    setEvaluating(true);
+    try {
+      const data = await api.post(`/api/moderator/evaluations/${id}/evaluate`);
+      setEvaluation(data.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setEvaluating(false);
+    }
+  };
 
-                    {requests.map((req) => (
-                        <div
-                            key={req.id}
-                            onClick={() => setSelectedRequest(req)}
-                            className="p-5 flex justify-between items-center cursor-pointer hover:bg-zinc-50 transition"
-                        >
+  const handleOverride = async (id, action) => {
+    setEvaluating(true);
+    try {
+      await api.post(`/api/moderator/evaluations/${id}/override`, { action });
+      setSelectedRequest(null);
+      setEvaluation(null);
+      fetchRequests();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setEvaluating(false);
+    }
+  };
 
-                            {/* LEFT */}
-                            <div>
-                                <div className="flex gap-2 items-center">
-                                    <span className="text-xs font-bold bg-zinc-100 px-2 py-1 rounded">
-                                        {req.id}
-                                    </span>
+  const handleMarkIrregular = async (id) => {
+    setEvaluating(true);
+    try {
+      await api.post(`/api/moderator/evaluations/${id}/irregular`);
+      fetchRequests();
+    } catch (err) {
+      alert(err.message || "Failed to mark as irregular");
+    } finally {
+      setEvaluating(false);
+    }
+  };
 
-                                    <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${
-                                        req.status === "Pending"
-                                            ? "bg-yellow-100 text-yellow-700"
-                                            : req.status === "Approved"
-                                            ? "bg-emerald-100 text-emerald-700"
-                                            : "bg-rose-100 text-rose-600"
-                                    }`}>
-                                        {req.status}
-                                    </span>
-                                </div>
+  const openRequest = async (req) => {
+    setSelectedRequest(req);
+    setEvaluation(null);
+    try {
+      const data = await api.get(`/api/moderator/students/${req.student_id}/evaluate`);
+      if (req.evaluation_result) data.data.decision = req.status;
+      setEvaluation(data.data);
+    } catch {
+      if (req.evaluation_result) {
+        setEvaluation(typeof req.evaluation_result === "string" ? JSON.parse(req.evaluation_result) : req.evaluation_result);
+      }
+    }
+  };
 
-                                <p className="text-sm text-zinc-700 mt-1">
-                                    {req.type} — {req.name}
-                                </p>
-                            </div>
+  const closeModal = () => {
+    setSelectedRequest(null);
+    setEvaluation(null);
+    setEditingSubjects(false);
+    fetchRequests();
+  };
 
-                            <span className="text-xs text-zinc-400">
-                                Click to review →
-                            </span>
-                        </div>
-                    ))}
+  return (
+    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+      <ModeratorHeader pendingCount={pending.length} />
 
-                </div>
-            </main>
-
-            {/* 🔥 MODAL */}
-            {selectedRequest && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-                    <div className="bg-white w-full max-w-lg rounded-xl shadow-lg p-6">
-
-                        {/* HEADER */}
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-bold text-zinc-800">
-                                Request Details
-                            </h2>
-
-                            <button
-                                onClick={() => setSelectedRequest(null)}
-                                className="text-zinc-500 hover:text-red-500"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        {/* CONTENT */}
-                        <div className="space-y-2 text-sm text-zinc-700">
-                            <p><strong>ID:</strong> {selectedRequest.id}</p>
-                            <p><strong>User:</strong> {selectedRequest.userId}</p>
-                            <p><strong>Name:</strong> {selectedRequest.name}</p>
-                            <p><strong>Type:</strong> {selectedRequest.type}</p>
-                            <p><strong>Details:</strong> {selectedRequest.details}</p>
-                        </div>
-
-                        {/* ACTIONS */}
-                        <div className="mt-6 flex gap-2">
-
-                            <button
-                                onClick={() =>
-                                    handleAction(selectedRequest.id, "Approved")
-                                }
-                                className="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-emerald-700"
-                            >
-                                Approve
-                            </button>
-
-                            <button
-                                onClick={() =>
-                                    handleAction(selectedRequest.id, "Rejected")
-                                }
-                                className="flex-1 bg-zinc-200 text-zinc-800 py-2 rounded-lg text-sm font-bold hover:bg-zinc-300"
-                            >
-                                Remove
-                            </button>
-
-                            <button
-                                onClick={() =>
-                                    handleAction(selectedRequest.id, "Escalated")
-                                }
-                                className="flex-1 bg-rose-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-rose-700"
-                            >
-                                Ban
-                            </button>
-
-                        </div>
-
-                    </div>
-                </div>
-            )}
-
+      <main className="max-w-6xl mx-auto p-6">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-zinc-800">Evaluation Requests</h1>
+            <p className="text-sm text-zinc-500">Click a request to view evaluation result</p>
+          </div>
         </div>
-    );
+
+        {error && (
+          <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 font-medium">{error}</div>
+        )}
+
+        {loading ? (
+          <div className="text-center text-zinc-400 py-10">Loading requests...</div>
+        ) : (
+          <RequestList pending={pending} reviewed={reviewed} onOpen={openRequest} />
+        )}
+      </main>
+
+      {selectedRequest && (
+        <DetailModal
+          request={selectedRequest}
+          evaluation={evaluation}
+          evaluating={evaluating}
+          editingSubjects={editingSubjects}
+          subjectData={subjectData}
+          selectedSubjectToAdd={selectedSubjectToAdd}
+          setSelectedSubjectToAdd={setSelectedSubjectToAdd}
+          onAddSubject={handleAddSubject}
+          onUpdateSubject={handleUpdateSubject}
+          onDeleteSubject={handleDeleteSubject}
+          onToggleEdit={() => toggleEditSubjects(selectedRequest.student_id)}
+          onEvaluate={handleEvaluate}
+          onMarkIrregular={handleMarkIrregular}
+          onReject={(id) => handleOverride(id, "REJECTED")}
+          onClose={closeModal}
+        />
+      )}
+    </div>
+  );
 }

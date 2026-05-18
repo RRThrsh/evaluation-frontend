@@ -1,8 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-/*  ==============================================
-    COMPONENTS
-    ============================================== */
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import ClickSoundProvider from "./components/common/ClickSoundProvider";
 
 /*  ==============================================
     PAGES
@@ -17,10 +16,10 @@ import Contact from "./pages/public/Contact";
 /*  ===============================================
     DASHBOARD PAGE
     ===============================================*/
-import UsersHome from "./pages/dashboard/user/UsersHome";
 import StaffHome from "./pages/dashboard/staff/StaffHome";
 import ModeratorHome from "./pages/dashboard/moderator/ModeratorHome";
 import AdminHome from "./pages/dashboard/admin/AdminHome";
+import Profile from "./pages/dashboard/Profile";
 
 /*  ==============================================
     ERROR PAGES
@@ -32,50 +31,62 @@ import Maintenance from "./pages/error/Maintenance";
 
 function App() {
     return (
-        <BrowserRouter>
-            <Routes>
-                {/* Public Pages */}
+        <ClickSoundProvider>
+        <AuthProvider>
+            <BrowserRouter>
+                <Routes>
+                    {/* Public Pages */}
+                    <Route path="/" element={<Home />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
 
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
+                    {/* Auth Pages */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route
+                        path="/forgot-password"
+                        element={<ForgotPassword />}
+                    />
 
-                {/* Auth Pages */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route
-                    path="/forgot-password"
-                    element={<ForgotPassword />}
-                />
-                {/* USERS */}
-                <Route>
-                    <Route path="/users" element={<UsersHome />}/>
-                </Route>
+                    {/* STAFF */}
+                    <Route path="/staff" element={
+                        <ProtectedRoute roles={["staff", "admin"]}>
+                            <StaffHome />
+                        </ProtectedRoute>
+                    }/>
 
-                {/* STAFF */}
-                <Route>
-                    <Route path="/staff" element={<StaffHome />}/>
-                </Route>
+                    {/* MODERATOR */}
+                    <Route path="/moderator" element={
+                        <ProtectedRoute roles={["moderator", "admin"]}>
+                            <ModeratorHome />
+                        </ProtectedRoute>
+                    }/>
 
-                {/* MODERATOR */}
-                <Route>
-                    <Route path="/moderator" element={<ModeratorHome />}/>
-                </Route>
+                    {/* ADMIN */}
+                    <Route path="/admin" element={
+                        <ProtectedRoute roles={["admin"]}>
+                            <AdminHome />
+                        </ProtectedRoute>
+                    }/>
 
-                {/* ADMIN */}
-                <Route>
-                    <Route path="/admin" element={<AdminHome />}/>
-                </Route>
+                    {/* PROFILE (all authenticated roles) */}
+                    <Route path="/profile" element={
+                        <ProtectedRoute roles={["user", "staff", "moderator", "admin"]}>
+                            <Profile />
+                        </ProtectedRoute>
+                    }/>
 
-                {/* Error Pages */}
-                <Route path="/401" element={<Unauthorized />} />
-                <Route path="/429" element={<TooManyRequest />} />
-                <Route path="/maintenance" element={<Maintenance />} />
+                    {/* Error Pages */}
+                    <Route path="/401" element={<Unauthorized />} />
+                    <Route path="/429" element={<TooManyRequest />} />
+                    <Route path="/maintenance" element={<Maintenance />} />
 
-                {/* 404 */}
-                <Route path="*" element={<NotFound />} />
-            </Routes>
-        </BrowserRouter>
+                    {/* 404 */}
+                    <Route path="*" element={<NotFound />} />
+                </Routes>
+            </BrowserRouter>
+        </AuthProvider>
+        </ClickSoundProvider>
     );
 }
 

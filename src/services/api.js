@@ -1,9 +1,40 @@
 const API_BASE = import.meta.env.VITE_API_URL || "";
+const CACHE_TTL = 60_000;
 
 class ApiError extends Error {
   constructor(status, message) {
     super(message);
     this.status = status;
+  }
+}
+
+const cache = new Map();
+
+function getCacheKey(endpoint) {
+  return endpoint;
+}
+
+function getCached(key) {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL) {
+    cache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCache(key, data) {
+  cache.set(key, { data, timestamp: Date.now() });
+}
+
+function clearCache(prefix) {
+  if (prefix) {
+    for (const key of cache.keys()) {
+      if (key.startsWith(prefix)) cache.delete(key);
+    }
+  } else {
+    cache.clear();
   }
 }
 
@@ -14,6 +45,14 @@ async function request(endpoint, options = {}) {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
+
+  const isGet = !options.method || options.method === "GET";
+  const cacheKey = getCacheKey(endpoint);
+
+  if (isGet) {
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+  }
 
   const res = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
@@ -32,6 +71,9 @@ async function request(endpoint, options = {}) {
   if (!res.ok) {
     throw new ApiError(res.status, data.message || data.error || `Request failed (${res.status})`);
   }
+
+  if (isGet) setCache(cacheKey, data);
+  else clearCache(endpoint.split("/").slice(0, 5).join("/"));
 
   return data;
 }

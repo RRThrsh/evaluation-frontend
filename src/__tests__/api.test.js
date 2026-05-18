@@ -34,9 +34,9 @@ describe("api", () => {
                 json: () => Promise.resolve({}),
             });
 
-            await api.get("/test");
+            await api.get("/test-auth");
             expect(global.fetch).toHaveBeenCalledWith(
-                "/test",
+                "/test-auth",
                 expect.objectContaining({
                     headers: expect.objectContaining({
                         Authorization: "Bearer my-token",

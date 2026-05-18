@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ClickSoundProvider from "./components/common/ClickSoundProvider";
 
 /*  ==============================================
     PAGES
@@ -15,7 +16,6 @@ import Contact from "./pages/public/Contact";
 /*  ===============================================
     DASHBOARD PAGE
     ===============================================*/
-import UsersHome from "./pages/dashboard/user/UsersHome";
 import StaffHome from "./pages/dashboard/staff/StaffHome";
 import ModeratorHome from "./pages/dashboard/moderator/ModeratorHome";
 import AdminHome from "./pages/dashboard/admin/AdminHome";
@@ -31,6 +31,7 @@ import Maintenance from "./pages/error/Maintenance";
 
 function App() {
     return (
+        <ClickSoundProvider>
         <AuthProvider>
             <BrowserRouter>
                 <Routes>
@@ -46,13 +47,6 @@ function App() {
                         path="/forgot-password"
                         element={<ForgotPassword />}
                     />
-
-                    {/* USERS */}
-                    <Route path="/users" element={
-                        <ProtectedRoute roles={["user", "admin"]}>
-                            <UsersHome />
-                        </ProtectedRoute>
-                    }/>
 
                     {/* STAFF */}
                     <Route path="/staff" element={
@@ -92,6 +86,7 @@ function App() {
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
+        </ClickSoundProvider>
     );
 }
 

@@ -28,13 +28,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (formData) => {
-    await api.post("/api/auth/register", formData);
-    const data = await api.post("/api/auth/login", {
-      email: formData.email,
-      password: formData.password,
-    });
-    localStorage.setItem("token", data.data.token);
-    setUser(data.data.user);
+    const data = await api.post("/api/auth/register", formData);
     return data;
   }, []);
 

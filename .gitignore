@@ -1,4 +1,14 @@
 node_modules/
 .env
-.opencode/
+.env.local
 dist/
+build/
+.opencode/
+coverage/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*.log

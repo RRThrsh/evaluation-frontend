@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../services/api";
 
 function statusBadge(status) {
@@ -25,9 +25,15 @@ export default function StudentSubjectsModal({
   const [curriculum, setCurriculum] = useState([]);
   const [loadingCurriculum, setLoadingCurriculum] = useState(false);
 
+  useEffect(() => { loadSubjects(); }, []);
+
   const loadSubjects = async () => {
-    const data = await api.get(`/api/admin/students/${student.id}/subjects`);
-    setStudentSubjects(data.data ?? []);
+    try {
+      const data = await api.get(`/api/admin/students/${student.id}/subjects`);
+      setStudentSubjects(data.data ?? []);
+    } catch (err) {
+      onToast(err.message, "error");
+    }
   };
 
   const handleGrade = async (ssId, grade, status) => {
@@ -85,6 +91,11 @@ export default function StudentSubjectsModal({
   const enrolledSubjectIds = new Set(studentSubjects.map((ss) => ss.subject_id));
   const availableSubjects = activeSubjects.filter((s) => !enrolledSubjectIds.has(s.id));
 
+  const previewSubjects = activeSubjects.filter(
+    (s) => s.course_id === student.course_id && s.year_level === enrollYear && s.semester === enrollSem
+  );
+  const toEnroll = previewSubjects.filter((s) => !enrolledSubjectIds.has(s.id));
+
   const fullName = (s) => {
     const parts = [s.first_name, s.middle_name, s.last_name].filter(Boolean);
     return parts.join(" ") || s.full_name || "—";
@@ -112,11 +123,11 @@ export default function StudentSubjectsModal({
         </div>
 
         {managingSubjects && (
-          <div className="bg-emerald-50/50 rounded-xl border border-emerald-100 p-4">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-emerald-50/50 rounded-xl border border-emerald-100 p-4 space-y-4">
+            <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-slate-800">Enroll by Semester</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">Enroll in all subjects for a year and semester at once</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">Select year and semester to see available subjects</p>
               </div>
               <button onClick={() => setManagingSubjects(false)}
                 className="text-xs font-medium text-white bg-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-700 transition">Done</button>
@@ -136,11 +147,59 @@ export default function StudentSubjectsModal({
                   {[1, 2].map((s) => <option key={s} value={s}>Semester {s}</option>)}
                 </select>
               </div>
-              <button onClick={handleEnrollSemester} disabled={saving}
-                className="px-6 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition disabled:opacity-50 flex items-center gap-1.5 h-[42px]">
-                {saving ? "..." : "Enroll Semester"}
-              </button>
             </div>
+            {previewSubjects.length === 0 ? (
+              <div className="text-xs text-slate-400 text-center py-4 bg-white rounded-lg border border-dashed border-slate-200">
+                No subjects found for {ordinal(enrollYear)} Year, Semester {enrollSem}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider">
+                    <tr>
+                      <th className="px-4 py-2 font-semibold">Code</th>
+                      <th className="px-4 py-2 font-semibold">Subject</th>
+                      <th className="px-4 py-2 font-semibold">Type</th>
+                      <th className="px-4 py-2 font-semibold">Units</th>
+                      <th className="px-4 py-2 font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {previewSubjects.map((s) => {
+                      const alreadyIn = enrolledSubjectIds.has(s.id);
+                      return (
+                        <tr key={s.id} className={`${alreadyIn ? "bg-slate-50" : "hover:bg-emerald-50"} transition-colors`}>
+                          <td className="px-4 py-2 font-mono text-slate-700">{s.subject_code}</td>
+                          <td className="px-4 py-2 text-slate-700">{s.subject_name}</td>
+                          <td className="px-4 py-2">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase ${s.subject_type === "major" ? "bg-purple-100 text-purple-700" : "bg-amber-100 text-amber-700"}`}>{s.subject_type}</span>
+                          </td>
+                          <td className="px-4 py-2 text-slate-600">{s.units}</td>
+                          <td className="px-4 py-2">
+                            {alreadyIn ? (
+                              <span className="text-[10px] bg-slate-200 text-slate-500 px-2 py-0.5 rounded font-medium">Already enrolled</span>
+                            ) : (
+                              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-medium">Ready to enroll</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {toEnroll.length > 0 && (
+              <div className="flex items-center justify-between bg-emerald-100/50 rounded-lg px-4 py-2.5">
+                <span className="text-xs text-emerald-700">
+                  <strong>{toEnroll.length}</strong> subject{toEnroll.length !== 1 ? "s" : ""} ready to enroll
+                </span>
+                <button onClick={handleEnrollSemester} disabled={saving}
+                  className="px-5 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition disabled:opacity-50">
+                  {saving ? "..." : `Enroll All (${toEnroll.length})`}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

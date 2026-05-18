@@ -12,6 +12,7 @@ const Register = () => {
         confirmPassword: "",
     });
     const [showPassword, setShowPassword] = useState(false);
+    const [agreed, setAgreed] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const { register } = useAuth();
@@ -27,6 +28,11 @@ const Register = () => {
 
         if (form.password !== form.confirmPassword) {
             setError("Passwords do not match.");
+            return;
+        }
+
+        if (!agreed) {
+            setError("You must agree to the Terms of Service and Privacy Policy.");
             return;
         }
 
@@ -168,10 +174,27 @@ const Register = () => {
                             </div>
                         </div>
 
+                        {/* Terms & Policy Agreement */}
+                        <div className="flex items-start gap-3 pt-2">
+                            <input
+                                type="checkbox"
+                                id="agree"
+                                checked={agreed}
+                                onChange={(e) => setAgreed(e.target.checked)}
+                                className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <label htmlFor="agree" className="text-xs text-slate-500 leading-relaxed select-none">
+                                I agree to the{" "}
+                                <a href="/terms" target="_blank" className="text-blue-600 font-semibold hover:underline">Terms of Service</a>{" "}
+                                and{" "}
+                                <a href="/privacy" target="_blank" className="text-blue-600 font-semibold hover:underline">Privacy Policy</a>.
+                            </label>
+                        </div>
+
                         {/* Submit Button */}
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || !agreed}
                             className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 active:scale-[0.98] transition-all shadow-xl shadow-blue-200 flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? (

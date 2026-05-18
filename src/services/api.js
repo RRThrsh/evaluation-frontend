@@ -68,6 +68,12 @@ async function request(endpoint, options = {}) {
     throw new ApiError(429, "Too many requests");
   }
 
+  if (res.status === 401) {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+    throw new ApiError(401, "Session expired");
+  }
+
   if (!res.ok) {
     throw new ApiError(res.status, data.message || data.error || `Request failed (${res.status})`);
   }

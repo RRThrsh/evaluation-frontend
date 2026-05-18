@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
+import exportToExcel from "../../utils/exportToExcel";
+import ConfirmModal from "../common/ConfirmModal";
 
 export default function SubjectManager() {
     const [subjects, setSubjects] = useState([]);
@@ -15,6 +17,10 @@ export default function SubjectManager() {
     });
     const [saving, setSaving] = useState(false);
     const [toast, setToast] = useState(null);
+    const [search, setSearch] = useState("");
+    const [confirmAction, setConfirmAction] = useState(null);
+    const [exportConfirm, setExportConfirm] = useState(null);
+    const [expandedCourses, setExpandedCourses] = useState({});
 
     const showToast = (message, type = "success") => {
         setToast({ message, type });
@@ -81,7 +87,7 @@ export default function SubjectManager() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Deactivate this subject?")) return;
+        setConfirmAction(null);
         try {
             await api.delete(`/api/admin/subjects/${id}`);
             showToast("Subject deactivated");
@@ -92,13 +98,60 @@ export default function SubjectManager() {
     };
 
     const activeSubjects = subjects.filter((s) => s.is_active !== false);
-    const subjectsByYear = {};
-    YEARS.forEach((y) => {
-        SEMESTERS.forEach((sem) => {
-            const key = `${y}-${sem}`;
-            subjectsByYear[key] = activeSubjects.filter((s) => s.year_level === y && s.semester === sem);
+    const filteredSubjects = useMemo(() => {
+        if (!search.trim()) return activeSubjects;
+        const q = search.toLowerCase();
+        return activeSubjects.filter((s) =>
+            s.subject_code.toLowerCase().includes(q) ||
+            s.subject_name.toLowerCase().includes(q) ||
+            (s.course_name || "").toLowerCase().includes(q)
+        );
+    }, [activeSubjects, search]);
+
+    // Group subjects by course
+    const subjectsByCourse = useMemo(() => {
+        const map = {};
+        for (const s of filteredSubjects) {
+            const cid = s.course_id || "__none__";
+            if (!map[cid]) map[cid] = { course_id: cid, course_code: s.course_code || s.course_name || "Uncategorized", course_name: s.course_name || "", subjects: [] };
+            map[cid].subjects.push(s);
+        }
+        // Sort by course code
+        return Object.values(map).sort((a, b) => a.course_code.localeCompare(b.course_code));
+    }, [filteredSubjects]);
+
+    const courseYearSemSubjects = useMemo(() => {
+        const result = {};
+        for (const grp of subjectsByCourse) {
+            const byYear = {};
+            YEARS.forEach((y) => {
+                SEMESTERS.forEach((sem) => {
+                    const key = `${y}-${sem}`;
+                    if (!byYear[key]) byYear[key] = [];
+                    byYear[key] = grp.subjects.filter((s) => s.year_level === y && s.semester === sem);
+                });
+            });
+            result[grp.course_id] = byYear;
+        }
+        return result;
+    }, [subjectsByCourse, YEARS, SEMESTERS]);
+
+    const toggleCourse = (courseId) => {
+        setExpandedCourses((prev) => {
+            const next = { ...prev };
+            if (next[courseId]) delete next[courseId];
+            else next[courseId] = true;
+            return next;
         });
-    });
+    };
+
+    const expandAll = () => {
+        const all = {};
+        subjectsByCourse.forEach((g) => { all[g.course_id] = true; });
+        setExpandedCourses(all);
+    };
+
+    const collapseAll = () => setExpandedCourses({});
 
     return (
         <div className="space-y-6">
@@ -165,7 +218,9 @@ export default function SubjectManager() {
                             <select value={form.prerequisite_id} onChange={(e) => setForm({ ...form, prerequisite_id: e.target.value })}
                                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                                 <option value="">— None —</option>
-                                {activeSubjects.map((s) => <option key={s.id} value={s.id}>{s.subject_code} — {s.subject_name}</option>)}
+                                {activeSubjects
+                                    .filter((s) => !form.course_id || s.course_id === form.course_id)
+                                    .map((s) => <option key={s.id} value={s.id}>{s.subject_code} — {s.subject_name}</option>)}
                             </select>
                         </div>
                     </div>
@@ -184,71 +239,151 @@ export default function SubjectManager() {
                 </form>
             </div>
 
-            {/* Curriculum View */}
+            {/* Curriculum View - Folder Layout by Course */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
                     <span className="text-sm font-semibold text-slate-800">Curriculum Layout</span>
-                    <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{activeSubjects.length} subjects</span>
+                    <div className="flex items-center gap-2">
+                        <input value={search} onChange={(e) => setSearch(e.target.value)}
+                            className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-48" placeholder="Search subjects..." />
+                        <button onClick={expandAll} className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg hover:bg-slate-200 transition">Expand All</button>
+                        <button onClick={collapseAll} className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg hover:bg-slate-200 transition">Collapse All</button>
+                        <button onClick={() => setExportConfirm({ step: 1, count: activeSubjects.length })}
+                            className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            Export
+                        </button>
+                        <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{activeSubjects.length} subjects</span>
+                    </div>
                 </div>
                 {loading ? (
                     <div className="p-10 text-center text-sm text-slate-400">Loading...</div>
+                ) : subjectsByCourse.length === 0 ? (
+                    <div className="p-10 text-center text-sm text-slate-400">{search ? "No subjects match your search" : "No subjects yet"}</div>
                 ) : (
-                    <div className="p-5 space-y-6">
-                        {YEARS.map((year) => (
-                            <div key={year}>
-                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">{ordinal(year)} Year</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {SEMESTERS.map((sem) => {
-                                        const key = `${year}-${sem}`;
-                                        const subs = subjectsByYear[key] || [];
-                                        return (
-                                            <div key={sem} className="border border-slate-200 rounded-xl overflow-hidden">
-                                                <div className="bg-slate-50 px-4 py-2 border-b border-slate-200">
-                                                    <span className="text-xs font-semibold text-slate-600">Semester {sem}</span>
-                                                    <span className="text-[10px] text-slate-400 ml-2">{subs.length} subjects</span>
-                                                </div>
-                                                {subs.length === 0 ? (
-                                                    <div className="p-4 text-center text-xs text-slate-400 italic">No subjects</div>
-                                                ) : (
-                                                    <div className="divide-y divide-slate-50">
-                                                        {subs.map((s) => (
-                                                            <div key={s.id} className="px-4 py-2.5 flex items-center justify-between group hover:bg-slate-50 transition-colors">
-                                                                <div className="min-w-0">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-xs font-mono font-medium text-slate-800">{s.subject_code}</span>
-                                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase ${s.subject_type === "major" ? "bg-purple-100 text-purple-700" : "bg-amber-100 text-amber-700"}`}>
-                                                                            {s.subject_type}
-                                                                        </span>
-                                                                    </div>
-                                                                    <p className="text-[11px] text-slate-500 truncate max-w-[250px]">{s.subject_name}</p>
-                                                                    {s.prerequisite_name && (
-                                                                        <p className="text-[10px] text-amber-500">Prereq: {s.prerequisite_name}</p>
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex items-center gap-2 shrink-0 ml-2">
-                                                                    <span className="text-[10px] text-slate-400">{s.units} units</span>
-                                                                    <button onClick={() => handleEdit(s)}
-                                                                        className="text-blue-400 hover:text-blue-600 transition opacity-0 group-hover:opacity-100 p-1">
-                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                                                    </button>
-                                                                    <button onClick={() => handleDelete(s.id)}
-                                                                        className="text-red-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100 p-1">
-                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
+                    <div className="p-5 space-y-4">
+                        {subjectsByCourse.map((grp) => {
+                            const expanded = !!expandedCourses[grp.course_id];
+                            const byYear = courseYearSemSubjects[grp.course_id] || {};
+                            const totalUnits = grp.subjects.reduce((sum, s) => sum + (s.units || 0), 0);
+                            return (
+                                <div key={grp.course_id} className="border border-slate-200 rounded-xl overflow-hidden">
+                                    {/* Course Folder Header */}
+                                    <button onClick={() => toggleCourse(grp.course_id)}
+                                        className="w-full flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-white hover:from-blue-50 hover:to-white transition text-left group">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <svg className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${expanded ? "rotate-90" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                            </svg>
+                                            <svg className={`w-5 h-5 shrink-0 ${expanded ? "text-blue-600" : "text-amber-500"}`} fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M2 6a2 2 0 012-2h5l2 2h9a2 2 0 012 2v1H2V6zm0 3h20v9a2 2 0 01-2 2H4a2 2 0 01-2-2V9z" />
+                                            </svg>
+                                            <div className="min-w-0">
+                                                <span className="text-sm font-bold text-slate-800">{grp.course_code}</span>
+                                                {grp.course_name && <span className="text-xs text-slate-400 ml-2">{grp.course_name}</span>}
                                             </div>
-                                        );
-                                    })}
+                                        </div>
+                                        <div className="flex items-center gap-3 shrink-0 ml-3">
+                                            <span className="text-[10px] text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded font-medium">{grp.subjects.length} subjects</span>
+                                            <span className="text-[10px] text-slate-400">{totalUnits} units</span>
+                                        </div>
+                                    </button>
+
+                                    {/* Course Content */}
+                                    {expanded && (
+                                        <div className="border-t border-slate-100 p-4 space-y-5">
+                                            {YEARS.map((year) => {
+                                                const yearHasSubjects = SEMESTERS.some((sem) => (byYear[`${year}-${sem}`] || []).length > 0);
+                                                if (!yearHasSubjects) return null;
+                                                return (
+                                                    <div key={year}>
+                                                        <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2.5">{ordinal(year)} Year</h5>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                            {SEMESTERS.map((sem) => {
+                                                                const subs = byYear[`${year}-${sem}`] || [];
+                                                                return (
+                                                                    <div key={sem} className="border border-slate-100 rounded-lg overflow-hidden">
+                                                                        <div className="bg-slate-50/50 px-3.5 py-1.5 border-b border-slate-100 flex items-center justify-between">
+                                                                            <span className="text-[11px] font-semibold text-slate-600">Semester {sem}</span>
+                                                                            <span className="text-[10px] text-slate-400">{subs.length}</span>
+                                                                        </div>
+                                                                        {subs.length === 0 ? (
+                                                                            <div className="p-3 text-center text-[11px] text-slate-300 italic">—</div>
+                                                                        ) : (
+                                                                            <div className="divide-y divide-slate-50">
+                                                                                {subs.map((s) => (
+                                                                                    <div key={s.id} className="px-3.5 py-2 flex items-center justify-between group hover:bg-slate-50 transition-colors">
+                                                                                        <div className="min-w-0">
+                                                                                            <div className="flex items-center gap-1.5">
+                                                                                                <span className="text-[11px] font-mono font-medium text-slate-800">{s.subject_code}</span>
+                                                                                                <span className={`text-[9px] px-1 py-0.5 rounded font-medium uppercase ${s.subject_type === "major" ? "bg-purple-100 text-purple-700" : "bg-amber-100 text-amber-700"}`}>{s.subject_type}</span>
+                                                                                            </div>
+                                                                                            <p className="text-[10px] text-slate-500 truncate max-w-[200px]">{s.subject_name}</p>
+                                                                                        </div>
+                                                                                        <div className="flex items-center gap-1 shrink-0 ml-2">
+                                                                                            <span className="text-[10px] text-slate-400">{s.units}u</span>
+                                                                                            <button onClick={() => handleEdit(s)}
+                                                                                                className="text-blue-300 hover:text-blue-600 transition opacity-0 group-hover:opacity-100 p-0.5">
+                                                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                                                                            </button>
+                                                                                            <button onClick={() => setConfirmAction({ id: s.id, name: s.subject_code })}
+                                                                                                className="text-red-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100 p-0.5">
+                                                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
+
+            {confirmAction && (
+                <ConfirmModal
+                    title="Deactivate Subject"
+                    message={`Deactivate subject "${confirmAction.name}"?`}
+                    extra="This will hide it from the curriculum. Existing enrollments are not affected."
+                    confirmLabel="Deactivate"
+                    confirmColor="bg-red-600 hover:bg-red-700"
+                    onConfirm={() => handleDelete(confirmAction.id)}
+                    onCancel={() => setConfirmAction(null)}
+                />
+            )}
+
+            {exportConfirm?.step === 1 && (
+                <ConfirmModal
+                    title="Export to Excel"
+                    message={`Export ${exportConfirm.count} subject(s) to Excel?`}
+                    confirmLabel="Continue"
+                    confirmColor="bg-blue-600 hover:bg-blue-700"
+                    onConfirm={() => setExportConfirm({ ...exportConfirm, step: 2 })}
+                    onCancel={() => setExportConfirm(null)}
+                />
+            )}
+
+            {exportConfirm?.step === 2 && (
+                <ConfirmModal
+                    title="Confirm Export"
+                    message={`Ready to download "${exportConfirm.count} subjects" as an Excel file. Proceed?`}
+                    confirmLabel="Export"
+                    confirmColor="bg-blue-600 hover:bg-blue-700"
+                    onConfirm={() => { setExportConfirm(null); exportToExcel(activeSubjects, "subjects.xlsx", "Subjects"); }}
+                    onCancel={() => setExportConfirm(null)}
+                />
+            )}
         </div>
     );
 }

@@ -20,6 +20,7 @@ import EnrollmentHistory from "../../../components/admin/EnrollmentHistory";
 import CompletedEnrollments from "../../../components/admin/CompletedEnrollments";
 import ModeratorCourses from "../../../components/admin/ModeratorCourses";
 import SvgIcon from "../../../components/common/SvgIcon";
+import ConfirmModal from "../../../components/common/ConfirmModal";
 
 const TABLE_GROUPS = [
   { name: "Academic", tables: ["students", "subjects", "student_subjects", "student_units", "subject_requests"] },
@@ -43,6 +44,7 @@ export default function AdminHome() {
   const [error, setError] = useState("");
   const [tables, setTables] = useState([]);
   const [toast, setToast] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const [pendingUsers, setPendingUsers] = useState([]);
   const [pendingUsersLoading, setPendingUsersLoading] = useState(false);
@@ -156,7 +158,6 @@ export default function AdminHome() {
   };
 
   const handleShutdown = async () => {
-    if (!window.confirm("Shut down the entire system? This cannot be undone.")) return;
     try {
       await api.post("/api/admin/shutdown");
       showToast("Shutdown initiated");
@@ -205,7 +206,7 @@ export default function AdminHome() {
               onSend={handleBroadcast}
               controls={controls}
               onToggle={toggleControl}
-              onShutdown={handleShutdown}
+              onShutdown={() => setConfirmAction({ action: "shutdown" })}
             />
           )}
 
@@ -235,6 +236,17 @@ export default function AdminHome() {
           )}
         </main>
       </div>
+
+      {confirmAction?.action === "shutdown" && (
+        <ConfirmModal
+          title="⚠️ Emergency Shutdown"
+          message="Shut down the entire system? This cannot be undone."
+          confirmLabel="Shut Down"
+          confirmColor="bg-red-600 hover:bg-red-700"
+          onConfirm={() => { setConfirmAction(null); handleShutdown(); }}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
     </div>
   );
 }

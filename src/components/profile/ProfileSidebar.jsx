@@ -1,7 +1,10 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
 import SvgIcon from "../common/SvgIcon";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 export default function ProfileSidebar({ user }) {
+  const [showChangePassword, setShowChangePassword] = useState(false);
+
   return (
     <aside className="space-y-6">
       <div className="rounded-[28px] border border-white/50 bg-white/80 p-6 shadow-lg shadow-slate-200/50 backdrop-blur-xl">
@@ -14,12 +17,14 @@ export default function ProfileSidebar({ user }) {
             <p className="mt-1 text-sm leading-relaxed text-slate-500">Manage your password and account security settings.</p>
           </div>
         </div>
-        <Link to="/forgot-password"
+        <button onClick={() => setShowChangePassword(true)}
           className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
           <SvgIcon path="M15 7a2 2 0 012 2" />
           Change Password
-        </Link>
+        </button>
       </div>
+
+      {showChangePassword && <ChangePasswordModal onClose={() => setShowChangePassword(false)} />}
 
       <div className="rounded-[28px] border border-white/50 bg-white/80 p-6 shadow-lg shadow-slate-200/50 backdrop-blur-xl">
         <h3 className="text-lg font-bold text-slate-900">Account Overview</h3>

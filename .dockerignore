@@ -1,4 +1,11 @@
 node_modules
-dist
-.git
+npm-debug.log*
 .env
+.env.local
+.git
+.gitignore
+Dockerfile
+.dockerignore
+README.md
+coverage
+*.md

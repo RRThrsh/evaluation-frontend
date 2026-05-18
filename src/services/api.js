@@ -72,8 +72,6 @@ async function request(endpoint, options = {}) {
     throw new ApiError(res.status, data.message || data.error || `Request failed (${res.status})`);
   }
 
-  await new Promise((r) => setTimeout(r, 3000));
-
   if (isGet) setCache(cacheKey, data);
   else clearCache(endpoint.split("/").slice(0, 5).join("/"));
 

@@ -14,7 +14,6 @@ export default function RoleManager() {
   const [permissions, setPermissions] = useState([]);
   const [rolePerms, setRolePerms] = useState({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = "success") => {
@@ -25,9 +24,10 @@ export default function RoleManager() {
   const load = async () => {
     setLoading(true);
     try {
-      const [rolesData, permsData] = await Promise.all([
+      const [rolesData, permsData, rpData] = await Promise.all([
         api.get("/api/admin/tables/roles?limit=50"),
         api.get("/api/admin/tables/permissions?limit=50"),
+        api.get("/api/admin/role-permissions"),
       ]);
       const r = rolesData.data?.rows ?? [];
       const p = permsData.data?.rows ?? [];
@@ -35,12 +35,9 @@ export default function RoleManager() {
       setPermissions(p);
 
       const rp = {};
-      for (const role of r) {
-        try {
-          const res = await api.get(`/api/admin/tables/role_permissions?limit=100`);
-          const all = res.data?.rows ?? [];
-          rp[role.id] = all.filter((rp) => rp.role_id === role.id).map((rp) => rp.permission_id);
-        } catch { rp[role.id] = []; }
+      for (const row of (rpData.data || [])) {
+        if (!rp[row.role_id]) rp[row.role_id] = [];
+        rp[row.role_id].push(row.permission_id);
       }
       setRolePerms(rp);
     } catch (err) {
@@ -60,9 +57,9 @@ export default function RoleManager() {
     }));
     try {
       if (hasIt) {
-        await api.post("/api/query", { sql: `DELETE FROM role_permissions WHERE role_id = $1 AND permission_id = $2`, params: [roleId, permId] });
+        await api.post("/api/admin/role-permissions/remove", { role_id: roleId, permission_id: permId });
       } else {
-        await api.post("/api/query", { sql: `INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)`, params: [roleId, permId] });
+        await api.post("/api/admin/role-permissions", { role_id: roleId, permission_id: permId });
       }
     } catch {
       setRolePerms(old);

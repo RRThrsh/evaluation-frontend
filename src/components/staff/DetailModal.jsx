@@ -1,6 +1,13 @@
+import { useEffect } from "react";
 import EvaluationReport from "./EvaluationReport";
 
 export default function DetailModal({ evalData, onClose, onSendPdf, sendingPdf }) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
   if (!evalData) return null;
 
   const statusColor = {
@@ -12,8 +19,8 @@ export default function DetailModal({ evalData, onClose, onSendPdf, sendingPdf }
   }[evalData.status] || "text-yellow-600";
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white w-full max-w-lg rounded-xl shadow-lg p-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white w-full max-w-lg rounded-xl shadow-lg p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-slate-800">Evaluation Details</h2>
           <button onClick={onClose} className="text-slate-500 hover:text-red-500">✕</button>

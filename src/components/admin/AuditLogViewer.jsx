@@ -17,13 +17,39 @@ export default function AuditLogViewer() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
   const [page, setPage] = useState(1);
+  const [filterAction, setFilterAction] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
 
-  useEffect(() => {
-    api.get("/api/audit-logs")
-      .then((data) => setLogs(Array.isArray(data) ? data : data?.data ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const loadLogs = async (filters = {}) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filters.action) params.set("action", filters.action);
+      if (filters.dateFrom) params.set("date_from", filters.dateFrom);
+      if (filters.dateTo) params.set("date_to", filters.dateTo);
+      const qs = params.toString();
+      const data = await api.get(`/api/audit-logs${qs ? `?${qs}` : ""}`);
+      setLogs(Array.isArray(data) ? data : data?.data ?? []);
+    } catch {}
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadLogs(); }, []);
+
+  const handleFilter = (e) => {
+    e.preventDefault();
+    setPage(1);
+    loadLogs({ action: filterAction, dateFrom: filterDateFrom, dateTo: filterDateTo });
+  };
+
+  const handleClear = () => {
+    setFilterAction("");
+    setFilterDateFrom("");
+    setFilterDateTo("");
+    setPage(1);
+    loadLogs();
+  };
 
   const actionColor = (action) => {
     if (action?.toLowerCase().startsWith("create")) return "text-emerald-600 bg-emerald-50";
@@ -50,6 +76,37 @@ export default function AuditLogViewer() {
         </div>
         <span className="text-xs text-slate-400 bg-slate-100 px-3 py-1.5 rounded-lg font-medium">{logs.length} entries</span>
       </div>
+
+      <form onSubmit={handleFilter} className="flex flex-wrap gap-3 items-end mb-5">
+        <div>
+          <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Action</label>
+          <select value={filterAction} onChange={(e) => setFilterAction(e.target.value)}
+            className="border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+            <option value="">All</option>
+            <option value="CREATE">Create</option>
+            <option value="UPDATE">Update</option>
+            <option value="DELETE">Delete</option>
+            <option value="LOGIN">Login</option>
+            <option value="LOGOUT">Logout</option>
+            <option value="BROADCAST">Broadcast</option>
+            <option value="SHUTDOWN">Shutdown</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">From</label>
+          <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)}
+            className="border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
+        </div>
+        <div>
+          <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">To</label>
+          <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)}
+            className="border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
+        </div>
+        <button type="submit"
+          className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition">Filter</button>
+        <button type="button" onClick={handleClear}
+          className="px-4 py-2 text-xs font-medium text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Clear</button>
+      </form>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">

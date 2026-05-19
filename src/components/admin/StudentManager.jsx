@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
+import { sanitizeObject } from "../../utils/sanitize";
 import StudentForm from "../../components/admin/StudentForm";
 import StudentSubjectsModal from "../../components/admin/StudentSubjectsModal";
 import StudentList from "../../components/admin/StudentList";
+import ConfirmModal from "../common/ConfirmModal";
 
 export default function StudentManager() {
     const [students, setStudents] = useState([]);
@@ -13,15 +15,17 @@ export default function StudentManager() {
     const [loading, setLoading] = useState(true);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [toast, setToast] = useState(null);
+    const [search, setSearch] = useState("");
 
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({
         email: "", student_number: "", first_name: "", last_name: "", middle_name: "",
         date_of_birth: "", gender: "", address: "", contact_number: "",
-        year_level: 1, course_id: "",
+        year_level: 1, current_semester: 1, course_id: "",
     });
     const [editingStudent, setEditingStudent] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [confirmAction, setConfirmAction] = useState(null);
 
     const showToast = (message, type = "success") => {
         setToast({ message, type });
@@ -50,7 +54,7 @@ export default function StudentManager() {
     useEffect(() => { load(); }, []);
 
     const openCreateForm = async () => {
-        setForm({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, course_id: "" });
+        setForm({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, current_semester: 1, course_id: "" });
         setEditingStudent(null);
         setShowForm(true);
         try {
@@ -71,6 +75,7 @@ export default function StudentManager() {
             address: student.address || "",
             contact_number: student.contact_number || "",
             year_level: student.year_level || 1,
+            current_semester: student.current_semester || 1,
             course_id: student.course_id || "",
         });
         setEditingStudent(student.id);
@@ -90,21 +95,21 @@ export default function StudentManager() {
         setSaving(true);
         try {
             if (editingStudent) {
-                await api.put(`/api/admin/students/${editingStudent}`, {
+                await api.put(`/api/admin/students/${editingStudent}`, sanitizeObject({
                     email: form.email.trim() || null, first_name: form.first_name.trim(), last_name: form.last_name.trim(),
                     middle_name: form.middle_name.trim() || null, date_of_birth: form.date_of_birth || null,
                     gender: form.gender || null, address: form.address.trim() || null,
-                    contact_number: form.contact_number.trim() || null, year_level: form.year_level, course_id: form.course_id || null,
-                });
+                    contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null,
+                }));
                 showToast("Student updated");
             } else {
-                await api.post("/api/admin/students", {
+                await api.post("/api/admin/students", sanitizeObject({
                     email: form.email.trim(), student_number: form.student_number.toUpperCase(),
                     first_name: form.first_name.trim(), last_name: form.last_name.trim(),
                     middle_name: form.middle_name.trim() || null, date_of_birth: form.date_of_birth || null,
                     gender: form.gender || null, address: form.address.trim() || null,
-                    contact_number: form.contact_number.trim() || null, year_level: form.year_level, course_id: form.course_id || null,
-                });
+                    contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null,
+                }));
                 showToast("Student created");
             }
             setShowForm(false);
@@ -117,7 +122,7 @@ export default function StudentManager() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Delete this student? All enrollment records will also be deleted.")) return;
+        setConfirmAction(null);
         try {
             await api.delete(`/api/admin/students/${id}`);
             showToast("Student deleted");
@@ -127,6 +132,15 @@ export default function StudentManager() {
             showToast(err.message, "error");
         }
     };
+
+    const filteredStudents = useMemo(() => {
+        if (!search.trim()) return students;
+        const q = search.toLowerCase();
+        return students.filter((s) => {
+            const name = [s.first_name, s.middle_name, s.last_name, s.full_name].filter(Boolean).join(" ").toLowerCase();
+            return s.student_number.toLowerCase().includes(q) || name.includes(q) || (s.course_code || "").toLowerCase().includes(q);
+        });
+    }, [students, search]);
 
     return (
         <div className="space-y-6">
@@ -159,12 +173,28 @@ export default function StudentManager() {
             )}
 
             <StudentList
-                students={students}
+                students={filteredStudents}
+                allStudents={students}
                 loading={loading}
+                search={search}
+                setSearch={setSearch}
                 onSelect={setSelectedStudent}
                 onEdit={openEditForm}
                 onAdd={openCreateForm}
+                onDelete={(s) => setConfirmAction({ id: s.id, name: `${s.first_name} ${s.last_name}` })}
             />
+
+            {confirmAction && (
+                <ConfirmModal
+                    title="Delete Student"
+                    message={`Delete student "${confirmAction.name}"?`}
+                    extra="All enrollment records and data will also be deleted. This cannot be undone."
+                    confirmLabel="Delete"
+                    confirmColor="bg-red-600 hover:bg-red-700"
+                    onConfirm={() => handleDelete(confirmAction.id)}
+                    onCancel={() => setConfirmAction(null)}
+                />
+            )}
         </div>
     );
 }

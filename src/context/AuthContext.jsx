@@ -36,7 +36,12 @@ export function AuthProvider({ children }) {
     return api.post("/api/auth/forgot-password", { email });
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await api.post("/api/auth/logout");
+    } catch {
+      // Server-side logout is best-effort
+    }
     localStorage.removeItem("token");
     setUser(null);
   }, []);

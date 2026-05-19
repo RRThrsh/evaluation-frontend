@@ -3,6 +3,7 @@ import Header from "../../components/layout/Header";
 import Footer from "../../components/layout/Footer";
 import { Mail, Phone, MapPin, Send, CheckCircle } from "lucide-react";
 import api from "../../services/api";
+import { sanitizeObject } from "../../utils/sanitize";
 
 const Contact = () => {
     const [form, setForm] = useState({ name: "", student_id: "", email: "", message: "" });
@@ -19,7 +20,7 @@ const Contact = () => {
         setError("");
         setSubmitting(true);
         try {
-            await api.post("/api/contact", form);
+            await api.post("/api/contact", sanitizeObject(form));
             setSent(true);
             setForm({ name: "", student_id: "", email: "", message: "" });
         } catch (err) {

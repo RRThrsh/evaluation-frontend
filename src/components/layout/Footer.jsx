@@ -6,24 +6,24 @@ const Footer = () => {
         <footer className="mt-24 border-t border-slate-900 bg-slate-950 text-white">
             <div className="max-w-7xl mx-auto px-6 py-16">
 
-                {/* Academic Support CTA */}
+                {/* Support CTA */}
                 <div className="mb-16 p-8 lg:p-12 rounded-3xl bg-gradient-to-br from-slate-900 to-black border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8">
                     
                     <div className="max-w-2xl text-center md:text-left">
                         <h3 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
-                            Need help understanding your evaluation?
+                            Need help with an evaluation?
                         </h3>
                         <p className="mt-3 text-slate-400 leading-relaxed">
-                            Our academic advisors are available for 1-on-1 consultations to help you 
-                            interpret your performance data and plan your next semester.
+                            Reach out to the support team for assistance with evaluation submissions, 
+                            approvals, or system access.
                         </p>
                     </div>
 
                     <Link
-                        to="/support"
+                        to="/contact"
                         className="whitespace-nowrap px-8 py-4 rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-500 active:scale-95 transition-all shadow-lg shadow-blue-900/20"
                     >
-                        Contact Advisor
+                        Contact Support
                     </Link>
                 </div>
 
@@ -44,29 +44,27 @@ const Footer = () => {
                         </p>
                     </div>
 
-                    {/* Academic Resources */}
+                    {/* Resources */}
                     <div>
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">
                             Resources
                         </h3>
                         <ul className="space-y-4 text-sm font-medium">
-                            <li><Link to="/portal" className="text-slate-400 hover:text-blue-400 transition">Student Portal</Link></li>
-                            <li><Link to="/handbook" className="text-slate-400 hover:text-blue-400 transition">Academic Handbook</Link></li>
-                            <li><Link to="/grading-policy" className="text-slate-400 hover:text-blue-400 transition">Grading Policy</Link></li>
-                            <li><Link to="/scholarships" className="text-slate-400 hover:text-blue-400 transition">Honors & Scholarships</Link></li>
+                            <li><Link to="/" className="text-slate-400 hover:text-blue-400 transition">Home</Link></li>
+                            <li><Link to="/about" className="text-slate-400 hover:text-blue-400 transition">About the System</Link></li>
+                            <li><Link to="/contact" className="text-slate-400 hover:text-blue-400 transition">Contact Support</Link></li>
                         </ul>
                     </div>
 
-                    {/* Support & Admin */}
+                    {/* Quick Access */}
                     <div>
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">
-                            Support
+                            Quick Access
                         </h3>
                         <ul className="space-y-4 text-sm font-medium">
-                            <li><Link to="/help" className="text-slate-400 hover:text-blue-400 transition">IT Help Desk</Link></li>
-                            <li><Link to="/registrar" className="text-slate-400 hover:text-blue-400 transition">Registrar's Office</Link></li>
-                            <li><Link to="/feedback" className="text-slate-400 hover:text-blue-400 transition">System Feedback</Link></li>
-                            <li><Link to="/privacy" className="text-slate-400 hover:text-blue-400 transition">Student Privacy</Link></li>
+                            <li><Link to="/login" className="text-slate-400 hover:text-blue-400 transition">Staff Login</Link></li>
+                            <li><Link to="/register" className="text-slate-400 hover:text-blue-400 transition">Register Account</Link></li>
+                            <li><Link to="/forgot-password" className="text-slate-400 hover:text-blue-400 transition">Reset Password</Link></li>
                         </ul>
                     </div>
 
@@ -88,7 +86,7 @@ const Footer = () => {
                 {/* Bottom Bar */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                     <p className="text-xs text-slate-500">
-                        © {new Date().getFullYear()} College Student Evaluation System. All rights reserved.
+                        © {new Date().getFullYear()} Student Evaluation Workflow System. All rights reserved.
                     </p>
 
                     <div className="flex items-center gap-2">

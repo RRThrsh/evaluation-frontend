@@ -19,7 +19,13 @@ import RoleManager from "../../../components/admin/RoleManager";
 import EnrollmentHistory from "../../../components/admin/EnrollmentHistory";
 import CompletedEnrollments from "../../../components/admin/CompletedEnrollments";
 import ModeratorCourses from "../../../components/admin/ModeratorCourses";
+import SessionManager from "../../../components/admin/SessionManager";
+import ModeratorEvaluations from "../../../components/admin/ModeratorEvaluations";
+import BulkImport from "../../../components/admin/BulkImport";
+import GradeReports from "../../../components/admin/GradeReports";
 import SvgIcon from "../../../components/common/SvgIcon";
+import ConfirmModal from "../../../components/common/ConfirmModal";
+import { sanitizeInput } from "../../../utils/sanitize";
 
 const TABLE_GROUPS = [
   { name: "Academic", tables: ["students", "subjects", "student_subjects", "student_units", "subject_requests"] },
@@ -43,6 +49,7 @@ export default function AdminHome() {
   const [error, setError] = useState("");
   const [tables, setTables] = useState([]);
   const [toast, setToast] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const [pendingUsers, setPendingUsers] = useState([]);
   const [pendingUsersLoading, setPendingUsersLoading] = useState(false);
@@ -136,7 +143,7 @@ export default function AdminHome() {
   const handleBroadcast = async () => {
     if (!broadcast.trim()) return;
     try {
-      await api.post("/api/admin/broadcast", { message: broadcast });
+      await api.post("/api/admin/broadcast", { message: sanitizeInput(broadcast) });
       showToast("Broadcast sent");
       setBroadcast("");
     } catch (err) {
@@ -144,19 +151,18 @@ export default function AdminHome() {
     }
   };
 
-  const toggleControl = async (label, state) => {
+  const toggleControl = async (key, state) => {
     const newState = state === "Enabled" ? "Disabled" : "Enabled";
     try {
-      await api.post("/api/admin/controls/toggle", { label, state: newState });
-      setControls((prev) => prev.map((c) => c.label === label ? { ...c, state: newState } : c));
-      showToast(`${label}: ${newState}`);
+      await api.post("/api/admin/controls/toggle", { key, state: newState });
+      setControls((prev) => prev.map((c) => c.key === key ? { ...c, state: newState } : c));
+      showToast(`${key}: ${newState}`);
     } catch (err) {
       showToast(err.message, "error");
     }
   };
 
   const handleShutdown = async () => {
-    if (!window.confirm("Shut down the entire system? This cannot be undone.")) return;
     try {
       await api.post("/api/admin/shutdown");
       showToast("Shutdown initiated");
@@ -205,7 +211,7 @@ export default function AdminHome() {
               onSend={handleBroadcast}
               controls={controls}
               onToggle={toggleControl}
-              onShutdown={handleShutdown}
+              onShutdown={() => setConfirmAction({ action: "shutdown" })}
             />
           )}
 
@@ -230,11 +236,27 @@ export default function AdminHome() {
           {activeTab === "completed-enrollments" && <CompletedEnrollments />}
           {activeTab === "moderator-courses" && <ModeratorCourses />}
 
+          {activeTab === "sessions" && <SessionManager />}
+          {activeTab === "moderator-evaluations" && <ModeratorEvaluations />}
+          {activeTab === "bulk-import" && <BulkImport />}
+          {activeTab === "reports" && <GradeReports />}
+
           {activeTab === "database" && (
             <DatabaseViewer selectedTable={selectedTable} tableData={tableData} tableLoading={tableLoading} onLoadTable={loadTable} />
           )}
         </main>
       </div>
+
+      {confirmAction?.action === "shutdown" && (
+        <ConfirmModal
+          title="⚠️ Emergency Shutdown"
+          message="Shut down the entire system? This cannot be undone."
+          confirmLabel="Shut Down"
+          confirmColor="bg-red-600 hover:bg-red-700"
+          onConfirm={() => { setConfirmAction(null); handleShutdown(); }}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
     </div>
   );
 }

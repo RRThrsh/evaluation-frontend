@@ -35,6 +35,7 @@ export function RequestSection({ title, dotColor, requests, onOpen }) {
                   )}
                 </div>
                 <p className="text-sm text-zinc-700 mt-1">{req.student_number || "N/A"} — {req.reason ?? req.type}</p>
+                {req.course_name && <p className="text-xs text-zinc-400 mt-0.5">{req.course_code || req.course_name}</p>}
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-zinc-400">{new Date(req.created_at).toLocaleDateString()}</span>

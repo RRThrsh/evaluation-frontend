@@ -85,7 +85,13 @@ export default function StaffHome() {
             onSubmit={handleSubmitClick}
           />
 
-          <SubmissionsList evaluations={evaluations} onSelect={setSelectedEval} />
+          <SubmissionsList evaluations={evaluations} onSelect={(ev) => {
+            if (!ev.staff_viewed_at) {
+              api.patch(`/api/staff/evaluations/${ev.id}/viewed`).catch(() => {});
+              setEvaluations(prev => prev.map(e => e.id === ev.id ? { ...e, staff_viewed_at: new Date().toISOString() } : e));
+            }
+            setSelectedEval(ev);
+          }} />
         </div>
       </div>
 

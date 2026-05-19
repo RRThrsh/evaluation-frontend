@@ -16,7 +16,7 @@ export default function ModeratorHome() {
   const [selectedSubjectToAdd, setSelectedSubjectToAdd] = useState("");
 
   const fetchRequests = () => {
-    api.get("/api/moderator/evaluations")
+    api.get("/api/moderator/evaluations/all")
       .then((data) => setRequests(data.data ?? data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -56,14 +56,9 @@ export default function ModeratorHome() {
 
   const handleEvaluate = async (id) => {
     setEvaluating(true);
-    try {
-      const data = await api.post(`/api/moderator/evaluations/${id}/evaluate`);
-      setEvaluation(data.data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setEvaluating(false);
-    }
+    const data = await api.post(`/api/moderator/evaluations/${id}/evaluate`);
+    setEvaluation(data.data);
+    setEvaluating(false);
   };
 
   const handleOverride = async (id, action) => {

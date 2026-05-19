@@ -1,3 +1,5 @@
+import { sanitizeInput } from "../../utils/sanitize";
+
 export default function SubjectEditor({ subjectData, selectedSubjectToAdd, setSelectedSubjectToAdd, onAdd, onUpdate, onDelete, onClose }) {
   return (
     <div className="mt-4 space-y-3">
@@ -33,7 +35,7 @@ export default function SubjectEditor({ subjectData, selectedSubjectToAdd, setSe
               <option value="REJECTED">REJECTED</option>
             </select>
             <input type="text" defaultValue={s.grade || ""}
-              onBlur={(e) => { if (e.target.value !== (s.grade || "")) onUpdate(s.id, { grade: e.target.value || null }); }}
+              onBlur={(e) => { const v = sanitizeInput(e.target.value); if (v !== (s.grade || "")) onUpdate(s.id, { grade: v || null }); }}
               placeholder="Grade" className="w-16 text-xs border border-zinc-200 rounded px-1 py-0.5 text-center" />
             <button onClick={() => onDelete(s.id)} className="text-red-500 hover:text-red-700 text-xs font-bold px-1">✕</button>
           </div>

@@ -25,7 +25,7 @@ export default function CompletedEnrollments() {
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState(null);
-  const [confirmExport, setConfirmExport] = useState(false);
+  const [confirmExport, setConfirmExport] = useState(null);
 
   useEffect(() => {
     api.get("/api/admin/enrollments/completed")
@@ -52,7 +52,7 @@ export default function CompletedEnrollments() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-400 bg-slate-100 px-3 py-1.5 rounded-lg font-medium">{enrollments.length} pre-enrolled</span>
-          <button onClick={() => setConfirmExport(true)} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">
+          <button onClick={() => setConfirmExport({ step: 1, count: enrollments.length })} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             Export Excel
           </button>
@@ -159,14 +159,25 @@ export default function CompletedEnrollments() {
         </div>
       )}
 
-      {confirmExport && (
+      {confirmExport?.step === 1 && (
         <ConfirmModal
           title="Export to Excel"
-          message={`Export ${enrollments.length} pre-enrolled student(s) to Excel?`}
+          message={`Export ${confirmExport.count} pre-enrolled student(s) to Excel?`}
+          confirmLabel="Continue"
+          confirmColor="bg-blue-600 hover:bg-blue-700"
+          onConfirm={() => setConfirmExport({ ...confirmExport, step: 2 })}
+          onCancel={() => setConfirmExport(null)}
+        />
+      )}
+
+      {confirmExport?.step === 2 && (
+        <ConfirmModal
+          title="Confirm Export"
+          message={`Ready to download "${confirmExport.count} pre-enrolled students" as an Excel file. Proceed?`}
           confirmLabel="Export"
           confirmColor="bg-blue-600 hover:bg-blue-700"
-          onConfirm={() => { setConfirmExport(false); exportToExcel(enrollments, "pre-enrolled-students.xlsx", "PreEnroll"); }}
-          onCancel={() => setConfirmExport(false)}
+          onConfirm={() => { setConfirmExport(null); exportToExcel(enrollments, "pre-enrolled-students.xlsx", "PreEnroll"); }}
+          onCancel={() => setConfirmExport(null)}
         />
       )}
     </div>

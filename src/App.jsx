@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ClickSoundProvider from "./components/common/ClickSoundProvider";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 
 /*  ==============================================
     PAGES
@@ -11,6 +12,7 @@ import About from "./pages/public/About";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 import Contact from "./pages/public/Contact";
 
 /*  ===============================================
@@ -32,6 +34,7 @@ import Maintenance from "./pages/error/Maintenance";
 function App() {
     return (
         <ClickSoundProvider>
+        <ErrorBoundary>
         <AuthProvider>
             <BrowserRouter>
                 <Routes>
@@ -46,6 +49,10 @@ function App() {
                     <Route
                         path="/forgot-password"
                         element={<ForgotPassword />}
+                    />
+                    <Route
+                        path="/reset-password/:token"
+                        element={<ResetPassword />}
                     />
 
                     {/* STAFF */}
@@ -86,6 +93,7 @@ function App() {
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
+        </ErrorBoundary>
         </ClickSoundProvider>
     );
 }

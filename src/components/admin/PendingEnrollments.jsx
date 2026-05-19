@@ -14,9 +14,11 @@ function SvgIcon({ path, className = "w-5 h-5" }) {
 export default function PendingEnrollments({ enrollments, loading, onUpdate }) {
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [confirmExport, setConfirmExport] = useState(false);
+  const [confirmExport, setConfirmExport] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const handleConfirm = async (id) => {
+    setConfirmAction(null);
     try {
       await api.post(`/api/admin/enrollments/${id}/confirm`);
       onUpdate();
@@ -27,6 +29,7 @@ export default function PendingEnrollments({ enrollments, loading, onUpdate }) {
   };
 
   const handleReject = async (id) => {
+    setConfirmAction(null);
     try {
       await api.post(`/api/admin/enrollments/${id}/reject`);
       onUpdate();
@@ -57,7 +60,7 @@ export default function PendingEnrollments({ enrollments, loading, onUpdate }) {
     <div className="rounded-3xl border border-white/70 bg-white/90 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-slate-900">Evaluated Students</h3>
-        <button onClick={() => setConfirmExport(true)} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">
+        <button onClick={() => setConfirmExport({ step: 1, count: enrollments.length })} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">
           <SvgIcon path="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" className="w-3.5 h-3.5" />
           Export Excel
         </button>
@@ -166,13 +169,13 @@ export default function PendingEnrollments({ enrollments, loading, onUpdate }) {
 
                 <div className="flex items-center gap-2 pt-2">
                   <button
-                    onClick={() => handleConfirm(detail.id)}
+                    onClick={() => setConfirmAction({ id: detail.id, action: "confirm", name: `${detail.first_name} ${detail.last_name}` })}
                     className="flex-1 rounded-xl bg-emerald-500 py-2.5 text-sm font-semibold text-white hover:bg-emerald-600 transition"
                   >
                     Confirm Enrollment
                   </button>
                   <button
-                    onClick={() => handleReject(detail.id)}
+                    onClick={() => setConfirmAction({ id: detail.id, action: "reject", name: `${detail.first_name} ${detail.last_name}` })}
                     className="flex-1 rounded-xl border border-red-200 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition"
                   >
                     Reject Enrollment
@@ -184,15 +187,40 @@ export default function PendingEnrollments({ enrollments, loading, onUpdate }) {
         </div>
       )}
 
-      {confirmExport && (
+      {confirmExport?.step === 1 && (
         <ConfirmModal
           title="Export to Excel"
-          message={`Export ${enrollments.length} evaluated student(s) to Excel?`}
+          message={`Export ${confirmExport.count} evaluated student(s) to Excel?`}
+          confirmLabel="Continue"
+          confirmColor="bg-blue-600 hover:bg-blue-700"
+          onConfirm={() => setConfirmExport({ ...confirmExport, step: 2 })}
+          onCancel={() => setConfirmExport(null)}
+        />
+      )}
+
+      {confirmExport?.step === 2 && (
+        <ConfirmModal
+          title="Confirm Export"
+          message={`Ready to download "${confirmExport.count} evaluated students" as an Excel file. Proceed?`}
           confirmLabel="Export"
           confirmColor="bg-blue-600 hover:bg-blue-700"
-          onConfirm={() => { setConfirmExport(false); exportToExcel(enrollments, "evaluated-students.xlsx", "Evaluated"); }}
-          onCancel={() => setConfirmExport(false)}
+          onConfirm={() => { setConfirmExport(null); exportToExcel(enrollments, "evaluated-students.xlsx", "Evaluated"); }}
+          onCancel={() => setConfirmExport(null)}
         />
+      )}
+
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <ConfirmModal
+            title={confirmAction.action === "confirm" ? "Confirm Enrollment" : "Reject Enrollment"}
+            message={`${confirmAction.action === "confirm" ? "Confirm" : "Reject"} enrollment for ${confirmAction.name}?`}
+            extra={confirmAction.action === "reject" ? "This will deny the student's enrollment request." : "The student will be enrolled in the recommended subjects."}
+            confirmLabel={confirmAction.action === "confirm" ? "Confirm" : "Reject"}
+            confirmColor={confirmAction.action === "confirm" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700"}
+            onConfirm={() => confirmAction.action === "confirm" ? handleConfirm(confirmAction.id) : handleReject(confirmAction.id)}
+            onCancel={() => setConfirmAction(null)}
+          />
+        </div>
       )}
     </div>
   );

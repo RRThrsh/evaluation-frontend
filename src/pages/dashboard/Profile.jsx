@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { sanitizeObject } from "../../utils/sanitize";
 import ProfileHeader from "../../components/profile/ProfileHeader";
 import ProfileHero from "../../components/profile/ProfileHero";
 import ProfileInfo from "../../components/profile/ProfileInfo";
@@ -35,7 +36,7 @@ export default function Profile() {
         setSaving(true);
         setEditError("");
         try {
-            await updateProfile({ full_name: form.full_name.trim(), email: form.email.trim() });
+            await updateProfile(sanitizeObject({ full_name: form.full_name.trim(), email: form.email.trim() }));
             setEditing(false);
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);

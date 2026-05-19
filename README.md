@@ -21,7 +21,9 @@ Built with **React 19**, **Vite**, **Tailwind CSS 4**, **Framer Motion**, and **
 - **Admin approval flow**: New accounts = `pending`; admin approves before login
 - **Public student search**: Look up any student by number + enrolled subjects
 - **Staff submits PENDING request** — no auto-evaluation; moderator reviews
+- **Staff submission tracking**: Submissions split into **Pending** (yellow, unseen), **Response Received** (green with blue dot on unread items), and **Seen** (gray) — all with pagination
 - **Moderator evaluation**: Grade checking, carry-over/retake/prerequisite detection; always sets FOR_ENROLLMENT
+- **Moderator request list**: Shows assigned course name/code for each student
 - **Irregular handling**: >2 failed subjects → moderator marks irregular → admin decides enrollment
 - **Admin enrollment**: Clickable row opens modal with Confirm/Reject buttons
 - **Moderator-course assignment**: Moderators only see students in their assigned courses
@@ -33,8 +35,9 @@ Built with **React 19**, **Vite**, **Tailwind CSS 4**, **Framer Motion**, and **
 - **Academic Config**: Admin-managed grading rules, thresholds, labels, and student number prefix
 - **Database browser**: Admin can view/edit any table with dynamic PK detection
 - **Pagination**: 15/page admin tables, 10/page moderator/staff lists
+- **Modal behavior**: All modals close on backdrop click and Escape key
 - **SVG icons**: All Edit/Delete text buttons replaced with pencil/trash icons
-- **In-memory cache**: GET responses cached 60s; cleared on mutations
+- **In-memory cache**: GET responses cached 60s; cleared on mutations (prefix: 4 URL segments)
 
 ## Project Structure
 

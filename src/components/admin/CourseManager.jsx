@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
 import exportToExcel from "../../utils/exportToExcel";
+import { sanitizeObject } from "../../utils/sanitize";
 import ConfirmModal from "../common/ConfirmModal";
 
 export default function CourseManager() {
@@ -40,10 +41,10 @@ export default function CourseManager() {
         setSaving(true);
         try {
             if (editing) {
-                await api.put(`/api/admin/courses/${editing}`, form);
+                await api.put(`/api/admin/courses/${editing}`, sanitizeObject(form));
                 showToast("Course updated");
             } else {
-                await api.post("/api/admin/courses", form);
+                await api.post("/api/admin/courses", sanitizeObject(form));
                 showToast("Course created");
             }
             resetForm();

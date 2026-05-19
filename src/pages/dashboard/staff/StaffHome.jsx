@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
+import { sanitizeInput } from "../../../utils/sanitize";
 import StaffHeader from "../../../components/staff/StaffHeader";
 import SubmitForm from "../../../components/staff/SubmitForm";
 import SubmissionsList from "../../../components/staff/SubmissionsList";
@@ -40,7 +41,7 @@ export default function StaffHome() {
     setSendSuccess("");
     setError("");
     try {
-      await api.post("/api/staff/evaluate/send-pdf", { student_number: studentNumberToSend });
+      await api.post("/api/staff/evaluate/send-pdf", { student_number: sanitizeInput(studentNumberToSend) });
       setSendSuccess("PDF sent to student email");
       if (closeAfter) closeAfter();
     } catch (err) {
@@ -56,7 +57,7 @@ export default function StaffHome() {
     setError("");
     setResult(null);
     try {
-      const data = await api.post("/api/staff/evaluate", { student_number: studentNumber });
+      const data = await api.post("/api/staff/evaluate", { student_number: sanitizeInput(studentNumber) });
       setResult(data.data);
       const evals = await api.get("/api/staff/evaluations");
       setEvaluations(evals.data ?? []);

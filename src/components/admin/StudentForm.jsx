@@ -62,12 +62,20 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
             <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })}
               className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none" rows={2} placeholder="(optional)" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1.5">Year Level</label>
               <select value={form.year_level} onChange={(e) => setForm({ ...form, year_level: Number(e.target.value) })}
                 className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                 {YEARS.map((y) => <option key={y} value={y}>{ordinal(y)} Year</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">Current Semester</label>
+              <select value={form.current_semester} onChange={(e) => setForm({ ...form, current_semester: Number(e.target.value) })}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                <option value={1}>1st Semester</option>
+                <option value={2}>2nd Semester</option>
               </select>
             </div>
             <div>

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { KeyRound, ArrowLeft, Mail, CheckCircle, ExternalLink } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { sanitizeInput } from "../../utils/sanitize";
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState("");
@@ -16,7 +17,7 @@ const ForgotPassword = () => {
         setError("");
         setLoading(true);
         try {
-            const data = await forgotPassword(email);
+            const data = await forgotPassword(sanitizeInput(email));
             setResetUrl(data.resetUrl || "");
             setSent(true);
         } catch (err) {

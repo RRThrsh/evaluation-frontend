@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
+import { sanitizeObject } from "../../utils/sanitize";
 import StudentForm from "../../components/admin/StudentForm";
 import StudentSubjectsModal from "../../components/admin/StudentSubjectsModal";
 import StudentList from "../../components/admin/StudentList";
@@ -20,7 +21,7 @@ export default function StudentManager() {
     const [form, setForm] = useState({
         email: "", student_number: "", first_name: "", last_name: "", middle_name: "",
         date_of_birth: "", gender: "", address: "", contact_number: "",
-        year_level: 1, course_id: "",
+        year_level: 1, current_semester: 1, course_id: "",
     });
     const [editingStudent, setEditingStudent] = useState(null);
     const [saving, setSaving] = useState(false);
@@ -53,7 +54,7 @@ export default function StudentManager() {
     useEffect(() => { load(); }, []);
 
     const openCreateForm = async () => {
-        setForm({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, course_id: "" });
+        setForm({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, current_semester: 1, course_id: "" });
         setEditingStudent(null);
         setShowForm(true);
         try {
@@ -74,6 +75,7 @@ export default function StudentManager() {
             address: student.address || "",
             contact_number: student.contact_number || "",
             year_level: student.year_level || 1,
+            current_semester: student.current_semester || 1,
             course_id: student.course_id || "",
         });
         setEditingStudent(student.id);
@@ -93,21 +95,21 @@ export default function StudentManager() {
         setSaving(true);
         try {
             if (editingStudent) {
-                await api.put(`/api/admin/students/${editingStudent}`, {
+                await api.put(`/api/admin/students/${editingStudent}`, sanitizeObject({
                     email: form.email.trim() || null, first_name: form.first_name.trim(), last_name: form.last_name.trim(),
                     middle_name: form.middle_name.trim() || null, date_of_birth: form.date_of_birth || null,
                     gender: form.gender || null, address: form.address.trim() || null,
-                    contact_number: form.contact_number.trim() || null, year_level: form.year_level, course_id: form.course_id || null,
-                });
+                    contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null,
+                }));
                 showToast("Student updated");
             } else {
-                await api.post("/api/admin/students", {
+                await api.post("/api/admin/students", sanitizeObject({
                     email: form.email.trim(), student_number: form.student_number.toUpperCase(),
                     first_name: form.first_name.trim(), last_name: form.last_name.trim(),
                     middle_name: form.middle_name.trim() || null, date_of_birth: form.date_of_birth || null,
                     gender: form.gender || null, address: form.address.trim() || null,
-                    contact_number: form.contact_number.trim() || null, year_level: form.year_level, course_id: form.course_id || null,
-                });
+                    contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null,
+                }));
                 showToast("Student created");
             }
             setShowForm(false);

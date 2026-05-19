@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
 import exportToExcel from "../../utils/exportToExcel";
+import { sanitizeObject } from "../../utils/sanitize";
 import ConfirmModal from "../common/ConfirmModal";
 
 export default function SubjectManager() {
@@ -59,7 +60,7 @@ export default function SubjectManager() {
         }
         setSaving(true);
         try {
-            const payload = { ...form, prerequisite_id: form.prerequisite_id || null, course_id: form.course_id || null };
+            const payload = sanitizeObject({ ...form, prerequisite_id: form.prerequisite_id || null, course_id: form.course_id || null });
             if (editing) {
                 await api.put(`/api/admin/subjects/${editing}`, payload);
                 showToast("Subject updated");

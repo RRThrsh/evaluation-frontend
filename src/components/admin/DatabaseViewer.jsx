@@ -3,6 +3,7 @@ import api from "../../services/api";
 import SvgIcon from "../common/SvgIcon";
 import SkeletonRows from "./SkeletonRows";
 import DeleteModal from "./DeleteModal";
+import { sanitizeObject } from "../../utils/sanitize";
 
 const SENSITIVE_TABLES = ["users"];
 
@@ -47,7 +48,7 @@ export default function DatabaseViewer({ selectedTable, tableData, tableLoading,
     if (!editRow) return;
     setSaving(true);
     try {
-      await api.put(`/api/admin/tables/${selectedTable}/${editRow[pkColumn]}`, editFormData);
+      await api.put(`/api/admin/tables/${selectedTable}/${editRow[pkColumn]}`, sanitizeObject(editFormData));
       showToast("Record updated successfully");
       setEditRow(null);
       onLoadTable(selectedTable);

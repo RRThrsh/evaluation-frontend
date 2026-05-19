@@ -266,7 +266,7 @@ export default function DashboardOverview({ broadcast, setBroadcast, onSend, con
                 <div key={ctl.label} className="flex items-center justify-between py-2">
                   <span className="text-sm text-slate-600">{ctl.label}</span>
                   <button
-                    onClick={() => onToggle(ctl.label, ctl.state)}
+                    onClick={() => onToggle(ctl.key, ctl.state)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${ctl.state === "Enabled" ? "bg-emerald-400" : "bg-slate-300"}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${ctl.state === "Enabled" ? "translate-x-6" : "translate-x-1"}`} />

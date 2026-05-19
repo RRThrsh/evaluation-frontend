@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import api from "../../../services/api";
+import { sanitizeInput } from "../../../utils/sanitize";
 
 export default function UsersHome() {
     const [studentNumber, setStudentNumber] = useState("");
@@ -16,7 +17,7 @@ export default function UsersHome() {
         setResult(null);
 
         try {
-            const data = await api.get(`/api/students/lookup/${studentNumber}`);
+            const data = await api.get(`/api/students/lookup/${encodeURIComponent(sanitizeInput(studentNumber))}`);
             if (data?.success && data?.data) {
                 setResult(data.data);
             } else {

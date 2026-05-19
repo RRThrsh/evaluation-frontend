@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import EvaluationReport from "./EvaluationReport";
 import SubjectEditor from "./SubjectEditor";
 import ConfirmModal from "../common/ConfirmModal";
@@ -5,11 +6,19 @@ import ConfirmModal from "../common/ConfirmModal";
 export default function DetailModal({
   request, evaluation, evaluating, editingSubjects, subjectData, selectedSubjectToAdd,
   setSelectedSubjectToAdd, onAddSubject, onUpdateSubject, onDeleteSubject,
-  onToggleEdit, onEvaluate, onMarkIrregular, onReject, onClose, confirmAction, setConfirmAction,
+  onToggleEdit, onEvaluate, onMarkIrregular, onReject, onClose,
 }) {
+  const [confirmAction, setConfirmAction] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => { if (!confirmAction) onClose(); }}>
+      <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-zinc-800">
             {request.status === "PENDING" ? "Student Grades Overview" : "Evaluation Report"}

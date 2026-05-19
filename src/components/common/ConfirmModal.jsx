@@ -1,4 +1,12 @@
+import { useEffect } from "react";
+
 export default function ConfirmModal({ title, message, extra, confirmLabel, confirmColor, onConfirm, onCancel }) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onCancel(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onCancel]);
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
       <div className="bg-white w-full max-w-sm rounded-xl shadow-lg p-6 text-center" onClick={(e) => e.stopPropagation()}>

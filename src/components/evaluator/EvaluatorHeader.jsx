@@ -2,11 +2,11 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import NotificationBell from "../common/NotificationBell";
 
-export default function ModeratorHeader({ pendingCount }) {
+export default function EvaluatorHeader({ pendingCount }) {
   const { logout } = useAuth();
   return (
     <nav className="bg-white border-b border-zinc-200 px-6 py-3 flex justify-between items-center">
-      <span className="font-bold text-zinc-700">MODERATOR CONTROL CENTER</span>
+      <span className="font-bold text-zinc-700">EVALUATOR CONTROL CENTER</span>
       <div className="flex items-center gap-4">
         <span className="text-sm text-zinc-500">Pending: {pendingCount}</span>
         <NotificationBell />

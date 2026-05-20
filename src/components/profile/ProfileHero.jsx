@@ -2,13 +2,11 @@ import SvgIcon from "../common/SvgIcon";
 
 const roleStyles = {
   admin: { badge: "bg-purple-500/10 text-purple-700 border-purple-200", glow: "from-purple-600 to-fuchsia-500" },
-  moderator: { badge: "bg-blue-500/10 text-blue-700 border-blue-200", glow: "from-blue-600 to-cyan-500" },
-  staff: { badge: "bg-emerald-500/10 text-emerald-700 border-emerald-200", glow: "from-emerald-600 to-green-500" },
-  user: { badge: "bg-slate-100 text-slate-600 border-slate-200", glow: "from-slate-700 to-slate-500" },
+  evaluator: { badge: "bg-blue-500/10 text-blue-700 border-blue-200", glow: "from-blue-600 to-cyan-500" },
 };
 
 export default function ProfileHero({ user, editing, onEdit }) {
-  const roleStyle = roleStyles[user?.role] || roleStyles.user;
+  const roleStyle = roleStyles[user?.role] || roleStyles.evaluator;
 
   return (
     <section className="relative overflow-hidden rounded-[32px] border border-white/50 bg-white/80 p-6 shadow-xl shadow-slate-200/50 backdrop-blur-xl md:p-8">
@@ -19,8 +17,8 @@ export default function ProfileHero({ user, editing, onEdit }) {
         </div>
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">{user?.full_name || "User"}</h1>
-            <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] ${roleStyle.badge}`}>{user?.role || "user"}</span>
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">{user?.full_name || "Evaluator"}</h1>
+            <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] ${roleStyle.badge}`}>{user?.role || "evaluator"}</span>
           </div>
           <p className="mt-2 text-slate-500">{user?.email}</p>
           <div className="mt-5 flex flex-wrap gap-3">

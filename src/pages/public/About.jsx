@@ -21,8 +21,8 @@ const About = () => {
                                 <span className="text-blue-600 text-shadow-sm">Evaluation Workflow Works</span>
                             </h1>
                             <p className="text-slate-600 text-lg lg:text-xl leading-relaxed max-w-2xl">
-                                Staff submit evaluation requests, moderators review student records 
-                                and classify them by academic standing, and administrators confirm 
+                                Evaluators submit and review evaluation requests,
+                                classify students by academic standing, and administrators confirm 
                                 enrollment for the next semester.
                             </p>
                         </div>
@@ -51,10 +51,10 @@ const About = () => {
                             <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                                 <ClipboardCheck size={28} />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-3">1. Staff Submits</h3>
+                            <h3 className="text-xl font-bold text-slate-900 mb-3">1. Evaluator Submits</h3>
                             <p className="text-slate-500 leading-relaxed">
-                                Staff members enter a student number to submit an evaluation request. 
-                                The system creates a PENDING request and notifies the moderator for review.
+                                Evaluators enter a student number to submit an evaluation request. 
+                                The system creates a PENDING request and notifies the evaluator for review.
                             </p>
                         </div>
 
@@ -62,9 +62,9 @@ const About = () => {
                             <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                                 <Activity size={28} />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-3">2. Moderator Evaluates</h3>
+                            <h3 className="text-xl font-bold text-slate-900 mb-3">2. Evaluator Evaluates</h3>
                             <p className="text-slate-500 leading-relaxed">
-                                Moderators review the student's grades, check prerequisites, and classify 
+                                Evaluators review the student's grades, check prerequisites, and classify 
                                 them as <strong>Regular</strong>, <strong>Conditional</strong>, or 
                                 <strong> Irregular</strong>. Requests are forwarded for admin enrollment confirmation.
                             </p>

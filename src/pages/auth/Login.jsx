@@ -23,7 +23,7 @@ const Login = () => {
         try {
             const data = await login(sanitizeInput(email), password);
             const role = data.data?.user?.role;
-            const routes = { admin: "/admin", moderator: "/moderator", staff: "/staff" };
+            const routes = { admin: "/admin", evaluator: "/evaluator" };
             navigate(routes[role] || "/");
         } catch (err) {
             setError(err.message);
@@ -33,100 +33,93 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 px-6 font-sans antialiased">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 px-6">
 
-            <div className="absolute top-0 left-0 w-full h-32 bg-blue-600/5 clip-path-slant" />
-
-            <div className="w-full max-w-md">
-                {/* Branding / Icon */}
+            <div className="w-full max-w-sm">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-white border border-slate-200 rounded-2xl shadow-sm mb-4">
-                        <Lock className="text-blue-600" size={28} />
+                    <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-900 rounded-xl mb-4">
+                        <Lock className="text-white" size={22} />
                     </div>
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
                         Welcome Back
                     </h1>
-                    <p className="text-slate-500 mt-2">
+                    <p className="text-slate-500 text-sm mt-1.5">
                         Sign in to the Evaluation System
                     </p>
                 </div>
 
-                <div className="bg-white rounded-[2rem] shadow-2xl shadow-blue-900/5 border border-slate-100 p-8 lg:p-10">
+                <div className="bg-white rounded-xl border border-slate-200 p-6">
                     {registered && (
-                        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-2xl text-sm text-blue-600 font-medium">
+                        <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600">
                             Account created. Awaiting admin approval.
                         </div>
                     )}
 
                     {error && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-600 font-medium">
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
                             {error}
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-
-                        {/* Email Field */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-700 uppercase tracking-widest ml-1">
-                                Institutional Email
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-slate-600">
+                                Email
                             </label>
-                            <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                                    <Mail size={18} />
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                    <Mail size={16} />
                                 </div>
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="name@university.edu"
-                                    className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                                    className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all"
                                     required
                                 />
                             </div>
                         </div>
 
-                        {/* Password Field */}
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center ml-1">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-widest">
+                        <div className="space-y-1.5">
+                            <div className="flex justify-between items-center">
+                                <label className="text-xs font-medium text-slate-600">
                                     Password
                                 </label>
-                                <Link to="/forgot-password" size="sm" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+                                <Link to="/forgot-password" className="text-xs text-slate-500 hover:text-slate-700">
                                     Forgot?
                                 </Link>
                             </div>
-                            <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                                    <Lock size={18} />
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                    <Lock size={16} />
                                 </div>
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full pl-11 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                                    className="w-full pl-9 pr-10 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all"
                                     required
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                 >
-                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Submit Button */}
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 active:scale-[0.98] transition-all shadow-xl shadow-blue-200 flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-slate-900 text-white font-medium py-2.5 rounded-lg hover:bg-slate-800 transition-colors text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? (
                                 <span className="flex items-center gap-2">
-                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                     </svg>
@@ -134,27 +127,25 @@ const Login = () => {
                                 </span>
                             ) : (
                                 <span className="flex items-center gap-2">
-                                    <LogIn size={20} />
+                                    <LogIn size={16} />
                                     Sign In
                                 </span>
                             )}
                         </button>
                     </form>
 
-                    {/* Footer Links */}
-                    <div className="mt-8 pt-6 border-t border-slate-50 text-center">
+                    <div className="mt-6 pt-4 border-t border-slate-100 text-center">
                         <p className="text-sm text-slate-500">
                             New to the system?{" "}
-                            <Link to="/register" className="text-blue-600 font-bold hover:underline">
+                            <Link to="/register" className="text-slate-900 font-semibold hover:underline">
                                 Create Account
                             </Link>
                         </p>
                     </div>
                 </div>
 
-                {/* System Notice */}
-                <p className="text-center mt-8 text-[11px] text-slate-400 leading-relaxed uppercase tracking-widest px-4">
-                    Authorized use only. Unauthorized access is subject to university policy and local law.
+                <p className="text-center mt-6 text-[10px] text-slate-400 uppercase tracking-wider">
+                    Authorized use only. Unauthorized access is subject to university policy.
                 </p>
             </div>
         </div>

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import api from "../../../services/api";
-import ModeratorHeader from "../../../components/moderator/ModeratorHeader";
-import RequestList from "../../../components/moderator/RequestList";
-import DetailModal from "../../../components/moderator/DetailModal";
+import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
+import RequestList from "../../../components/evaluator/RequestList";
+import DetailModal from "../../../components/evaluator/DetailModal";
 
-export default function ModeratorHome() {
+export default function EvaluatorHome() {
   const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [evaluation, setEvaluation] = useState(null);
@@ -16,7 +16,7 @@ export default function ModeratorHome() {
   const [selectedSubjectToAdd, setSelectedSubjectToAdd] = useState("");
 
   const fetchRequests = () => {
-    api.get("/api/moderator/evaluations/all")
+    api.get("/api/evaluator/evaluations/all")
       .then((data) => setRequests(data.data ?? data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -28,24 +28,24 @@ export default function ModeratorHome() {
   const reviewed = requests.filter(r => r.status !== "PENDING");
 
   const fetchStudentSubjects = async (studentId) => {
-    const data = await api.get(`/api/moderator/students/${studentId}/subjects`);
+    const data = await api.get(`/api/evaluator/students/${studentId}/subjects`);
     setSubjectData(data.data ?? data);
   };
 
   const handleAddSubject = async (studentId) => {
     if (!selectedSubjectToAdd) return;
-    await api.post(`/api/moderator/students/${studentId}/subjects`, { subject_id: selectedSubjectToAdd, status: "PENDING" });
+    await api.post(`/api/evaluator/students/${studentId}/subjects`, { subject_id: selectedSubjectToAdd, status: "PENDING" });
     setSelectedSubjectToAdd("");
     await fetchStudentSubjects(studentId);
   };
 
   const handleUpdateSubject = async (studentId, subjectRecordId, updates) => {
-    await api.patch(`/api/moderator/students/${studentId}/subjects/${subjectRecordId}`, updates);
+    await api.patch(`/api/evaluator/students/${studentId}/subjects/${subjectRecordId}`, updates);
     await fetchStudentSubjects(studentId);
   };
 
   const handleDeleteSubject = async (studentId, subjectRecordId) => {
-    await api.delete(`/api/moderator/students/${studentId}/subjects/${subjectRecordId}`);
+    await api.delete(`/api/evaluator/students/${studentId}/subjects/${subjectRecordId}`);
     await fetchStudentSubjects(studentId);
   };
 
@@ -56,7 +56,7 @@ export default function ModeratorHome() {
 
   const handleEvaluate = async (id) => {
     setEvaluating(true);
-    const data = await api.post(`/api/moderator/evaluations/${id}/evaluate`);
+    const data = await api.post(`/api/evaluator/evaluations/${id}/evaluate`);
     setEvaluation(data.data);
     setEvaluating(false);
   };
@@ -64,7 +64,7 @@ export default function ModeratorHome() {
   const handleOverride = async (id, action) => {
     setEvaluating(true);
     try {
-      await api.post(`/api/moderator/evaluations/${id}/override`, { action });
+      await api.post(`/api/evaluator/evaluations/${id}/override`, { action });
       setSelectedRequest(null);
       setEvaluation(null);
       fetchRequests();
@@ -78,7 +78,7 @@ export default function ModeratorHome() {
   const handleMarkIrregular = async (id) => {
     setEvaluating(true);
     try {
-      await api.post(`/api/moderator/evaluations/${id}/irregular`);
+      await api.post(`/api/evaluator/evaluations/${id}/irregular`);
       fetchRequests();
     } catch (err) {
       alert(err.message || "Failed to mark as irregular");
@@ -91,7 +91,7 @@ export default function ModeratorHome() {
     setSelectedRequest(req);
     setEvaluation(null);
     try {
-      const data = await api.get(`/api/moderator/students/${req.student_id}/evaluate`);
+      const data = await api.get(`/api/evaluator/students/${req.student_id}/evaluate`);
       if (req.evaluation_result) data.data.decision = req.status;
       setEvaluation(data.data);
     } catch {
@@ -110,7 +110,7 @@ export default function ModeratorHome() {
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <ModeratorHeader pendingCount={pending.length} />
+      <EvaluatorHeader pendingCount={pending.length} />
 
       <main className="max-w-6xl mx-auto p-6">
         <div className="mb-6 flex items-center justify-between">

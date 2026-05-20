@@ -60,7 +60,7 @@ const Homepage = () => {
                         </h1>
 
                         <p className="text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto mb-10 leading-relaxed">
-                            Staff submit evaluation requests. Moderators review and approve.
+                            Evaluators submit and review evaluation requests.
                             Administrators oversee the entire process. Simple, transparent, efficient.
                         </p>
 
@@ -175,15 +175,15 @@ const Homepage = () => {
                                     icon: <ClipboardCheck size={28} />,
                                     color: "bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white",
                                     title: "1. Staff Submits",
-                                    desc: "Staff enter a student number to submit an evaluation request. The system creates a pending request and notifies the moderator.",
+                                    desc: "Staff enter a student number to submit an evaluation request. The system creates a pending request and notifies the evaluator.",
                                     role: "For Staff",
                                 },
                                 {
                                     icon: <Activity size={28} />,
                                     color: "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white",
-                                    title: "2. Moderator Evaluates",
-                                    desc: "Moderators review grades, check prerequisites, and classify students as Regular, Conditional, or Irregular. Requests are sent for enrollment approval.",
-                                    role: "For Moderators",
+                                    title: "2. Evaluator Evaluates",
+                                    desc: "Evaluators review grades, check prerequisites, and classify students as Regular, Conditional, or Irregular. Requests are sent for enrollment approval.",
+                                    role: "For Evaluators",
                                 },
                                 {
                                     icon: <ShieldCheck size={28} />,
@@ -235,14 +235,14 @@ const Homepage = () => {
                                 {
                                     title: "Staff",
                                     desc: "Submit evaluation requests for students.",
-                                    link: "/staff",
+                                    link: "/evaluator",
                                     color: "border-indigo-200 bg-indigo-50/50",
                                     textColor: "text-indigo-700",
                                 },
                                 {
-                                    title: "Moderators",
+                                    title: "Evaluators",
                                     desc: "Review and approve evaluation requests.",
-                                    link: "/moderator",
+                                    link: "/evaluator",
                                     color: "border-emerald-200 bg-emerald-50/50",
                                     textColor: "text-emerald-700",
                                 },

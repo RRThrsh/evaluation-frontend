@@ -42,7 +42,7 @@ export default function PendingEnrollments({ enrollments, loading, onUpdate }) {
   const openDetail = async (req) => {
     setDetail(req);
     setDetailLoading(true);
-    try { await api.get(`/api/moderator/students/${req.student_id}/evaluate`); } catch (e) { /* ok */ }
+    try { await api.get(`/api/evaluator/students/${req.student_id}/evaluate`); } catch (e) { /* ok */ }
     setDetailLoading(false);
   };
 

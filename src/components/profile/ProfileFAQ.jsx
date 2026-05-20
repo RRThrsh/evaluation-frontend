@@ -2,12 +2,12 @@ import { useState } from "react";
 import SvgIcon from "../common/SvgIcon";
 
 const FAQS = [
-  { q: "What is the Evaluation System?", a: "The Evaluation System allows staff to submit student evaluation requests, moderators to review them, and administrators to oversee the entire workflow." },
-  { q: "How do I submit an evaluation request?", a: "Staff members can submit an evaluation by entering the student number on the Staff Dashboard." },
-  { q: "What happens after I submit?", a: "Once submitted, the request enters a Pending state for moderator review." },
+  { q: "What is the Evaluation System?", a: "The Evaluation System allows evaluators to submit and review student evaluation requests, and administrators to oversee the entire workflow." },
+  { q: "How do I submit an evaluation request?", a: "Evaluators can submit an evaluation by entering the student number on the Evaluator Dashboard." },
+  { q: "What happens after I submit?", a: "Once submitted, the request enters a Pending state for evaluator review." },
   { q: "Can I delete my evaluation request?", a: "No, submitted requests cannot be deleted or withdrawn." },
-  { q: "Who can review evaluations?", a: "Only moderators can review evaluation requests." },
-  { q: "What roles are available?", a: "User, Staff, Moderator, and Admin roles are supported." },
+  { q: "Who can review evaluations?", a: "Evaluators can review evaluation requests." },
+  { q: "What roles are available?", a: "Evaluator and Admin roles are supported." },
 ];
 
 export default function ProfileFAQ() {

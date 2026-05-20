@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 
-const mockUser = { id: 1, name: "Test", email: "test@test.com", role: "user" };
+const mockUser = { id: 1, name: "Test", email: "test@test.com", role: "evaluator" };
 
 vi.mock("../services/api", () => ({
     default: {

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../../services/api";
 import Pagination from "../common/Pagination";
 
-const ROLES = ["admin", "moderator", "staff", "user"];
+const ROLES = ["admin", "evaluator"];
 const PAGE_SIZE = 15;
 
 function SvgIcon({ path, className = "w-5 h-5" }) {

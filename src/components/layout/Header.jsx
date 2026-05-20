@@ -18,44 +18,42 @@ const Header = () => {
 
     const roleDashboard = {
         admin: "/admin",
-        moderator: "/moderator",
-        staff: "/staff",
-        user: "/users",
+        evaluator: "/evaluator",
     };
 
     const dashboardPath = roleDashboard[user?.role] || "/login";
 
     return (
-        <header className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-xl border-b border-slate-100/80">
-            <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <header className="sticky top-0 z-[100] w-full bg-white border-b border-slate-100">
+            <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
 
-                {/* Logo & Institution Branding */}
+                {/* Logo */}
                 <Link
                     to="/"
-                    className="flex items-center gap-3 hover:opacity-80 transition-all group"
+                    className="flex items-center gap-2.5"
                 >
-                    <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:rotate-3 transition-transform">
-                        <GraduationCap size={24} />
+                    <div className="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center text-white">
+                        <GraduationCap size={20} />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-lg font-bold tracking-tight text-slate-900 leading-none">
+                        <span className="text-base font-bold tracking-tight text-slate-900 leading-none">
                             Evaluation
                         </span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                        <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
                             College System
                         </span>
                     </div>
                 </Link>
 
                 {/* Desktop Navigation */}
-                <nav className="hidden md:flex items-center gap-1">
+                <nav className="hidden md:flex items-center gap-0.5">
                     {navLinks.map((link) => (
                         <Link
                             key={link.path}
                             to={link.path}
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                            className={`px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors ${
                                 isActive(link.path)
-                                    ? "text-blue-600 bg-blue-50"
+                                    ? "text-slate-900 bg-slate-100"
                                     : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                             }`}
                         >
@@ -64,15 +62,15 @@ const Header = () => {
                     ))}
                 </nav>
 
-                {/* Desktop Auth Section */}
-                <div className="hidden md:flex items-center gap-3 border-l border-slate-100 ml-4 pl-4">
+                {/* Desktop Auth */}
+                <div className="hidden md:flex items-center gap-2.5 border-l border-slate-100 ml-3 pl-3">
                     {user ? (
                         <>
                             <Link
                                 to={dashboardPath}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all text-sm"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white font-medium rounded-md hover:bg-slate-800 transition-colors text-sm"
                             >
-                                <LayoutDashboard size={16} />
+                                <LayoutDashboard size={15} />
                                 Dashboard
                             </Link>
                             <span className="text-sm text-slate-400 font-medium">
@@ -80,20 +78,20 @@ const Header = () => {
                             </span>
                             <button
                                 onClick={logout}
-                                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"
                                 title="Logout"
                             >
-                                <LogOut size={18} />
+                                <LogOut size={16} />
                             </button>
                         </>
                     ) : (
                         <>
-                            <Link to="/login" className="text-sm font-bold text-slate-500 hover:text-slate-900 px-3 transition-colors">
+                            <Link to="/login" className="text-sm font-medium text-slate-500 hover:text-slate-900 px-2 transition-colors">
                                 Sign In
                             </Link>
                             <Link
                                 to="/register"
-                                className="px-5 py-2 bg-blue-600 text-white font-bold text-sm rounded-lg hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-200"
+                                className="px-4 py-1.5 bg-slate-900 text-white font-medium text-sm rounded-md hover:bg-slate-800 transition-colors"
                             >
                                 Get Started
                             </Link>
@@ -104,46 +102,46 @@ const Header = () => {
                 {/* Mobile Menu Toggle */}
                 <button
                     onClick={() => setMobileOpen(!mobileOpen)}
-                    className="md:hidden p-2.5 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors"
+                    className="md:hidden p-2 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors"
                     aria-label="Toggle Menu"
                 >
-                    {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+                    {mobileOpen ? <X size={18} /> : <Menu size={18} />}
                 </button>
             </div>
 
             {/* Mobile Navigation Dropdown */}
             {mobileOpen && (
-                <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-100 shadow-xl">
-                    <nav className="flex flex-col p-6 space-y-2">
+                <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-100 shadow-sm">
+                    <nav className="flex flex-col p-4 space-y-1">
                         {navLinks.map((link) => (
                             <Link
                                 key={link.path}
-                                className={`flex items-center justify-between p-4 rounded-2xl font-bold transition-all ${
+                                className={`flex items-center justify-between px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
                                     isActive(link.path)
-                                        ? "bg-blue-50 text-blue-600"
+                                        ? "bg-slate-100 text-slate-900"
                                         : "text-slate-600 hover:bg-slate-50"
                                 }`}
                                 to={link.path}
                                 onClick={() => setMobileOpen(false)}
                             >
                                 {link.name}
-                                <ChevronRight size={16} className={isActive(link.path) ? "opacity-100" : "opacity-0"} />
+                                <ChevronRight size={14} className={isActive(link.path) ? "opacity-100" : "opacity-0"} />
                             </Link>
                         ))}
 
-                        <div className="pt-4 mt-4 border-t border-slate-50 flex flex-col gap-3">
+                        <div className="pt-3 mt-3 border-t border-slate-100 flex flex-col gap-2">
                             {user ? (
                                 <>
                                     <Link
                                         to={dashboardPath}
-                                        className="w-full py-4 text-center text-sm font-bold bg-blue-600 text-white rounded-xl"
+                                        className="w-full py-2.5 text-center text-sm font-medium bg-slate-900 text-white rounded-md"
                                         onClick={() => setMobileOpen(false)}
                                     >
                                         Dashboard
                                     </Link>
                                     <button
                                         onClick={() => { logout(); setMobileOpen(false); }}
-                                        className="w-full py-4 text-center text-sm font-bold text-red-500"
+                                        className="w-full py-2.5 text-center text-sm font-medium text-slate-500"
                                     >
                                         Logout
                                     </button>
@@ -152,14 +150,14 @@ const Header = () => {
                                 <>
                                     <Link
                                         to="/login"
-                                        className="w-full py-4 text-center text-sm font-bold text-slate-500"
+                                        className="w-full py-2.5 text-center text-sm font-medium text-slate-500"
                                         onClick={() => setMobileOpen(false)}
                                     >
                                         Sign In
                                     </Link>
                                     <Link
                                         to="/register"
-                                        className="w-full py-4 text-center text-sm font-bold bg-blue-600 text-white rounded-xl"
+                                        className="w-full py-2.5 text-center text-sm font-medium bg-slate-900 text-white rounded-md"
                                         onClick={() => setMobileOpen(false)}
                                     >
                                         Get Started

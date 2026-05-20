@@ -4,7 +4,7 @@ import SvgIcon from "../common/SvgIcon";
 
 export default function ProfileHeader() {
   const { user, logout } = useAuth();
-  const dashboardLink = { admin: "/admin", moderator: "/moderator", staff: "/staff", user: "/users" };
+  const dashboardLink = { admin: "/admin", evaluator: "/evaluator" };
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/30 bg-white/70 backdrop-blur-xl">

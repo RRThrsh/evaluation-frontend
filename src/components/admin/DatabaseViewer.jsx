@@ -157,9 +157,7 @@ export default function DatabaseViewer({ selectedTable, tableData, tableLoading,
                     <span className="text-sm text-slate-800 break-all">{formatCell(editRow[col])}</span>
                   ) : col === "role" && selectedTable === "users" ? (
                     <select value={editFormData[col] ?? ""} onChange={(e) => setEditFormData((prev) => ({ ...prev, [col]: e.target.value }))} className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white">
-                      <option value="user">user</option>
-                      <option value="staff">staff</option>
-                      <option value="moderator">moderator</option>
+                      <option value="evaluator">evaluator</option>
                       <option value="admin">admin</option>
                     </select>
                   ) : (

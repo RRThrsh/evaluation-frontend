@@ -1,4 +1,4 @@
-export const baseInputStyles = "w-full border rounded-md outline-none transition duration-200";
+export const baseInputStyles = "w-full border rounded-lg outline-none transition-all duration-150 focus:border-slate-400 focus:ring-2 focus:ring-slate-100";
 
 export const labelStyles = "text-sm font-medium text-gray-700";
 

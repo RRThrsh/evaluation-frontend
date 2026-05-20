@@ -8,9 +8,7 @@ const Unauthorized = () => {
 
     const roleDashboard = {
         admin: "/admin",
-        moderator: "/moderator",
-        staff: "/staff",
-        user: "/users",
+        evaluator: "/evaluator",
     };
 
     const dashboardPath = roleDashboard[user?.role] || "/";

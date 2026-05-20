@@ -18,9 +18,9 @@ import AuditLogViewer from "../../../components/admin/AuditLogViewer";
 import RoleManager from "../../../components/admin/RoleManager";
 import EnrollmentHistory from "../../../components/admin/EnrollmentHistory";
 import CompletedEnrollments from "../../../components/admin/CompletedEnrollments";
-import ModeratorCourses from "../../../components/admin/ModeratorCourses";
+import EvaluatorCourses from "../../../components/admin/EvaluatorCourses";
 import SessionManager from "../../../components/admin/SessionManager";
-import ModeratorEvaluations from "../../../components/admin/ModeratorEvaluations";
+import EvaluatorEvaluations from "../../../components/admin/EvaluatorEvaluations";
 import BulkImport from "../../../components/admin/BulkImport";
 import GradeReports from "../../../components/admin/GradeReports";
 import SvgIcon from "../../../components/common/SvgIcon";
@@ -234,10 +234,10 @@ export default function AdminHome() {
 
           {activeTab === "academic_config" && <AcademicConfigManager />}
           {activeTab === "completed-enrollments" && <CompletedEnrollments />}
-          {activeTab === "moderator-courses" && <ModeratorCourses />}
+          {activeTab === "evaluator-courses" && <EvaluatorCourses />}
 
           {activeTab === "sessions" && <SessionManager />}
-          {activeTab === "moderator-evaluations" && <ModeratorEvaluations />}
+          {activeTab === "evaluator-evaluations" && <EvaluatorEvaluations />}
           {activeTab === "bulk-import" && <BulkImport />}
           {activeTab === "reports" && <GradeReports />}
 

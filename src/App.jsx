@@ -18,8 +18,7 @@ import Contact from "./pages/public/Contact";
 /*  ===============================================
     DASHBOARD PAGE
     ===============================================*/
-import StaffHome from "./pages/dashboard/staff/StaffHome";
-import ModeratorHome from "./pages/dashboard/moderator/ModeratorHome";
+import EvaluatorHome from "./pages/dashboard/evaluator/EvaluatorHome";
 import AdminHome from "./pages/dashboard/admin/AdminHome";
 import Profile from "./pages/dashboard/Profile";
 
@@ -55,17 +54,10 @@ function App() {
                         element={<ResetPassword />}
                     />
 
-                    {/* STAFF */}
-                    <Route path="/staff" element={
-                        <ProtectedRoute roles={["staff", "admin"]}>
-                            <StaffHome />
-                        </ProtectedRoute>
-                    }/>
-
-                    {/* MODERATOR */}
-                    <Route path="/moderator" element={
-                        <ProtectedRoute roles={["moderator", "admin"]}>
-                            <ModeratorHome />
+                    {/* EVALUATOR */}
+                    <Route path="/evaluator" element={
+                        <ProtectedRoute roles={["evaluator", "admin"]}>
+                            <EvaluatorHome />
                         </ProtectedRoute>
                     }/>
 
@@ -78,7 +70,7 @@ function App() {
 
                     {/* PROFILE (all authenticated roles) */}
                     <Route path="/profile" element={
-                        <ProtectedRoute roles={["user", "staff", "moderator", "admin"]}>
+                        <ProtectedRoute roles={["evaluator", "admin"]}>
                             <Profile />
                         </ProtectedRoute>
                     }/>

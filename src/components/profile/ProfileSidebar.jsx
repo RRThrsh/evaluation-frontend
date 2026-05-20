@@ -29,7 +29,7 @@ export default function ProfileSidebar({ user }) {
       <div className="rounded-[28px] border border-white/50 bg-white/80 p-6 shadow-lg shadow-slate-200/50 backdrop-blur-xl">
         <h3 className="text-lg font-bold text-slate-900">Account Overview</h3>
         <div className="mt-5 space-y-4">
-          <QuickStat label="Role" value={user?.role || "User"} />
+          <QuickStat label="Role" value={user?.role || "Evaluator"} />
           <QuickStat label="Status" value="Active" active />
           <QuickStat label="Profile" value="Complete" />
         </div>

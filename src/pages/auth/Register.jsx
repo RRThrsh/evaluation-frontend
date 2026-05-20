@@ -292,10 +292,10 @@ const Register = () => {
                                         </ul>
 
                                         <h3 className="text-base font-bold text-slate-900">4. User Roles & Responsibilities</h3>
-                                        <p>Users are assigned one of four roles: Staff, Moderator, Admin, or Pending. Each role has specific permissions and responsibilities as defined by the institution. Role assignments are managed by administrators.</p>
+                                        <p>Users are assigned one of three roles: Evaluator, Admin, or Pending. Each role has specific permissions and responsibilities as defined by the institution. Role assignments are managed by administrators.</p>
 
                                         <h3 className="text-base font-bold text-slate-900">5. Data Accuracy</h3>
-                                        <p>Staff and Moderators are responsible for ensuring the accuracy of evaluation data they submit or review. The institution reserves the right to audit and correct records as necessary.</p>
+                                        <p>Evaluators are responsible for ensuring the accuracy of evaluation data they submit or review. The institution reserves the right to audit and correct records as necessary.</p>
 
                                         <h3 className="text-base font-bold text-slate-900">6. Limitation of Liability</h3>
                                         <p>The system is provided "as is" without warranty of any kind. The institution shall not be liable for any damages arising from the use or inability to use the system, including but not limited to data loss, downtime, or evaluation errors.</p>
@@ -326,7 +326,7 @@ const Register = () => {
                                         </ul>
 
                                         <h3 className="text-base font-bold text-slate-900">3. Data Sharing</h3>
-                                        <p>Evaluation data is shared internally among authorized Staff, Moderators, and Administrators based on role-based access control. We do not sell or share personal data with third parties except as required by law.</p>
+                                        <p>Evaluation data is shared internally among authorized Evaluators and Administrators based on role-based access control. We do not sell or share personal data with third parties except as required by law.</p>
 
                                         <h3 className="text-base font-bold text-slate-900">4. Data Retention</h3>
                                         <p>Account data is retained for the duration of your affiliation with the institution. Evaluation records are retained in accordance with institutional academic record-keeping policies. You may request data deletion by contacting administration.</p>

@@ -7,13 +7,10 @@ import ErrorBoundary from "./components/common/ErrorBoundary";
 /*  ==============================================
     PAGES
     ============================================== */
-import Home from "./pages/public/Home";
-import About from "./pages/public/About";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
-import Contact from "./pages/public/Contact";
 
 /*  ===============================================
     DASHBOARD PAGE
@@ -37,10 +34,8 @@ function App() {
         <AuthProvider>
             <BrowserRouter>
                 <Routes>
-                    {/* Public Pages */}
-                    <Route path="/" element={<Home />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
+                    {/* Redirect root to login */}
+                    <Route path="/" element={<Login />} />
 
                     {/* Auth Pages */}
                     <Route path="/login" element={<Login />} />

@@ -1,51 +1,47 @@
 import { useState, useMemo } from "react";
+import { Search, ChevronRight, AlertTriangle } from "lucide-react";
 import api from "../../../services/api";
 import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
 
 const YEAR_LEVELS = { 1: "1st Year", 2: "2nd Year", 3: "3rd Year", 4: "4th Year" };
 
 const statusBadge = (status) =>
-  `text-xs font-semibold px-2 py-0.5 rounded uppercase ${
-    status === "APPROVED" || status === "ENROLLED" || status === "PASSED"
-      ? "bg-emerald-100 text-emerald-700"
-      : status === "PENDING"
-      ? "bg-yellow-100 text-yellow-700"
-      : status === "FAILED"
-      ? "bg-red-100 text-red-700"
-      : "bg-zinc-100 text-zinc-600"
+  `badge ${
+    status === "APPROVED" || status === "ENROLLED" || status === "PASSED" ? "badge-green" :
+    status === "PENDING" ? "badge-yellow" :
+    status === "FAILED" ? "badge-red" :
+    "badge-gray"
   }`;
 
 const overallBadge = (overall) =>
-  overall === "qualified"
-    ? "bg-emerald-100 text-emerald-700 border-emerald-300"
-    : overall === "conditional"
-    ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-    : "bg-red-100 text-red-700 border-red-300";
+  overall === "qualified" ? "badge badge-green" :
+  overall === "conditional" ? "badge badge-yellow" :
+  "badge badge-red";
 
 function StudentCard({ student }) {
   return (
-    <div className="bg-white border rounded-xl shadow-sm p-5">
+    <div className="card p-5">
       <div className="flex items-start justify-between">
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
           <div>
-            <span className="text-zinc-400 text-xs uppercase tracking-wide font-medium">Name</span>
-            <p className="font-semibold text-zinc-800 mt-0.5">{student.full_name}</p>
+            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Name</span>
+            <p className="font-semibold text-slate-800 mt-0.5">{student.full_name}</p>
           </div>
           <div>
-            <span className="text-zinc-400 text-xs uppercase tracking-wide font-medium">Student No.</span>
-            <p className="font-semibold text-zinc-800 mt-0.5">{student.student_number}</p>
+            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Student No.</span>
+            <p className="font-semibold text-slate-800 mt-0.5">{student.student_number}</p>
           </div>
           <div>
-            <span className="text-zinc-400 text-xs uppercase tracking-wide font-medium">Course</span>
-            <p className="font-semibold text-zinc-800 mt-0.5">{student.course || "N/A"}</p>
+            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Program</span>
+            <p className="font-semibold text-slate-800 mt-0.5">{student.course || "N/A"}</p>
           </div>
           <div>
-            <span className="text-zinc-400 text-xs uppercase tracking-wide font-medium">Year Level</span>
-            <p className="font-semibold text-zinc-800 mt-0.5">{YEAR_LEVELS[student.year_level] || `${student.year_level}th Year`}</p>
+            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Year Level</span>
+            <p className="font-semibold text-slate-800 mt-0.5">{YEAR_LEVELS[student.year_level] || `${student.year_level}th Year`}</p>
           </div>
         </div>
         {student.overall && (
-          <span className={`px-3 py-1 rounded-full text-sm font-bold uppercase border ${overallBadge(student.overall)}`}>
+          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${overallBadge(student.overall)}`}>
             {student.overall}
           </span>
         )}
@@ -56,32 +52,32 @@ function StudentCard({ student }) {
 
 function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
   return (
-    <div className="bg-white border rounded-xl shadow-sm">
-      <div className="px-5 py-3 border-b border-zinc-100">
-        <h3 className="font-semibold text-sm text-zinc-700">
-          {title} <span className="text-zinc-400 font-normal">({subjects.length})</span>
+    <div className="card overflow-hidden">
+      <div className="px-5 py-3 border-b border-slate-100">
+        <h3 className="font-semibold text-sm text-slate-700">
+          {title} <span className="text-slate-400 font-normal">({subjects.length})</span>
         </h3>
       </div>
       {subjects.length > 0 ? (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm table-fixed">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50/50">
+              <tr className="border-b border-slate-100 bg-slate-50/50">
                 {columns.map((col) => (
-                  <th key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-4 py-2.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide ${col.align === "right" ? "text-right" : ""} ${col.className || ""}`}>
+                  <th key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide ${col.align === "right" ? "text-right" : ""} ${col.className || ""}`}>
                     {col.label}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-50">
+            <tbody className="divide-y divide-slate-50">
               {subjects.map((s, i) => {
                 const extra = typeof rowClassName === "function" ? rowClassName(s) : "";
                 return (
-                  <tr key={s.id ?? i} className={`transition hover:bg-indigo-50/40 ${extra}`}>
+                  <tr key={s.id ?? i} className={`transition hover:bg-primary-50/40 ${extra}`}>
                     {columns.map((col) => (
-                      <td key={col.key} className={`px-4 py-2.5 text-zinc-700 truncate ${col.align === "right" ? "text-right" : ""}`}>
-                        {col.render ? col.render(s) : s[col.key] ?? "—"}
+                      <td key={col.key} className={`px-6 py-3 text-slate-700 truncate ${col.align === "right" ? "text-right" : ""}`}>
+                        {col.render ? col.render(s) : s[col.key] ?? "\u2014"}
                       </td>
                     ))}
                   </tr>
@@ -91,7 +87,7 @@ function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
           </table>
         </div>
       ) : (
-        <div className="p-8 text-center text-zinc-400 text-sm">{emptyMsg}</div>
+        <div className="p-8 text-center text-slate-400 text-sm">{emptyMsg}</div>
       )}
     </div>
   );
@@ -141,12 +137,9 @@ export default function EvaluatorHome() {
       } catch {}
 
       setStudent({
-        id: data.id,
-        full_name: `${data.first_name} ${data.last_name}`,
-        student_number: data.student_number,
-        year_level: data.year_level,
-        course: courseName,
-        overall,
+        id: data.id, full_name: `${data.first_name} ${data.last_name}`,
+        student_number: data.student_number, year_level: data.year_level,
+        course: courseName, overall,
       });
       setSubjects({ taken: current, available: next });
       setReplacements(gaps);
@@ -159,14 +152,12 @@ export default function EvaluatorHome() {
     }
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSearch();
-  };
+  const handleKeyDown = (e) => { if (e.key === "Enter") handleSearch(); };
 
   const currentColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
     { key: "subject_name", label: "Subject", width: "45%" },
-    { key: "grade", label: "Grade", align: "right", width: "15%", className: "whitespace-nowrap", render: (s) => s.grade || "—" },
+    { key: "grade", label: "Grade", align: "right", width: "15%", className: "whitespace-nowrap", render: (s) => s.grade || "\u2014" },
     { key: "status", label: "Status", width: "25%", render: (s) => <span className={statusBadge(s.status)}>{s.status}</span> },
   ], []);
 
@@ -175,11 +166,11 @@ export default function EvaluatorHome() {
     { key: "subject_name", label: "Subject", width: "45%" },
     { key: "prerequisite", label: "Prereq", width: "25%", render: (s) => {
       if (s.prerequisite) {
-        const badge = s.prereq_failed ? "bg-red-100 text-red-700" : s.prereq_met ? "bg-emerald-100 text-emerald-700" : "bg-yellow-100 text-yellow-700";
+        const badge = s.prereq_failed ? "badge badge-red" : s.prereq_met ? "badge badge-green" : "badge badge-yellow";
         const label = s.prereq_failed ? "FAILED" : s.prereq_met ? "OK" : "PENDING";
-        return <span className={`text-xs font-semibold px-2 py-0.5 rounded ${badge}`}>{s.prerequisite} ({label})</span>;
+        return <span className={`${badge}`}>{s.prerequisite} ({label})</span>;
       }
-      return <span className="text-zinc-300">—</span>;
+      return <span className="text-slate-300">—</span>;
     }},
     { key: "is_retake", label: "", width: "15%", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
   ], []);
@@ -187,18 +178,16 @@ export default function EvaluatorHome() {
   const remainingColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "20%", className: "whitespace-nowrap" },
     { key: "subject_name", label: "Subject", width: "55%" },
-    { key: "grade", label: "Grade", align: "right", width: "25%", className: "whitespace-nowrap", render: (s) => <span className="text-red-600 font-semibold">{s.grade || "—"}</span> },
+    { key: "grade", label: "Grade", align: "right", width: "25%", className: "whitespace-nowrap", render: (s) => <span className="text-red-600 font-semibold">{s.grade || "\u2014"}</span> },
   ], []);
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+    <div className="min-h-screen bg-slate-50">
       <EvaluatorHeader />
-
-      <main className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
-        {/* Search */}
-        <div className="bg-white border rounded-xl shadow-sm p-4 sm:p-5">
-          <label htmlFor="student-search" className="text-sm font-semibold text-zinc-700 mb-2 block">
-            Search Student
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+        <div className="card p-4 sm:p-5">
+          <label htmlFor="student-search" className="text-sm font-semibold text-slate-700 mb-2 block">
+            Search Student Record
           </label>
           <div className="flex gap-2">
             <input
@@ -208,85 +197,91 @@ export default function EvaluatorHome() {
               onChange={(e) => setSearchValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Enter student number..."
-              className="flex-1 border border-zinc-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              className="input-field flex-1"
             />
             <button
               onClick={handleSearch}
               disabled={loading || !searchValue.trim()}
-              className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-2"
+              className="btn btn-primary btn-md"
             >
               {loading ? (
                 <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+                <Search size={16} />
               )}
               {loading ? "Searching..." : "Search"}
             </button>
           </div>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium flex items-center gap-2">
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <AlertTriangle size={16} className="shrink-0" />
             {error}
           </div>
         )}
 
-        {/* Student Info */}
         {student && <StudentCard student={student} />}
 
-        {/* Subjects */}
-        {student && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <SubjectTable
-                title="Current Semester Subjects"
-                subjects={subjects.taken}
-                columns={currentColumns}
-                emptyMsg="No current semester subjects."
-              />
+        {!student && !loading && !error && (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+              <Search size={28} className="text-slate-300" />
             </div>
+            <p className="text-slate-400 text-sm">Enter a student number to view their records</p>
+          </div>
+        )}
+      </div>
+
+      {student && (
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-6 pb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SubjectTable
+              title="Current Semester Subjects"
+              subjects={subjects.taken}
+              columns={currentColumns}
+              emptyMsg="No current semester subjects."
+            />
             <div className="space-y-6">
               <SubjectTable
                 title="Possible Subjects (Next Semester)"
                 subjects={subjects.available}
                 columns={nextColumns}
                 emptyMsg="No next semester subjects."
-                rowClassName={(s) => s.prereq_failed ? "opacity-50 bg-zinc-50" : ""}
+                rowClassName={(s) => s.prereq_failed ? "opacity-50 bg-slate-50" : ""}
               />
               {blockedCount > 0 && (
-                <div className="bg-white border border-amber-200 rounded-xl shadow-sm">
-                  <div className="px-5 py-3 border-b border-amber-100 bg-amber-50/50 rounded-t-xl">
+                <div className="card overflow-hidden border border-amber-200">
+                  <div className="px-5 py-3 border-b border-amber-100 bg-amber-50/50">
                     <h3 className="font-semibold text-sm text-amber-700 flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                      <AlertTriangle size={16} />
                       Fill the Gap
                       {replacements[0]?.gap_year && (
                         <span className="text-xs font-normal text-amber-500">(Y{replacements[0].gap_year}S{replacements[0].gap_semester})</span>
                       )}
                     </h3>
                   </div>
-                  <div className="p-4 text-sm text-zinc-600 border-b border-amber-100 bg-amber-50/20">
-                    {blockedCount} subject{blockedCount > 1 ? "s" : ""} blocked by failed prerequisites — filling with {replacements.length} minor subject{replacements.length > 1 ? "s" : ""} from next year
+                  <div className="p-4 text-sm text-slate-600 border-b border-amber-100 bg-amber-50/20">
+                    {blockedCount} subject{blockedCount > 1 ? "s" : ""} blocked by failed prerequisites &mdash; filling with {replacements.length} minor subject{replacements.length > 1 ? "s" : ""} from next year
                   </div>
                   {replacements.length > 0 && (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm table-fixed">
+                      <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-amber-100 bg-amber-50/30">
-                            <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide w-[18%]">Code</th>
-                            <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide w-[48%]">Subject</th>
-                            <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide w-[18%]">Type</th>
-                            <th className="px-4 py-2.5 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide w-[16%]">Units</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide w-[18%]">Code</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide w-[48%]">Subject</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide w-[18%]">Type</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide w-[16%]">Units</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-amber-50">
                           {replacements.map((r, i) => (
                             <tr key={i} className="transition hover:bg-amber-50/40">
-                              <td className="px-4 py-2.5 text-emerald-700 font-mono text-sm font-semibold truncate">{r.subject_code}</td>
-                              <td className="px-4 py-2.5 text-zinc-700 truncate">{r.subject_name}</td>
-                              <td className="px-4 py-2.5"><span className="text-xs font-semibold px-2 py-0.5 rounded uppercase bg-blue-100 text-blue-700">{r.subject_type}</span></td>
-                              <td className="px-4 py-2.5 text-zinc-700 text-right">{r.units}</td>
+                              <td className="px-6 py-3 text-emerald-700 font-mono text-sm font-semibold truncate">{r.subject_code}</td>
+                              <td className="px-6 py-3 text-slate-700 truncate">{r.subject_name}</td>
+                              <td className="px-6 py-3"><span className="badge badge-blue">{r.subject_type}</span></td>
+                              <td className="px-6 py-3 text-slate-700 text-right">{r.units}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -297,30 +292,19 @@ export default function EvaluatorHome() {
               )}
             </div>
           </div>
-        )}
 
-        {/* Remaining Failed Subjects */}
-        {student && remainingFails.length > 0 && (
-          <div className="border-t border-zinc-200 pt-6">
-            <SubjectTable
-              title="Remaining Failed Subjects"
-              subjects={remainingFails}
-              columns={remainingColumns}
-              emptyMsg="No remaining failed subjects."
-            />
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!student && !loading && !error && (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-100 flex items-center justify-center">
-              <svg className="w-8 h-8 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          {remainingFails.length > 0 && (
+            <div className="border-t border-slate-200 pt-6">
+              <SubjectTable
+                title="Remaining Failed Subjects"
+                subjects={remainingFails}
+                columns={remainingColumns}
+                emptyMsg="No remaining failed subjects."
+              />
             </div>
-            <p className="text-zinc-400 text-sm">Enter a student number to view their records</p>
-          </div>
-        )}
-      </main>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import Pagination from "../common/Pagination";
 
 const PAGE_SIZE = 10;
 
-export function RequestSection({ title, dotColor, requests, onOpen }) {
+export const RequestSection = memo(function RequestSection({ title, dotColor, requests, onOpen }) {
   const [page, setPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(requests.length / PAGE_SIZE));
   const paginated = requests.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -18,7 +18,7 @@ export function RequestSection({ title, dotColor, requests, onOpen }) {
       {requests.length > 0 ? (
         <div className="bg-white border rounded-xl shadow-sm divide-y">
           {paginated.map((req, i) => (
-            <div key={req.id ?? i} onClick={() => onOpen(req)} className="p-5 flex justify-between items-center cursor-pointer hover:bg-zinc-50 transition">
+            <div key={req.id ?? i} onClick={() => onOpen(req)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(req); } }} role="button" tabIndex={0} className="p-5 flex justify-between items-center cursor-pointer hover:bg-zinc-50 transition focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
               <div>
                 <div className="flex gap-2 items-center">
                   <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${
@@ -50,13 +50,4 @@ export function RequestSection({ title, dotColor, requests, onOpen }) {
       {requests.length > PAGE_SIZE && <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />}
     </div>
   );
-}
-
-export default function RequestList({ pending, reviewed, onOpen }) {
-  return (
-    <div className="space-y-8">
-      <RequestSection title="New Requests" dotColor="bg-yellow-400" requests={pending} onOpen={onOpen} />
-      <RequestSection title="Reviewed" dotColor="bg-zinc-400" requests={reviewed} onOpen={onOpen} />
-    </div>
-  );
-}
+});

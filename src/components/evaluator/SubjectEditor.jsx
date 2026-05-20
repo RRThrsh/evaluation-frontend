@@ -23,7 +23,7 @@ export default function SubjectEditor({ subjectData, selectedSubjectToAdd, setSe
       <div className="divide-y border rounded-lg text-sm max-h-60 overflow-y-auto">
         {subjectData.taken.length === 0 && <div className="p-3 text-zinc-400 text-center">No subjects taken yet</div>}
         {subjectData.taken.map((s) => (
-          <div key={s.id} className="p-3 flex items-center gap-2">
+          <div key={s.id} className="p-3 flex items-center gap-2 transition hover:bg-zinc-50">
             <div className="flex-1 min-w-0">
               <span className="font-medium">{s.subject_code}</span>
               <span className="text-zinc-400 ml-1 text-xs">{s.subject_name} Y{s.year_level} S{s.semester}</span>

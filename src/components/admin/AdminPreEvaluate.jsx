@@ -2,16 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Search, X, Eye, ChevronLeft, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
 import api from "../../services/api";
 
-function statusBadge(status) {
-  const map = {
-    PENDING: { label: "Pending", cls: "badge badge-yellow" },
-    APPROVED: { label: "Pass", cls: "badge badge-green" },
-    REJECTED: { label: "Fail", cls: "badge badge-red" },
-  };
-  return map[status] || { label: status || "", cls: "badge badge-gray" };
-}
-
-function SubjectTable({ title, subjects, columns, badgeFn }) {
+function SubjectTable({ title, subjects, columns }) {
   if (!subjects || subjects.length === 0) return null;
   return (
     <div className="card overflow-hidden">
@@ -30,7 +21,7 @@ function SubjectTable({ title, subjects, columns, badgeFn }) {
             <tr key={s.id ?? s.subject_code ?? i} className="table-row">
               {columns.map((col) => (
                 <td key={col.key} className="table-cell">
-                  {col.render ? col.render(s) : s[col.key] ?? ""}
+                  {col.render ? col.render(s) : s[col.key] ?? "\u2014"}
                 </td>
               ))}
             </tr>
@@ -73,22 +64,14 @@ function EvalModal({ request, onClose, onPreEnroll }) {
   const currentColumns = [
     { key: "subject_code", label: "Code" },
     { key: "subject_name", label: "Subject" },
-    { key: "status", label: "Status", render: (s) => <span className={statusBadge(s.status).cls}>{statusBadge(s.status).label}</span> },
+    { key: "status", label: "Status", render: (s) => s.status || "\u2014" },
     { key: "grade", label: "Grade" },
   ];
 
   const nextColumns = [
     { key: "subject_code", label: "Code" },
     { key: "subject_name", label: "Subject" },
-    { key: "prerequisite", label: "Prereq", render: (s) => {
-      if (s.prerequisite) {
-        const badge = s.prereq_failed ? "badge badge-red" : s.prereq_met ? "badge badge-green" : "badge badge-yellow";
-        const label = s.prereq_failed ? "FAILED" : s.prereq_met ? "OK" : "PENDING";
-        return <span className={`${badge}`}>{s.prerequisite} ({label})</span>;
-      }
-      return <span className="text-slate-300"></span>;
-    }},
-    { key: "is_retake", label: "", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : s.is_gap_filler ? <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Gap</span> : null },
+    { key: "prerequisite", label: "Prereq", render: (s) => s.prerequisite || "\u2014" },
   ];
 
   const overallBadge = (overall) => {

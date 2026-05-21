@@ -71,47 +71,14 @@ function PreEnrolledModal({ request, onClose }) {
     if (e.target === overlayRef.current) onClose();
   };
 
-  const currentColumns = useMemo(() => [
-    { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "45%" },
-    { key: "grade", label: "Grade", align: "right", width: "15%", className: "whitespace-nowrap", render: (s) => s.grade || "\u2014" },
-    { key: "status", label: "Status", width: "25%", render: (s) => {
-      const map = {
-        APPROVED: { label: "Pass", cls: "badge badge-green" },
-        FAILED: { label: "Fail", cls: "badge badge-red" },
-        PENDING: { label: "Pending", cls: "badge badge-yellow" },
-      };
-      const b = map[s.status] || { label: s.status || "\u2014", cls: "badge badge-gray" };
-      return <span className={b.cls}>{b.label}</span>;
-    }},
-  ], []);
-
   const nextColumns = useMemo(() => [
-    { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "40%" },
-    { key: "prerequisite", label: "Prereq", width: "25%", render: (s) => {
-      if (s.prerequisite) {
-        const badge = s.prereq_failed ? "badge badge-red" : s.is_retake ? "badge badge-yellow" : "badge badge-green";
-        const label = s.prereq_failed ? "FAILED" : s.is_retake ? "RETAKE" : "OK";
-        return <span className={`${badge}`}>{s.prerequisite} ({label})</span>;
-      }
-      return <span className="text-slate-300">{"\u2014"}</span>;
-    }},
-    { key: "units", label: "Units", align: "right", width: "10%", render: (s) => <span className="text-slate-400">{s.units}</span> },
-    { key: "is_gap_filler", label: "", width: "10%", render: (s) => s.is_gap_filler ? <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Gap</span> : s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
+    { key: "subject_code", label: "Code", width: "20%", className: "whitespace-nowrap" },
+    { key: "subject_name", label: "Subject", width: "50%" },
+    { key: "prerequisite", label: "Prereq", width: "15%", render: (s) => s.prerequisite ? s.prerequisite : "\u2014" },
+    { key: "units", label: "Units", align: "right", width: "15%" },
   ], []);
 
-  const gapColumns = useMemo(() => [
-    { key: "subject_code", label: "Code", width: "18%", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "48%" },
-    { key: "subject_type", label: "Type", width: "18%", render: (s) => <span className="badge badge-blue">{s.subject_type}</span> },
-    { key: "units", label: "Units", width: "16%", align: "right" },
-  ], []);
-
-  const blockedCount = evalData?.summary_extras?.blocked_count || 0;
-  const gapFillers = evalData?.gap_fillers || [];
-  const subjects = evalData?.subjects || [];
-  const currentSubjects = evalData?.current_semester_subjects || [];
+  const subjects = (evalData?.subjects || []).filter((s) => !s.prereq_failed);
 
   return (
     <div ref={overlayRef} onClick={handleOverlay} className="fixed inset-0 z-50 flex items-start justify-center pt-10 pb-10 overflow-y-auto bg-black/40 backdrop-blur-sm">
@@ -155,27 +122,10 @@ function PreEnrolledModal({ request, onClose }) {
             </div>
           ) : evalData ? (
             <>
-              {currentSubjects.length > 0 && (
-                <SubjectTable title="Current Semester Subjects" subjects={currentSubjects} columns={currentColumns} />
-              )}
-
               {subjects.length > 0 ? (
-                <SubjectTable
-                  title="Possible Subjects (Next Semester)"
-                  subjects={subjects}
-                  columns={nextColumns}
-                  rowClassName={(s) => s.prereq_failed ? "opacity-50 bg-slate-50" : s.is_gap_filler ? "bg-amber-50/50" : ""}
-                />
+                <SubjectTable title="Possible Subjects (Next Semester)" subjects={subjects} columns={nextColumns} />
               ) : (
                 <div className="card p-8 text-center text-slate-400 text-sm">No possible subjects available.</div>
-              )}
-
-              {blockedCount > 0 && gapFillers.length > 0 && (
-                <SubjectTable
-                  title="Fill the Gap"
-                  subjects={gapFillers}
-                  columns={gapColumns}
-                />
               )}
 
               {evalData.recommendations?.length > 0 && (

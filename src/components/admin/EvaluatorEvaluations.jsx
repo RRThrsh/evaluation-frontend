@@ -9,7 +9,7 @@ function SvgIcon({ path, className = "w-5 h-5" }) {
   );
 }
 
-export default function ModeratorEvaluations() {
+export default function EvaluatorEvaluations() {
   const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
@@ -38,8 +38,8 @@ export default function ModeratorEvaluations() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-900">Moderator Evaluations</h2>
-        <p className="text-sm text-slate-500 mt-1">Review all evaluation decisions made by moderators</p>
+        <h2 className="text-2xl font-bold text-slate-900">Evaluator Evaluations</h2>
+        <p className="text-sm text-slate-500 mt-1">Review all evaluation decisions made by evaluators</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -47,7 +47,7 @@ export default function ModeratorEvaluations() {
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
               <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase">Student</th>
-              <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase">Moderator</th>
+              <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase">Evaluator</th>
               <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase">Status</th>
               <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase">Date</th>
             </tr>
@@ -71,8 +71,8 @@ export default function ModeratorEvaluations() {
                     <p className="text-xs text-slate-400">{ev.student_number}</p>
                   </td>
                   <td className="px-5 py-3">
-                    <p className="text-slate-800">{ev.moderator_name}</p>
-                    <p className="text-xs text-slate-400">{ev.moderator_email}</p>
+                    <p className="text-slate-800">{ev.evaluator_name}</p>
+                    <p className="text-xs text-slate-400">{ev.evaluator_email}</p>
                   </td>
                   <td className="px-5 py-3">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${statusColor(ev.status)}`}>{ev.status}</span>

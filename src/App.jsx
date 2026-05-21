@@ -7,19 +7,15 @@ import ErrorBoundary from "./components/common/ErrorBoundary";
 /*  ==============================================
     PAGES
     ============================================== */
-import Home from "./pages/public/Home";
-import About from "./pages/public/About";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
-import Contact from "./pages/public/Contact";
 
 /*  ===============================================
     DASHBOARD PAGE
     ===============================================*/
-import StaffHome from "./pages/dashboard/staff/StaffHome";
-import ModeratorHome from "./pages/dashboard/moderator/ModeratorHome";
+import EvaluatorHome from "./pages/dashboard/evaluator/EvaluatorHome";
 import AdminHome from "./pages/dashboard/admin/AdminHome";
 import Profile from "./pages/dashboard/Profile";
 
@@ -38,10 +34,8 @@ function App() {
         <AuthProvider>
             <BrowserRouter>
                 <Routes>
-                    {/* Public Pages */}
-                    <Route path="/" element={<Home />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
+                    {/* Redirect root to login */}
+                    <Route path="/" element={<Login />} />
 
                     {/* Auth Pages */}
                     <Route path="/login" element={<Login />} />
@@ -55,17 +49,10 @@ function App() {
                         element={<ResetPassword />}
                     />
 
-                    {/* STAFF */}
-                    <Route path="/staff" element={
-                        <ProtectedRoute roles={["staff", "admin"]}>
-                            <StaffHome />
-                        </ProtectedRoute>
-                    }/>
-
-                    {/* MODERATOR */}
-                    <Route path="/moderator" element={
-                        <ProtectedRoute roles={["moderator", "admin"]}>
-                            <ModeratorHome />
+                    {/* EVALUATOR */}
+                    <Route path="/evaluator" element={
+                        <ProtectedRoute roles={["evaluator", "admin"]}>
+                            <EvaluatorHome />
                         </ProtectedRoute>
                     }/>
 
@@ -78,7 +65,7 @@ function App() {
 
                     {/* PROFILE (all authenticated roles) */}
                     <Route path="/profile" element={
-                        <ProtectedRoute roles={["user", "staff", "moderator", "admin"]}>
+                        <ProtectedRoute roles={["evaluator", "admin"]}>
                             <Profile />
                         </ProtectedRoute>
                     }/>

@@ -9,8 +9,8 @@ const SENSITIVE_TABLES = ["users"];
 
 function formatCell(value) {
   if (value === null || value === undefined) return <span className="italic text-slate-300">null</span>;
-  if (typeof value === "boolean") return <span className={`rounded-full px-2 py-1 text-xs font-semibold ${value ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>{value ? "true" : "false"}</span>;
-  if (typeof value === "number") return <span className="font-semibold text-blue-600">{value}</span>;
+  if (typeof value === "boolean") return <span className={`badge ${value ? "badge-green" : "badge-red"}`}>{value ? "true" : "false"}</span>;
+  if (typeof value === "number") return <span className="font-semibold text-primary-600">{value}</span>;
   if (typeof value === "object") return <span className="text-slate-400">{JSON.stringify(value).slice(0, 60)}</span>;
   return <span className="text-slate-700">{String(value)}</span>;
 }
@@ -24,75 +24,48 @@ export default function DatabaseViewer({ selectedTable, tableData, tableLoading,
   const [toast, setToast] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    try {
-      await api.delete(`/api/admin/tables/${deleteTarget.tableName}/${deleteTarget.rowId}`);
-      showToast("Record deleted successfully");
-      setDeleteTarget(null);
-      onLoadTable(deleteTarget.tableName);
-    } catch (err) {
-      showToast(err.message, "error");
-    } finally {
-      setDeleting(false);
-    }
+    try { await api.delete(`/api/admin/tables/${deleteTarget.tableName}/${deleteTarget.rowId}`); showToast("Record deleted successfully"); setDeleteTarget(null); onLoadTable(deleteTarget.tableName); }
+    catch (err) { showToast(err.message, "error"); }
+    finally { setDeleting(false); }
   };
 
   const handleEditSave = async () => {
     if (!editRow) return;
     setSaving(true);
-    try {
-      await api.put(`/api/admin/tables/${selectedTable}/${editRow[pkColumn]}`, sanitizeObject(editFormData));
-      showToast("Record updated successfully");
-      setEditRow(null);
-      onLoadTable(selectedTable);
-    } catch (err) {
-      showToast(err.message, "error");
-    } finally {
-      setSaving(false);
-    }
+    try { await api.put(`/api/admin/tables/${selectedTable}/${editRow[pkColumn]}`, sanitizeObject(editFormData)); showToast("Record updated successfully"); setEditRow(null); onLoadTable(selectedTable); }
+    catch (err) { showToast(err.message, "error"); }
+    finally { setSaving(false); }
   };
 
   if (!selectedTable) {
     return (
-      <div className="rounded-3xl border border-white/70 bg-white/90 shadow-sm overflow-hidden">
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="rounded-3xl bg-slate-100 p-5">
-            <SvgIcon path="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7" className="w-10 h-10 text-slate-400" />
-          </div>
-          <h3 className="mt-5 text-lg font-bold text-slate-700">No Table Selected</h3>
-          <p className="mt-2 text-sm text-slate-400">Choose a table from the sidebar</p>
-        </div>
+      <div className="card flex flex-col items-center justify-center py-24 text-center">
+        <div className="rounded-3xl bg-slate-100 p-5"><SvgIcon path="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7" className="w-10 h-10 text-slate-400" /></div>
+        <h3 className="mt-5 text-lg font-bold text-slate-700">No Table Selected</h3>
+        <p className="mt-2 text-sm text-slate-400">Choose a table from the sidebar</p>
       </div>
     );
   }
 
   if (tableLoading) {
-    return (
-      <div className="rounded-3xl border border-white/70 bg-white/90 shadow-sm overflow-hidden p-6">
-        <table className="w-full"><tbody><SkeletonRows columns={5} rows={8} /></tbody></table>
-      </div>
-    );
+    return <div className="card p-6"><table className="w-full"><tbody><SkeletonRows columns={5} rows={8} /></tbody></table></div>;
   }
 
   if (!tableData) return null;
 
   return (
     <>
-      <div className="rounded-3xl border border-white/70 bg-white/90 shadow-sm overflow-hidden">
+      <div className="card overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">{selectedTable}</div>
-            <div className="rounded-2xl bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">{tableData.totalRows} rows</div>
-            {SENSITIVE_TABLES.includes(selectedTable) && (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-600">Protected</div>
-            )}
+            <div className="badge badge-blue">{selectedTable}</div>
+            <div className="badge badge-gray">{tableData.totalRows} rows</div>
+            {SENSITIVE_TABLES.includes(selectedTable) && <div className="badge badge-amber">Protected</div>}
           </div>
         </div>
         <div className="overflow-auto max-h-[650px]">
@@ -113,12 +86,8 @@ export default function DatabaseViewer({ selectedTable, tableData, tableLoading,
                   ))}
                   <td className="px-5 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => { setEditRow(row); setEditFormData({ ...row }); }} className="rounded-lg border border-slate-200 p-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-blue-600">
-                        <SvgIcon path="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => setDeleteTarget({ tableName: selectedTable, rowId: row[pkColumn] })} className="rounded-lg border border-red-200 p-1.5 text-xs font-medium text-red-500 transition hover:bg-red-50 hover:text-red-700">
-                        <SvgIcon path="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" className="w-3.5 h-3.5" />
-                      </button>
+                      <button onClick={() => { setEditRow(row); setEditFormData({ ...row }); }} className="btn btn-ghost btn-sm text-amber-500"><SvgIcon path="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setDeleteTarget({ tableName: selectedTable, rowId: row[pkColumn] })} className="btn btn-ghost btn-sm text-red-400"><SvgIcon path="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" className="w-3.5 h-3.5" /></button>
                     </div>
                   </td>
                 </tr>
@@ -131,46 +100,35 @@ export default function DatabaseViewer({ selectedTable, tableData, tableLoading,
       <DeleteModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} tableName={deleteTarget?.tableName} rowId={deleteTarget?.rowId} deleting={deleting} />
 
       {editRow && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 backdrop-blur-sm pt-10 pb-10" onClick={() => setEditRow(null)}>
-          <div className="relative w-full max-w-2xl mx-4 rounded-3xl border border-white/60 bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay items-start pt-10 pb-10 overflow-y-auto" onClick={() => setEditRow(null)}>
+          <div className="modal-content max-w-2xl p-0" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-blue-50 p-2.5 text-blue-600">
-                  <SvgIcon path="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">Edit Row</h3>
-                  <p className="text-xs text-slate-400">{selectedTable}</p>
-                </div>
+                <div className="rounded-2xl bg-primary-50 p-2.5 text-primary-600"><SvgIcon path="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" className="w-4 h-4" /></div>
+                <div><h3 className="text-sm font-bold text-slate-900">Edit Row</h3><p className="text-xs text-slate-400">{selectedTable}</p></div>
               </div>
-              <button onClick={() => setEditRow(null)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
-                <SvgIcon path="M6 18L18 6M6 6l12 12" className="w-4 h-4" />
-              </button>
+              <button onClick={() => setEditRow(null)} className="btn btn-ghost btn-sm text-slate-400"><SvgIcon path="M6 18L18 6M6 6l12 12" className="w-4 h-4" /></button>
             </div>
             <div className="px-6 py-5 space-y-3 max-h-[65vh] overflow-y-auto">
-              {tableData.columns
-                .filter((col) => !(selectedTable === "users" && col === "password_hash"))
-                .map((col) => (
+              {tableData.columns.filter((col) => !(selectedTable === "users" && col === "password_hash")).map((col) => (
                 <div key={col} className="flex items-start gap-4 rounded-2xl bg-slate-50 px-4 py-3">
                   <span className="w-40 shrink-0 text-xs font-bold uppercase tracking-wider text-slate-500 pt-0.5">{col === "role" && selectedTable === "users" ? "Role (Admin only)" : col}</span>
                   {col === "id" || (selectedTable === "users" && col !== "role") ? (
                     <span className="text-sm text-slate-800 break-all">{formatCell(editRow[col])}</span>
                   ) : col === "role" && selectedTable === "users" ? (
-                    <select value={editFormData[col] ?? ""} onChange={(e) => setEditFormData((prev) => ({ ...prev, [col]: e.target.value }))} className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white">
-                      <option value="user">user</option>
-                      <option value="staff">staff</option>
-                      <option value="moderator">moderator</option>
+                    <select value={editFormData[col] ?? ""} onChange={(e) => setEditFormData((prev) => ({ ...prev, [col]: e.target.value }))} className="input-field flex-1">
+                      <option value="evaluator">evaluator</option>
                       <option value="admin">admin</option>
                     </select>
                   ) : (
-                    <input type="text" value={editFormData[col] ?? ""} onChange={(e) => setEditFormData((prev) => ({ ...prev, [col]: e.target.value }))} className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+                    <input type="text" value={editFormData[col] ?? ""} onChange={(e) => setEditFormData((prev) => ({ ...prev, [col]: e.target.value }))} className="input-field flex-1" />
                   )}
                 </div>
               ))}
             </div>
             <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
-              <button onClick={() => setEditRow(null)} className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50" disabled={saving}>Cancel</button>
-              <button onClick={handleEditSave} disabled={saving} className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:scale-[1.02] disabled:opacity-50">{saving ? "Saving..." : "Save Changes"}</button>
+              <button onClick={() => setEditRow(null)} className="btn btn-secondary btn-md" disabled={saving}>Cancel</button>
+              <button onClick={handleEditSave} disabled={saving} className="btn btn-primary btn-md">{saving ? "Saving..." : "Save Changes"}</button>
             </div>
           </div>
         </div>
@@ -178,7 +136,7 @@ export default function DatabaseViewer({ selectedTable, tableData, tableLoading,
 
       {toast && (
         <div className="fixed top-5 right-5 z-50">
-          <div className={`flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-3 ${toast.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"}`}>
+          <div className={`flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-xl ${toast.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"}`}>
             <SvgIcon path={toast.type === "success" ? "M5 13l4 4L19 7" : "M6 18L18 6M6 6l12 12"} className="w-5 h-5" />
             <span className="text-sm font-medium">{toast.message}</span>
           </div>

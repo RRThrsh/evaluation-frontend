@@ -9,12 +9,12 @@ function SvgIcon({ path, className = "w-5 h-5" }) {
   );
 }
 
-export default function ModeratorCourses() {
-  const [moderators, setModerators] = useState([]);
+export default function EvaluatorCourses() {
+  const [evaluators, setEvaluators] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMod, setSelectedMod] = useState(null);
+  const [selectedEval, setSelectedEval] = useState(null);
   const [selectedCourses, setSelectedCourses] = useState([]);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
@@ -27,8 +27,8 @@ export default function ModeratorCourses() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/admin/moderator-courses");
-      setModerators(res.data.moderators ?? []);
+      const res = await api.get("/api/admin/evaluator-courses");
+      setEvaluators(res.data.evaluators ?? []);
       setAssignments(res.data.assignments ?? []);
       setCourses(res.data.courses ?? []);
     } catch (err) {
@@ -40,9 +40,9 @@ export default function ModeratorCourses() {
 
   useEffect(() => { load(); }, []);
 
-  const selectMod = (mod) => {
-    setSelectedMod(mod);
-    setSelectedCourses(assignments.filter(a => a.user_id === mod.id).map(a => a.course_id));
+  const selectEval = (evalUser) => {
+    setSelectedEval(evalUser);
+    setSelectedCourses(assignments.filter(a => a.user_id === evalUser.id).map(a => a.course_id));
   };
 
   const toggleCourse = (courseId) => {
@@ -52,11 +52,11 @@ export default function ModeratorCourses() {
   };
 
   const save = async () => {
-    if (!selectedMod) return;
+    if (!selectedEval) return;
     setSaving(true);
     try {
-      await api.post("/api/admin/moderator-courses", { user_id: selectedMod.id, course_ids: selectedCourses });
-      showToast(`Courses assigned to ${selectedMod.full_name}`);
+      await api.post("/api/admin/evaluator-courses", { user_id: selectedEval.id, course_ids: selectedCourses });
+      showToast(`Courses assigned to ${selectedEval.full_name}`);
       await load();
     } catch (err) {
       showToast(err.message, "error");
@@ -79,8 +79,8 @@ export default function ModeratorCourses() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-800">Moderator Course Assignments</h2>
-        <p className="mt-1 text-sm text-slate-500">Assign courses to moderators so they only see relevant evaluation requests.</p>
+        <h2 className="text-xl font-bold text-slate-800">Evaluator Course Assignments</h2>
+        <p className="mt-1 text-sm text-slate-500">Assign courses to evaluators so they only see relevant evaluation requests.</p>
       </div>
 
       {toast && (
@@ -94,21 +94,21 @@ export default function ModeratorCourses() {
         <div className="xl:col-span-1">
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-100 px-5 py-4">
-              <h3 className="text-sm font-semibold text-slate-700">Moderators</h3>
+              <h3 className="text-sm font-semibold text-slate-700">Evaluators</h3>
             </div>
             <div className="divide-y divide-slate-100">
-              {moderators.length === 0 && (
-                <p className="px-5 py-8 text-center text-sm text-slate-400">No moderators found.</p>
+              {evaluators.length === 0 && (
+                <p className="px-5 py-8 text-center text-sm text-slate-400">No evaluators found.</p>
               )}
-              {moderators.map(mod => (
+              {evaluators.map(evalUser => (
                 <button
-                  key={mod.id}
-                  onClick={() => selectMod(mod)}
-                  className={`w-full px-5 py-4 text-left transition hover:bg-slate-50 ${selectedMod?.id === mod.id ? "bg-blue-50 ring-1 ring-blue-200" : ""}`}
+                  key={evalUser.id}
+                  onClick={() => selectEval(evalUser)}
+                  className={`w-full px-5 py-4 text-left transition hover:bg-slate-50 ${selectedEval?.id === evalUser.id ? "bg-blue-50 ring-1 ring-blue-200" : ""}`}
                 >
-                  <p className="text-sm font-medium text-slate-800">{mod.full_name}</p>
-                  <p className="text-xs text-slate-400">{mod.email}</p>
-                  <p className="mt-1 text-xs text-slate-500 truncate">{getAssignedNames(mod.id)}</p>
+                  <p className="text-sm font-medium text-slate-800">{evalUser.full_name}</p>
+                  <p className="text-xs text-slate-400">{evalUser.email}</p>
+                  <p className="mt-1 text-xs text-slate-500 truncate">{getAssignedNames(evalUser.id)}</p>
                 </button>
               ))}
             </div>
@@ -116,19 +116,19 @@ export default function ModeratorCourses() {
         </div>
 
         <div className="xl:col-span-2">
-          {!selectedMod ? (
+          {!selectedEval ? (
             <div className="flex items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white py-20">
               <div className="text-center">
                 <SvgIcon path="M13 10V3L4 14h7v7l9-11h-7z" className="mx-auto h-12 w-12 text-slate-300" />
-                <p className="mt-3 text-sm text-slate-400">Select a moderator to assign courses</p>
+                <p className="mt-3 text-sm text-slate-400">Select an evaluator to assign courses</p>
               </div>
             </div>
           ) : (
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-700">{selectedMod.full_name}</h3>
-                  <p className="text-xs text-slate-400">{selectedMod.email}</p>
+                  <h3 className="text-sm font-semibold text-slate-700">{selectedEval.full_name}</h3>
+                  <p className="text-xs text-slate-400">{selectedEval.email}</p>
                 </div>
                 <button
                   onClick={save}

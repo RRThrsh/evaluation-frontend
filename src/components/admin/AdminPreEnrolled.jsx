@@ -1,7 +1,47 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { X, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Eye, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle } from "lucide-react";
 
 import api from "../../services/api";
+
+function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
+  if (!subjects || subjects.length === 0) return null;
+  return (
+    <div className="card overflow-hidden">
+      <div className="px-5 py-3 border-b border-slate-100">
+        <h3 className="font-semibold text-sm text-slate-700">
+          {title} <span className="text-slate-400 font-normal">({subjects.length})</span>
+        </h3>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-100 bg-slate-50/50">
+              {columns.map((col) => (
+                <th key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide ${col.align === "right" ? "text-right" : ""} ${col.className || ""}`}>
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {subjects.map((s, i) => {
+              const extra = typeof rowClassName === "function" ? rowClassName(s) : "";
+              return (
+                <tr key={s.id ?? i} className={`transition hover:bg-primary-50/40 ${extra}`}>
+                  {columns.map((col) => (
+                    <td key={col.key} className={`px-6 py-3 text-slate-700 truncate ${col.align === "right" ? "text-right" : ""}`}>
+                      {col.render ? col.render(s) : s[col.key] ?? "\u2014"}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 function PreEnrolledModal({ request, onClose }) {
   const overlayRef = useRef(null);
@@ -31,16 +71,51 @@ function PreEnrolledModal({ request, onClose }) {
     if (e.target === overlayRef.current) onClose();
   };
 
-  const nextColumns = useMemo(() => [
-    { key: "subject_code", label: "Code", width: "auto", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "auto" },
-    { key: "units", label: "Units", width: "auto", render: (s) => <span className="text-slate-400">{s.units}</span> },
-    { key: "type", label: "", width: "auto", render: (s) => s.is_gap_filler ? <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Gap</span> : null },
+  const currentColumns = useMemo(() => [
+    { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
+    { key: "subject_name", label: "Subject", width: "45%" },
+    { key: "grade", label: "Grade", align: "right", width: "15%", className: "whitespace-nowrap", render: (s) => s.grade || "\u2014" },
+    { key: "status", label: "Status", width: "25%", render: (s) => {
+      const map = {
+        APPROVED: { label: "Pass", cls: "badge badge-green" },
+        FAILED: { label: "Fail", cls: "badge badge-red" },
+        PENDING: { label: "Pending", cls: "badge badge-yellow" },
+      };
+      const b = map[s.status] || { label: s.status || "\u2014", cls: "badge badge-gray" };
+      return <span className={b.cls}>{b.label}</span>;
+    }},
   ], []);
+
+  const nextColumns = useMemo(() => [
+    { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
+    { key: "subject_name", label: "Subject", width: "40%" },
+    { key: "prerequisite", label: "Prereq", width: "25%", render: (s) => {
+      if (s.prerequisite) {
+        const badge = s.prereq_failed ? "badge badge-red" : s.is_retake ? "badge badge-yellow" : "badge badge-green";
+        const label = s.prereq_failed ? "FAILED" : s.is_retake ? "RETAKE" : "OK";
+        return <span className={`${badge}`}>{s.prerequisite} ({label})</span>;
+      }
+      return <span className="text-slate-300">{"\u2014"}</span>;
+    }},
+    { key: "units", label: "Units", align: "right", width: "10%", render: (s) => <span className="text-slate-400">{s.units}</span> },
+    { key: "is_gap_filler", label: "", width: "10%", render: (s) => s.is_gap_filler ? <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Gap</span> : s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
+  ], []);
+
+  const gapColumns = useMemo(() => [
+    { key: "subject_code", label: "Code", width: "18%", className: "whitespace-nowrap" },
+    { key: "subject_name", label: "Subject", width: "48%" },
+    { key: "subject_type", label: "Type", width: "18%", render: (s) => <span className="badge badge-blue">{s.subject_type}</span> },
+    { key: "units", label: "Units", width: "16%", align: "right" },
+  ], []);
+
+  const blockedCount = evalData?.summary_extras?.blocked_count || 0;
+  const gapFillers = evalData?.gap_fillers || [];
+  const subjects = evalData?.subjects || [];
+  const currentSubjects = evalData?.current_semester_subjects || [];
 
   return (
     <div ref={overlayRef} onClick={handleOverlay} className="fixed inset-0 z-50 flex items-start justify-center pt-10 pb-10 overflow-y-auto bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-4xl mx-4 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div className="w-full max-w-5xl mx-4 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
         <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-800">Pre-Enrolled Student</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600">
@@ -80,49 +155,40 @@ function PreEnrolledModal({ request, onClose }) {
             </div>
           ) : evalData ? (
             <>
-              <div className="card overflow-hidden">
-                <div className="px-5 py-3 border-b border-slate-100">
-                  <h3 className="font-semibold text-sm text-slate-700">
-                    Pre-Enrolled Subjects
-                    <span className="text-slate-400 font-normal ml-1">({(evalData?.subjects || []).length})</span>
-                  </h3>
-                </div>
-                {(evalData.subjects || []).length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-100 bg-slate-50/50">
-                          {nextColumns.map((col) => (
-                            <th key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide ${col.align === "right" ? "text-right" : ""} ${col.className || ""}`}>
-                              {col.label}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {(evalData.subjects || []).map((s, i) => (
-                          <tr key={s.id ?? i} className={`transition hover:bg-primary-50/40 ${s.is_gap_filler ? "bg-amber-50/50" : ""}`}>
-                            {nextColumns.map((col) => (
-                              <td key={col.key} className={`px-6 py-3 text-slate-700 truncate ${col.align === "right" ? "text-right" : ""}`}>
-                                {col.render ? col.render(s) : s[col.key] ?? "\u2014"}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="p-8 text-center text-slate-400 text-sm">No possible subjects available.</div>
-                )}
-              </div>
+              {currentSubjects.length > 0 && (
+                <SubjectTable title="Current Semester Subjects" subjects={currentSubjects} columns={currentColumns} />
+              )}
+
+              {subjects.length > 0 ? (
+                <SubjectTable
+                  title="Possible Subjects (Next Semester)"
+                  subjects={subjects}
+                  columns={nextColumns}
+                  rowClassName={(s) => s.prereq_failed ? "opacity-50 bg-slate-50" : s.is_gap_filler ? "bg-amber-50/50" : ""}
+                />
+              ) : (
+                <div className="card p-8 text-center text-slate-400 text-sm">No possible subjects available.</div>
+              )}
+
+              {blockedCount > 0 && gapFillers.length > 0 && (
+                <SubjectTable
+                  title="Fill the Gap"
+                  subjects={gapFillers}
+                  columns={gapColumns}
+                />
+              )}
 
               {evalData.recommendations?.length > 0 && (
                 <div className="card p-4">
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Evaluation Notes</h4>
                   <div className="space-y-1">
                     {evalData.recommendations.map((r, i) => (
-                      <p key={i} className="text-xs text-slate-600">{r}</p>
+                      <p key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
+                        {r.includes("FAILED") || r.includes("disqualified") ? <AlertTriangle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
+                         r.includes("conditional") ? <AlertTriangle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
+                         <CheckCircle size={12} className="text-emerald-400 mt-0.5 shrink-0" />}
+                        {r}
+                      </p>
                     ))}
                   </div>
                 </div>

@@ -23,6 +23,7 @@ const AdminPreEvaluate = lazy(() => import("../../../components/admin/AdminPreEv
 const AdminPreEnrolled = lazy(() => import("../../../components/admin/AdminPreEnrolled"));
 const Grading = lazy(() => import("../../../components/admin/Grading"));
 const SectionManager = lazy(() => import("../../../components/admin/SectionManager"));
+const InstructorManager = lazy(() => import("../../../components/admin/InstructorManager"));
 
 const TABLE_GROUPS = [
   { name: "Academic", tables: ["students", "subjects", "student_subjects", "student_units"] },
@@ -150,6 +151,7 @@ export default function AdminHome() {
             {activeTab === "pre-enrolled" && <AdminPreEnrolled />}
             {activeTab === "grading" && <Grading />}
             {activeTab === "sections" && <SectionManager />}
+            {activeTab === "instructors" && <InstructorManager />}
             {activeTab === "sessions" && <SessionManager />}
             {activeTab === "database" && <DatabaseViewer selectedTable={selectedTable} tableData={tableData} tableLoading={tableLoading} onLoadTable={loadTable} />}
           </Suspense>

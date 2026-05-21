@@ -43,6 +43,17 @@ function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
   );
 }
 
+function formatNote(raw) {
+  const txt = raw.replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&#39;/g, "'");
+  // Prereq failed: Prerequisite "X" for "Y" is FAILED — student must retake "X" first
+  const prereqMatch = txt.match(/Prerequisite "(.+?)" for "(.+?)" is FAILED/);
+  if (prereqMatch) return `${prereqMatch[2]} requires ${prereqMatch[1]} — must retake first`;
+  // Awaiting grading
+  const awaitMatch = txt.match(/(\d+) currently enrolled subject/);
+  if (awaitMatch) return `${awaitMatch[1]} subject(s) still awaiting grading`;
+  return txt;
+}
+
 function PreEnrolledModal({ request, onClose }) {
   const overlayRef = useRef(null);
   const [evalData, setEvalData] = useState(null);
@@ -132,14 +143,17 @@ function PreEnrolledModal({ request, onClose }) {
                 <div className="card p-4">
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Evaluation Notes</h4>
                   <div className="space-y-1">
-                    {evalData.recommendations.map((r, i) => (
-                      <p key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
-                        {r.includes("FAILED") || r.includes("disqualified") || r.includes("Disqualified") ? <AlertTriangle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
-                         r.includes("conditional") || r.includes("Conditional") ? <AlertTriangle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
-                         <CheckCircle size={12} className="text-emerald-400 mt-0.5 shrink-0" />}
-                        {r}
-                      </p>
-                    ))}
+                    {evalData.recommendations.map((r, i) => {
+                      const text = formatNote(r);
+                      return (
+                        <p key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
+                          {text.includes("FAILED") || text.includes("disqualified") || text.includes("Disqualified") || text.includes("retake") ? <AlertTriangle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
+                           text.includes("conditional") || text.includes("Conditional") || text.includes("awaiting") ? <AlertTriangle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
+                           <CheckCircle size={12} className="text-emerald-400 mt-0.5 shrink-0" />}
+                          {text}
+                        </p>
+                      );
+                    })}
                   </div>
                 </div>
               )}

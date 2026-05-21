@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AlertTriangle, ChevronDown } from "lucide-react";
 import api from "../../services/api";
 
@@ -46,9 +46,11 @@ function EditableCell({ value, onSave }) {
   );
 }
 
-function PeriodCell({ studentGrades, examWeight, qarWeight, onUpdateGrade }) {
+function PeriodCell({ studentGrades, examWeight, qarWeight }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("general_average");
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
 
   const getGrade = (period) => {
     if (period === "general_average") {
@@ -68,10 +70,19 @@ function PeriodCell({ studentGrades, examWeight, qarWeight, onUpdateGrade }) {
 
   const displayGrade = getGrade(selected);
 
+  const handleClick = () => {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.left });
+    }
+    setOpen(!open);
+  };
+
   return (
-    <div className="relative">
+    <>
       <button
-        onClick={() => setOpen(!open)}
+        ref={btnRef}
+        onClick={handleClick}
         className="flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 font-semibold min-w-[100px]"
       >
         <span>{displayGrade != null ? displayGrade : "\u2014"}</span>
@@ -79,8 +90,11 @@ function PeriodCell({ studentGrades, examWeight, qarWeight, onUpdateGrade }) {
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[160px]">
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[160px]"
+            style={{ top: pos.top, left: pos.left }}
+          >
             {["prelim", "midterm", "finals", "general_average"].map((p) => {
               const val = getGrade(p);
               const labels = { prelim: "Prelim", midterm: "Midterm", finals: "Finals", general_average: "General Average" };
@@ -112,7 +126,7 @@ function PeriodCell({ studentGrades, examWeight, qarWeight, onUpdateGrade }) {
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }
 

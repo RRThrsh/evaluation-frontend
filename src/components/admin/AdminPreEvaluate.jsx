@@ -147,13 +147,6 @@ function EvalModal({ request, onClose, onPreEnroll }) {
             <>
               <SubjectTable title="Current Semester Subjects" subjects={evalData.current_semester_subjects} columns={currentColumns} />
               <SubjectTable title={`Possible Subjects (Next Semester)`} subjects={evalData.next_semester_subjects || []} columns={nextColumns} />
-              {evalData.failed_subjects?.length > 0 && (
-                <SubjectTable title="Failed Subjects" subjects={evalData.failed_subjects} columns={[
-                  { key: "subject_code", label: "Code" },
-                  { key: "subject_name", label: "Subject" },
-                  { key: "grade", label: "Grade", render: (s) => <span className="text-red-600 font-medium">{s.grade}</span> },
-                ]} />
-              )}
               {evalData.gap_fillers?.length > 0 && (
                 <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
                   {evalData.gap_fillers.length} gap filler subject(s) included in Possible Subjects table above.

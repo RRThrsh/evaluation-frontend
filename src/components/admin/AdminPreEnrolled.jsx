@@ -90,43 +90,96 @@ function PreEnrolledModal({ request, onClose }) {
             <div className="flex justify-center py-12">
               <span className="inline-block w-6 h-6 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
             </div>
-          ) : (
-            <div className="card overflow-hidden">
-              <div className="px-5 py-3 border-b border-slate-100">
-                <h3 className="font-semibold text-sm text-slate-700">
-                  Possible Subjects (Y{nextYear} - {semesterNames[nextSem]})
-                  <span className="text-slate-400 font-normal ml-1">({(evalData?.next_semester_subjects || []).length})</span>
-                </h3>
-              </div>
-              {(evalData?.next_semester_subjects || []).length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/50">
-                        {nextColumns.map((col) => (
-                          <th key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide ${col.align === "right" ? "text-right" : ""} ${col.className || ""}`}>
-                            {col.label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {(evalData.next_semester_subjects || []).map((s, i) => (
-                        <tr key={s.id ?? i} className={`transition hover:bg-primary-50/40 ${s.is_gap_filler ? "bg-amber-50/50" : ""}`}>
+          ) : evalData ? (
+            <>
+              <div className="card overflow-hidden">
+                <div className="px-5 py-3 border-b border-slate-100">
+                  <h3 className="font-semibold text-sm text-slate-700">
+                    Possible Subjects (Y{nextYear} - {semesterNames[nextSem]})
+                    <span className="text-slate-400 font-normal ml-1">({(evalData?.next_semester_subjects || []).length})</span>
+                  </h3>
+                </div>
+                {(evalData.next_semester_subjects || []).length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50/50">
                           {nextColumns.map((col) => (
-                            <td key={col.key} className={`px-6 py-3 text-slate-700 truncate ${col.align === "right" ? "text-right" : ""}`}>
-                              {col.render ? col.render(s) : s[col.key] ?? "\u2014"}
-                            </td>
+                            <th key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide ${col.align === "right" ? "text-right" : ""} ${col.className || ""}`}>
+                              {col.label}
+                            </th>
                           ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {(evalData.next_semester_subjects || []).map((s, i) => (
+                          <tr key={s.id ?? i} className={`transition hover:bg-primary-50/40 ${s.is_gap_filler ? "bg-amber-50/50" : ""}`}>
+                            {nextColumns.map((col) => (
+                              <td key={col.key} className={`px-6 py-3 text-slate-700 truncate ${col.align === "right" ? "text-right" : ""}`}>
+                                {col.render ? col.render(s) : s[col.key] ?? "\u2014"}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-slate-400 text-sm">No possible subjects available.</div>
+                )}
+              </div>
+
+              {evalData.remaining_failed_subjects?.length > 0 && (
+                <div className="card overflow-hidden">
+                  <div className="px-5 py-3 border-b border-slate-100">
+                    <h3 className="font-semibold text-sm text-slate-700">
+                      Failed Subjects
+                      <span className="text-slate-400 font-normal ml-1">({evalData.remaining_failed_subjects.length})</span>
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50/50">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Code</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Subject</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Grade</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Prereq For</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {evalData.remaining_failed_subjects.map((fs) => {
+                          const blocked = evalData.prerequisite_checks?.filter((p) => p.prerequisite_id === fs.subject_id) || [];
+                          return (
+                            <tr key={fs.id} className="hover:bg-red-50/40">
+                              <td className="px-6 py-3 text-slate-700 font-mono text-xs">{fs.subject_code}</td>
+                              <td className="px-6 py-3 text-slate-700">{fs.subject_name}</td>
+                              <td className="px-6 py-3"><span className="text-red-600 font-medium">{fs.grade || "INC"}</span></td>
+                              <td className="px-6 py-3 text-slate-500 text-xs">
+                                {blocked.length > 0 ? blocked.map((b) => b.subject_code).join(", ") : "\u2014"}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              ) : (
-                <div className="p-8 text-center text-slate-400 text-sm">No possible subjects available.</div>
               )}
-            </div>
+
+              {evalData.recommendations?.length > 0 && (
+                <div className="card p-4">
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Evaluation Notes</h4>
+                  <div className="space-y-1">
+                    {evalData.recommendations.map((r, i) => (
+                      <p key={i} className="text-xs text-slate-600">{r}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="p-10 text-center text-sm text-slate-400">Failed to load evaluation data.</div>
           )}
         </div>
       </div>

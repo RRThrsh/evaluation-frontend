@@ -129,44 +129,6 @@ function PreEnrolledModal({ request, onClose }) {
                 )}
               </div>
 
-              {evalData.remaining_failed_subjects?.length > 0 && (
-                <div className="card overflow-hidden">
-                  <div className="px-5 py-3 border-b border-slate-100">
-                    <h3 className="font-semibold text-sm text-slate-700">
-                      Failed Subjects
-                      <span className="text-slate-400 font-normal ml-1">({evalData.remaining_failed_subjects.length})</span>
-                    </h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-100 bg-slate-50/50">
-                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Code</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Subject</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Grade</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Prereq For</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {evalData.remaining_failed_subjects.map((fs) => {
-                          const blocked = evalData.prerequisite_checks?.filter((p) => p.prerequisite_id === fs.subject_id) || [];
-                          return (
-                            <tr key={fs.id} className="hover:bg-red-50/40">
-                              <td className="px-6 py-3 text-slate-700 font-mono text-xs">{fs.subject_code}</td>
-                              <td className="px-6 py-3 text-slate-700">{fs.subject_name}</td>
-                              <td className="px-6 py-3"><span className="text-red-600 font-medium">{fs.grade || "INC"}</span></td>
-                              <td className="px-6 py-3 text-slate-500 text-xs">
-                                {blocked.length > 0 ? blocked.map((b) => b.subject_code).join(", ") : "\u2014"}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
               {evalData.recommendations?.length > 0 && (
                 <div className="card p-4">
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Evaluation Notes</h4>

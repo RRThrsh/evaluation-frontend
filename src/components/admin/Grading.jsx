@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { AlertTriangle, ChevronDown } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { AlertTriangle } from "lucide-react";
 import api from "../../services/api";
 
 function computePeriodGrade(exam, qar, examWeight, qarWeight) {
@@ -47,10 +47,7 @@ function EditableCell({ value, onSave }) {
 }
 
 function PeriodCell({ studentGrades, examWeight, qarWeight }) {
-  const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("general_average");
-  const [pos, setPos] = useState({ top: 0, left: 0 });
-  const btnRef = useRef(null);
 
   const getGrade = (period) => {
     if (period === "general_average") {
@@ -68,65 +65,25 @@ function PeriodCell({ studentGrades, examWeight, qarWeight }) {
     return computePeriodGrade(g.exam_score, g.qar_score, examWeight, qarWeight);
   };
 
+  const labels = { prelim: "Prelim", midterm: "Midterm", finals: "Finals", general_average: "General Average" };
   const displayGrade = getGrade(selected);
-
-  const handleClick = () => {
-    if (!open && btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 4, left: rect.left });
-    }
-    setOpen(!open);
-  };
+  const prelim = studentGrades.find((g) => g.period === "prelim");
+  const midterm = studentGrades.find((g) => g.period === "midterm");
+  const finals = studentGrades.find((g) => g.period === "finals");
 
   return (
-    <>
-      <button
-        ref={btnRef}
-        onClick={handleClick}
-        className="flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 font-semibold min-w-[100px]"
+    <div className="flex items-center gap-2">
+      <select
+        value={selected}
+        onChange={(e) => setSelected(e.target.value)}
+        className="input-field text-xs py-1 px-1.5 min-w-[110px] font-semibold"
       >
-        <span>{displayGrade != null ? displayGrade : "\u2014"}</span>
-        <ChevronDown size={12} className="text-slate-400" />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div
-            className="fixed z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[160px]"
-            style={{ top: pos.top, left: pos.left }}
-          >
-            {["prelim", "midterm", "finals", "general_average"].map((p) => {
-              const val = getGrade(p);
-              const labels = { prelim: "Prelim", midterm: "Midterm", finals: "Finals", general_average: "General Average" };
-              return (
-                <button
-                  key={p}
-                  onClick={() => { setSelected(p); setOpen(false); }}
-                  className={`w-full text-left px-3 py-1.5 text-sm flex items-center justify-between gap-2 ${
-                    selected === p ? "bg-primary-50 text-primary-700" : "hover:bg-slate-50 text-slate-700"
-                  }`}
-                >
-                  <span>{labels[p]}</span>
-                  <span className="font-semibold">{val != null ? val : "\u2014"}</span>
-                </button>
-              );
-            })}
-            <div className="border-t border-slate-100 mt-1 pt-1 px-3 py-1.5 text-xs text-slate-400 space-y-1">
-              {["prelim", "midterm", "finals"].map((p) => {
-                const g = studentGrades.find((gr) => gr.period === p);
-                if (!g) return null;
-                return (
-                  <div key={p} className="flex justify-between gap-2">
-                    <span className="capitalize">{p} (E/Q)</span>
-                    <span>{g.exam_score ?? "\u2014"} / {g.qar_score ?? "\u2014"}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
-    </>
+        {["prelim", "midterm", "finals", "general_average"].map((p) => (
+          <option key={p} value={p}>{labels[p]}</option>
+        ))}
+      </select>
+      <span className="font-bold text-sm min-w-[40px]">{displayGrade != null ? displayGrade : "\u2014"}</span>
+    </div>
   );
 }
 

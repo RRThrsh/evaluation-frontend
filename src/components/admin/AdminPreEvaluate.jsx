@@ -32,6 +32,17 @@ function SubjectTable({ title, subjects, columns }) {
   );
 }
 
+function formatNote(raw) {
+  const txt = raw.replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&#39;/g, "'");
+  const prereqMatch = txt.match(/Prerequisite "(.+?)" for "(.+?)" is FAILED/);
+  if (prereqMatch) return `${prereqMatch[2]} requires ${prereqMatch[1]} — must retake first`;
+  const awaitMatch = txt.match(/(\d+) currently enrolled subject/);
+  if (awaitMatch) return `${awaitMatch[1]} subject(s) still awaiting grading`;
+  const notOfferedMatch = txt.match(/previously failed subject\(s\) NOT offered next semester: (.+)/);
+  if (notOfferedMatch) return `Failed subject(s) not offered next semester: ${notOfferedMatch[1]}`;
+  return txt;
+}
+
 function EvalModal({ request, onClose, onPreEnroll }) {
   const overlayRef = useRef(null);
   const [evalData, setEvalData] = useState(null);
@@ -129,22 +140,20 @@ function EvalModal({ request, onClose, onPreEnroll }) {
             <>
               <SubjectTable title="Current Semester Subjects" subjects={evalData.current_semester_subjects} columns={currentColumns} />
               <SubjectTable title={`Possible Subjects (Next Semester)`} subjects={evalData.next_semester_subjects || []} columns={nextColumns} />
-              {evalData.gap_fillers?.length > 0 && (
-                <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
-                  {evalData.gap_fillers.length} gap filler subject(s) included in Possible Subjects table above.
-                </div>
-              )}
 
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  {evalData.recommendations?.map((r, i) => (
-                    <p key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
-                      {r.includes("FAILED") || r.includes("disqualified") || r.includes("Disqualified") ? <AlertCircle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
-                       r.includes("conditional") || r.includes("Conditional") ? <AlertCircle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
-                       <CheckCircle size={12} className="text-emerald-400 mt-0.5 shrink-0" />}
-                      {r}
-                    </p>
-                  ))}
+                  {evalData.recommendations?.map((r, i) => {
+                    const text = formatNote(r);
+                    return (
+                      <p key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
+                        {text.includes("FAILED") || text.includes("retake") || text.includes("not offered") ? <AlertCircle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
+                         text.includes("conditional") || text.includes("Conditional") || text.includes("awaiting") ? <AlertCircle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
+                         <CheckCircle size={12} className="text-emerald-400 mt-0.5 shrink-0" />}
+                        {text}
+                      </p>
+                    );
+                  })}
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={onClose} className="btn btn-ghost btn-sm">Close</button>

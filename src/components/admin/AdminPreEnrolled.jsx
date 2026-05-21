@@ -36,15 +36,15 @@ function PreEnrolledModal({ request, onClose }) {
   const nextColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
     { key: "subject_name", label: "Subject", width: "45%" },
-    { key: "prerequisite", label: "Prereq", width: "25%", render: (s) => {
-      if (s.prerequisite) {
-        const badge = s.prereq_failed ? "badge badge-red" : s.prereq_met ? "badge badge-green" : "badge badge-yellow";
-        const label = s.prereq_failed ? "FAILED" : s.prereq_met ? "OK" : "PENDING";
-        return <span className={`${badge}`}>{s.prerequisite} ({label})</span>;
-      }
-      return <span className="text-slate-300">{s.prerequisite}</span>;
-    }},
-    { key: "is_retake", label: "", width: "15%", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
+                    { key: "prerequisite", label: "Prereq", width: "25%", render: (s) => {
+                      if (s.prerequisite) {
+                        const badge = s.prereq_failed ? "badge badge-red" : s.prereq_met ? "badge badge-green" : "badge badge-yellow";
+                        const label = s.prereq_failed ? "FAILED" : s.prereq_met ? "OK" : "PENDING";
+                        return <span className={`${badge}`}>{s.prerequisite} ({label})</span>;
+                      }
+                      return <span className="text-slate-300">{s.prerequisite}</span>;
+                    }},
+                    { key: "type", label: "", width: "15%", render: (s) => s.is_gap_filler ? <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Gap</span> : s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
   ], []);
 
   const nextYear = request.current_semester === 2 ? (request.year_level || 1) + 1 : (request.year_level || 1);
@@ -112,7 +112,7 @@ function PreEnrolledModal({ request, onClose }) {
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {(evalData.next_semester_subjects || []).map((s, i) => (
-                        <tr key={s.id ?? i} className="transition hover:bg-primary-50/40">
+                        <tr key={s.id ?? i} className={`transition hover:bg-primary-50/40 ${s.is_gap_filler ? "bg-amber-50/50" : ""}`}>
                           {nextColumns.map((col) => (
                             <td key={col.key} className={`px-6 py-3 text-slate-700 truncate ${col.align === "right" ? "text-right" : ""}`}>
                               {col.render ? col.render(s) : s[col.key] ?? "\u2014"}

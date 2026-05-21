@@ -88,7 +88,7 @@ function EvalModal({ request, onClose, onPreEnroll }) {
       }
       return <span className="text-slate-300">\u2014</span>;
     }},
-    { key: "is_retake", label: "", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
+    { key: "is_retake", label: "", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : s.is_gap_filler ? <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Gap</span> : null },
   ];
 
   const overallBadge = (overall) => {
@@ -155,11 +155,9 @@ function EvalModal({ request, onClose, onPreEnroll }) {
                 ]} />
               )}
               {evalData.gap_fillers?.length > 0 && (
-                <SubjectTable title="Gap Fillers" subjects={evalData.gap_fillers} columns={[
-                  { key: "subject_code", label: "Code" },
-                  { key: "subject_name", label: "Subject" },
-                  { key: "is_retake", label: "", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : <span className="text-xs text-slate-400">Alternative</span> },
-                ]} />
+                <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
+                  {evalData.gap_fillers.length} gap filler subject(s) included in Possible Subjects table above.
+                </div>
               )}
 
               <div className="flex items-center justify-between">

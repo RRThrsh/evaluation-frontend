@@ -1,33 +1,37 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { AlertTriangle, ChevronDown } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { AlertTriangle } from "lucide-react";
 import api from "../../services/api";
 
-function computePeriodGrade(exam, qar, examWeight, qarWeight) {
+const PERIOD_LABELS = {
+  prelim: "Prelim",
+  midterm: "Midterm",
+  finals: "Finals",
+  general_average: "General Average",
+};
+
+function computeGrade(exam, qar, examW, qarW) {
   if (exam == null || qar == null) return null;
-  const total = parseFloat(exam) * examWeight + parseFloat(qar) * qarWeight;
-  return (total / (examWeight + qarWeight)).toFixed(2);
+  return ((parseFloat(exam) * examW + parseFloat(qar) * qarW) / (examW + qarW)).toFixed(2);
 }
 
 function EditableCell({ value, onSave }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(value ?? "");
 
-  const handleSave = () => {
-    onSave(val === "" ? null : parseFloat(val));
-    setEditing(false);
-  };
+  useEffect(() => { setVal(value ?? ""); }, [value]);
 
-  if (!editing) {
+  const save = () => { onSave(val === "" ? null : parseFloat(val)); setEditing(false); };
+
+  if (!editing)
     return (
       <span
         className="cursor-pointer hover:bg-primary-50 px-2 py-1 rounded block min-h-[24px]"
         onClick={() => setEditing(true)}
         title="Click to edit"
       >
-        {value != null ? value : "\u2014"}
+        {value != null ? value : "—"}
       </span>
     );
-  }
 
   return (
     <input
@@ -35,105 +39,18 @@ function EditableCell({ value, onSave }) {
       step="0.01"
       value={val}
       onChange={(e) => setVal(e.target.value)}
-      onBlur={handleSave}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") handleSave();
-        if (e.key === "Escape") setEditing(false);
-      }}
+      onBlur={save}
+      onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
       className="input-field w-20 text-sm px-2 py-1"
       autoFocus
     />
   );
 }
 
-function PeriodCell({ studentGrades, examWeight, qarWeight }) {
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState("general_average");
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
-  const btnRef = useRef(null);
+export default function Grading({ defaultPeriod }) {
+  const period = defaultPeriod || "prelim";
+  const isGA = period === "general_average";
 
-  const getGrade = (period) => {
-    if (period === "general_average") {
-      const scores = ["prelim", "midterm", "finals"]
-        .map((p) => {
-          const g = studentGrades.find((gr) => gr.period === p);
-          return g ? computePeriodGrade(g.exam_score, g.qar_score, examWeight, qarWeight) : null;
-        })
-        .filter((v) => v !== null);
-      if (scores.length === 0) return null;
-      return (scores.reduce((a, b) => a + parseFloat(b), 0) / scores.length).toFixed(2);
-    }
-    const g = studentGrades.find((gr) => gr.period === period);
-    if (!g) return null;
-    return computePeriodGrade(g.exam_score, g.qar_score, examWeight, qarWeight);
-  };
-
-  const labels = { prelim: "Prelim", midterm: "Midterm", finals: "Finals", general_average: "General Average" };
-  const displayGrade = getGrade(selected);
-
-  const handleClick = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setMenuPos({ top: rect.bottom + 4, left: rect.left });
-    }
-    setOpen(true);
-  };
-
-  return (
-    <>
-      <button
-        ref={btnRef}
-        onClick={handleClick}
-        className="font-semibold text-sm flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 cursor-pointer"
-      >
-        <span>{displayGrade != null ? displayGrade : "\u2014"}</span>
-        <ChevronDown size={12} className="text-slate-400" />
-      </button>
-      {open && (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setOpen(false)}
-          />
-          <div
-            className="fixed z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[160px]"
-            style={{ top: menuPos.top, left: menuPos.left }}
-          >
-            {["prelim", "midterm", "finals", "general_average"].map((p) => {
-              const val = getGrade(p);
-              return (
-                <button
-                  key={p}
-                  onClick={() => { setSelected(p); setOpen(false); }}
-                  className={`w-full text-left px-3 py-1.5 text-sm flex items-center justify-between gap-2 ${
-                    selected === p ? "bg-primary-50 text-primary-700" : "hover:bg-slate-50 text-slate-700"
-                  }`}
-                >
-                  <span>{labels[p]}</span>
-                  <span className="font-semibold">{val != null ? val : "\u2014"}</span>
-                </button>
-              );
-            })}
-            <div className="border-t border-slate-100 mt-1 pt-1 px-3 py-1.5 text-xs text-slate-400 space-y-1">
-              {["prelim", "midterm", "finals"].map((p) => {
-                const g = studentGrades.find((gr) => gr.period === p);
-                if (!g) return null;
-                return (
-                  <div key={p} className="flex justify-between gap-2">
-                    <span className="capitalize">{p} (E/Q)</span>
-                    <span>{g.exam_score ?? "\u2014"} / {g.qar_score ?? "\u2014"}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
-    </>
-  );
-}
-
-export default function Grading() {
   const [subjects, setSubjects] = useState([]);
   const [sections, setSections] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState("");
@@ -192,21 +109,35 @@ export default function Grading() {
     }
   };
 
-  const grouped = {};
-  grades.forEach((g) => {
-    if (!grouped[g.student_subject_id]) {
-      grouped[g.student_subject_id] = { ...g, periods: [] };
-    }
-    grouped[g.student_subject_id].periods.push(g);
-  });
-  const studentRows = Object.values(grouped);
+  // Group by student_subject_id
+  const studentRows = Object.values(
+    grades.reduce((acc, g) => {
+      if (!acc[g.student_subject_id]) acc[g.student_subject_id] = { ...g, periods: [] };
+      acc[g.student_subject_id].periods.push(g);
+      return acc;
+    }, {})
+  );
 
   const selectedSubjectObj = subjects.find((s) => s.id === selectedSubject);
+  const periodLabel = PERIOD_LABELS[period];
+
+  const getGrade = (periods, p) => {
+    const g = periods.find((x) => x.period === p);
+    return g ? computeGrade(g.exam_score, g.qar_score, examWeight, qarWeight) : null;
+  };
+
+  const getGA = (periods) => {
+    const scores = ["prelim", "midterm", "finals"]
+      .map((p) => getGrade(periods, p))
+      .filter(Boolean);
+    if (!scores.length) return null;
+    return (scores.reduce((a, b) => a + parseFloat(b), 0) / scores.length).toFixed(2);
+  };
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-6 pb-6">
       <div className="card p-4 sm:p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-700">Grading</h2>
+        <h2 className="text-sm font-semibold text-slate-700">{periodLabel} Grades</h2>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-medium text-slate-600 mb-1 block">Subject</label>
@@ -214,6 +145,7 @@ export default function Grading() {
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
               className="input-field w-full text-sm"
+              disabled={loadingSubjects}
             >
               <option value="">-- Select Subject --</option>
               {subjects.map((s) => (
@@ -253,9 +185,7 @@ export default function Grading() {
           <div className="px-5 py-3 border-b border-slate-100">
             <h3 className="font-semibold text-sm text-slate-700">
               {selectedSubjectObj.subject_code} - {selectedSubjectObj.subject_name}
-              <span className="text-slate-400 font-normal ml-2">
-                ({studentRows.length} students)
-              </span>
+              <span className="text-slate-400 font-normal ml-2">({studentRows.length} students)</span>
             </h3>
           </div>
         )}
@@ -263,98 +193,55 @@ export default function Grading() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50">
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
-                  Student No.
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
-                  Section
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
-                  Instructor
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
-                  Exam
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
-                  QAR
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
-                  Grade
-                </th>
+                {["Instructor", "Section", "Student No.", ...(!isGA ? ["Exam", "QAR"] : []), periodLabel].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {studentRows.map((row) => {
-                const prelim = row.periods.find((g) => g.period === "prelim");
-                const midterm = row.periods.find((g) => g.period === "midterm");
-                const finals = row.periods.find((g) => g.period === "finals");
+                const pg = row.periods.find((g) => g.period === period);
+                const grade = isGA ? getGA(row.periods) : getGrade(row.periods, period);
 
                 return (
                   <tr key={row.student_subject_id} className="hover:bg-slate-50/50">
-                    <td className="px-4 py-3 text-slate-800 font-medium font-mono text-xs">
-                      {row.student_number}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">{row.section_name || "\u2014"}</td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">{row.instructor_name || "\u2014"}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1 items-center">
-                        <EditableCell
-                          value={prelim?.exam_score}
-                          onSave={(v) => prelim && handleUpdateGrade(prelim.grade_id, "exam_score", v)}
-                        />
-                        <span className="text-slate-300 mx-0.5">|</span>
-                        <EditableCell
-                          value={midterm?.exam_score}
-                          onSave={(v) => midterm && handleUpdateGrade(midterm.grade_id, "exam_score", v)}
-                        />
-                        <span className="text-slate-300 mx-0.5">|</span>
-                        <EditableCell
-                          value={finals?.exam_score}
-                          onSave={(v) => finals && handleUpdateGrade(finals.grade_id, "exam_score", v)}
-                        />
-                      </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">P | M | F</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1 items-center">
-                        <EditableCell
-                          value={prelim?.qar_score}
-                          onSave={(v) => prelim && handleUpdateGrade(prelim.grade_id, "qar_score", v)}
-                        />
-                        <span className="text-slate-300 mx-0.5">|</span>
-                        <EditableCell
-                          value={midterm?.qar_score}
-                          onSave={(v) => midterm && handleUpdateGrade(midterm.grade_id, "qar_score", v)}
-                        />
-                        <span className="text-slate-300 mx-0.5">|</span>
-                        <EditableCell
-                          value={finals?.qar_score}
-                          onSave={(v) => finals && handleUpdateGrade(finals.grade_id, "qar_score", v)}
-                        />
-                      </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">P | M | F</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <PeriodCell
-                        studentGrades={row.periods}
-                        examWeight={examWeight}
-                        qarWeight={qarWeight}
-                        onUpdateGrade={handleUpdateGrade}
-                      />
+                    <td className="px-4 py-3 text-slate-600 text-xs">{row.instructor_name || "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 text-xs">{row.section_name || "—"}</td>
+                    <td className="px-4 py-3 text-slate-800 font-medium font-mono text-xs">{row.student_number}</td>
+                    {!isGA && (
+                      <>
+                        <td className="px-4 py-3">
+                          <EditableCell
+                            value={pg?.exam_score}
+                            onSave={(v) => pg && handleUpdateGrade(pg.grade_id, "exam_score", v)}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <EditableCell
+                            value={pg?.qar_score}
+                            onSave={(v) => pg && handleUpdateGrade(pg.grade_id, "qar_score", v)}
+                          />
+                        </td>
+                      </>
+                    )}
+                    <td className="px-4 py-3 font-semibold text-slate-700 text-xs">
+                      {grade ?? "—"}
                     </td>
                   </tr>
                 );
               })}
               {studentRows.length === 0 && !loading && selectedSubject && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-sm">
+                  <td colSpan={isGA ? 4 : 6} className="px-6 py-12 text-center text-slate-400 text-sm">
                     No students found for this subject.
                   </td>
                 </tr>
               )}
               {!selectedSubject && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-sm">
+                  <td colSpan={isGA ? 4 : 6} className="px-6 py-12 text-center text-slate-400 text-sm">
                     Select a subject to view grades.
                   </td>
                 </tr>

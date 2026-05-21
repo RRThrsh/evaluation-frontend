@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { X, Eye, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle } from "lucide-react";
+import { X, Eye, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
 
 import api from "../../services/api";
 
@@ -211,6 +211,8 @@ export default function AdminPreEnrolled() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [modal, setModal] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchRequests = useCallback(async (pg) => {
     setLoading(true);
@@ -235,6 +237,20 @@ export default function AdminPreEnrolled() {
     fetchRequests(p);
   };
 
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/api/admin/evaluations/${confirmDelete.id}`);
+      setConfirmDelete(null);
+      fetchRequests(page);
+    } catch (err) {
+      setError(err.message || "Failed to delete");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-6 pb-6">
       <div className="card overflow-hidden">
@@ -255,18 +271,27 @@ export default function AdminPreEnrolled() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Student No.</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Course</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide"></th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {requests.map((row) => (
-                <tr key={row.id} onClick={() => setModal(row)} className="transition hover:bg-primary-50/40 cursor-pointer">
+                <tr key={row.id} className="transition hover:bg-primary-50/40">
                   <td className="px-6 py-4 text-slate-700">{row.school_year || "N/A"}</td>
                   <td className="px-6 py-4 text-slate-700">{row.semester ? `Sem ${row.semester}` : "N/A"}</td>
                   <td className="px-6 py-4 text-slate-700 font-mono">{row.student_number}</td>
                   <td className="px-6 py-4 text-slate-800 font-medium">{row.first_name} {row.last_name}</td>
                   <td className="px-6 py-4 text-slate-700">{row.course_name || "N/A"}</td>
-                  <td className="px-6 py-4 text-right"><Eye size={16} className="text-slate-400 inline-block" /></td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => setModal(row)} className="p-1.5 rounded-lg hover:bg-primary-100 transition-colors text-slate-400 hover:text-primary-600" title="View">
+                        <Eye size={16} />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(row); }} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600" title="Delete">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
               {requests.length === 0 && !loading && (
@@ -294,6 +319,23 @@ export default function AdminPreEnrolled() {
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium">{error}</div>
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => !deleting && setConfirmDelete(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-slate-800 mb-2">Delete Pre-Enrolled</h3>
+            <p className="text-sm text-slate-600 mb-5">
+              Remove <span className="font-semibold">{confirmDelete.first_name} {confirmDelete.last_name}</span> from pre-enrolled list?
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button onClick={() => setConfirmDelete(null)} disabled={deleting} className="btn btn-ghost btn-sm">Cancel</button>
+              <button onClick={handleDelete} disabled={deleting} className="btn btn-danger btn-sm">
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {modal && <PreEnrolledModal request={modal} onClose={() => setModal(null)} />}

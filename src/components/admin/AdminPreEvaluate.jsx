@@ -77,7 +77,7 @@ function EvalModal({ request, onClose, onPreEnroll }) {
   const overallBadge = (overall) => {
     if (overall === "qualified") return <span className="badge badge-green text-sm px-3 py-1">Qualified</span>;
     if (overall === "conditional") return <span className="badge badge-yellow text-sm px-3 py-1">Conditional</span>;
-    return <span className="badge badge-red text-sm px-3 py-1">Disqualified</span>;
+    return null;
   };
 
   return (
@@ -112,7 +112,6 @@ function EvalModal({ request, onClose, onPreEnroll }) {
                 </div>
               </div>
               <div className="text-right">
-                {evalData && overallBadge(evalData.overall)}
                 {evalData?.has_pending_request && (
                   <div className="mt-2 text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
                     ⚠ Pending request already exists{evalData.pending_requested_by ? ` (by ${evalData.pending_requested_by})` : ""}
@@ -140,8 +139,8 @@ function EvalModal({ request, onClose, onPreEnroll }) {
                 <div className="space-y-1">
                   {evalData.recommendations?.map((r, i) => (
                     <p key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
-                      {r.includes("FAILED") || r.includes("disqualified") ? <AlertCircle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
-                       r.includes("conditional") ? <AlertCircle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
+                      {r.includes("FAILED") || r.includes("disqualified") || r.includes("Disqualified") ? <AlertCircle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
+                       r.includes("conditional") || r.includes("Conditional") ? <AlertCircle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
                        <CheckCircle size={12} className="text-emerald-400 mt-0.5 shrink-0" />}
                       {r}
                     </p>

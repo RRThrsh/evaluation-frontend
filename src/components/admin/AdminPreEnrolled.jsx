@@ -134,8 +134,8 @@ function PreEnrolledModal({ request, onClose }) {
                   <div className="space-y-1">
                     {evalData.recommendations.map((r, i) => (
                       <p key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
-                        {r.includes("FAILED") || r.includes("disqualified") ? <AlertTriangle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
-                         r.includes("conditional") ? <AlertTriangle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
+                        {r.includes("FAILED") || r.includes("disqualified") || r.includes("Disqualified") ? <AlertTriangle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
+                         r.includes("conditional") || r.includes("Conditional") ? <AlertTriangle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
                          <CheckCircle size={12} className="text-emerald-400 mt-0.5 shrink-0" />}
                         {r}
                       </p>

@@ -3,8 +3,6 @@ import { X, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 
 import api from "../../services/api";
 
-const semesterNames = { 1: "1st Semester", 2: "2nd Semester" };
-
 function PreEnrolledModal({ request, onClose }) {
   const overlayRef = useRef(null);
   const [evalData, setEvalData] = useState(null);
@@ -19,36 +17,26 @@ function PreEnrolledModal({ request, onClose }) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.get(`/api/evaluator/students/${request.student_id}/evaluate`);
+        const res = await api.get(`/api/admin/evaluations/${request.id}/pre-enrolled-data`);
         setEvalData(res.data);
       } catch (err) {
-        console.error("Pre-Enrolled eval fetch failed:", err);
+        console.error("Failed to load pre-enrolled data:", err);
       } finally {
         setLoading(false);
       }
     })();
-  }, [request.student_id]);
+  }, [request.id]);
 
   const handleOverlay = (e) => {
     if (e.target === overlayRef.current) onClose();
   };
 
   const nextColumns = useMemo(() => [
-    { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "45%" },
-                    { key: "prerequisite", label: "Prereq", width: "25%", render: (s) => {
-                      if (s.prerequisite) {
-                        const badge = s.prereq_failed ? "badge badge-red" : s.prereq_met ? "badge badge-green" : "badge badge-yellow";
-                        const label = s.prereq_failed ? "FAILED" : s.prereq_met ? "OK" : "PENDING";
-                        return <span className={`${badge}`}>{s.prerequisite} ({label})</span>;
-                      }
-                      return <span className="text-slate-300">{s.prerequisite}</span>;
-                    }},
-                    { key: "type", label: "", width: "15%", render: (s) => s.is_gap_filler ? <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Gap</span> : s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
+    { key: "subject_code", label: "Code", width: "auto", className: "whitespace-nowrap" },
+    { key: "subject_name", label: "Subject", width: "auto" },
+    { key: "units", label: "Units", width: "auto", render: (s) => <span className="text-slate-400">{s.units}</span> },
+    { key: "type", label: "", width: "auto", render: (s) => s.is_gap_filler ? <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Gap</span> : null },
   ], []);
-
-  const nextYear = request.current_semester === 2 ? (request.year_level || 1) + 1 : (request.year_level || 1);
-  const nextSem = request.current_semester === 2 ? 1 : 2;
 
   return (
     <div ref={overlayRef} onClick={handleOverlay} className="fixed inset-0 z-50 flex items-start justify-center pt-10 pb-10 overflow-y-auto bg-black/40 backdrop-blur-sm">
@@ -95,11 +83,11 @@ function PreEnrolledModal({ request, onClose }) {
               <div className="card overflow-hidden">
                 <div className="px-5 py-3 border-b border-slate-100">
                   <h3 className="font-semibold text-sm text-slate-700">
-                    Possible Subjects (Y{nextYear} - {semesterNames[nextSem]})
-                    <span className="text-slate-400 font-normal ml-1">({(evalData?.next_semester_subjects || []).length})</span>
+                    Pre-Enrolled Subjects
+                    <span className="text-slate-400 font-normal ml-1">({(evalData?.subjects || []).length})</span>
                   </h3>
                 </div>
-                {(evalData.next_semester_subjects || []).length > 0 ? (
+                {(evalData.subjects || []).length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
@@ -112,7 +100,7 @@ function PreEnrolledModal({ request, onClose }) {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
-                        {(evalData.next_semester_subjects || []).map((s, i) => (
+                        {(evalData.subjects || []).map((s, i) => (
                           <tr key={s.id ?? i} className={`transition hover:bg-primary-50/40 ${s.is_gap_filler ? "bg-amber-50/50" : ""}`}>
                             {nextColumns.map((col) => (
                               <td key={col.key} className={`px-6 py-3 text-slate-700 truncate ${col.align === "right" ? "text-right" : ""}`}>

@@ -5,7 +5,7 @@ import api from "../../services/api";
 export default function SectionManager() {
   const [sections, setSections] = useState([]);
   const [courses, setCourses] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -15,14 +15,14 @@ export default function SectionManager() {
     setLoading(true);
     setError("");
     try {
-      const [secRes, crsRes, usrRes] = await Promise.all([
+      const [secRes, crsRes, instRes] = await Promise.all([
         api.get("/api/admin/sections"),
         api.get("/api/admin/courses"),
-        api.get("/api/admin/users"),
+        api.get("/api/admin/instructors"),
       ]);
       setSections(secRes.data ?? []);
       setCourses(crsRes.data ?? []);
-      setUsers(usrRes.data ?? []);
+      setInstructors(instRes.data ?? []);
     } catch (err) {
       setError(err.message || "Failed to load");
     } finally {
@@ -75,9 +75,9 @@ export default function SectionManager() {
               </div>
               <div>
                 <label className="text-xs font-medium text-slate-600 mb-1 block">Instructor</label>
-                <select value={form.instructor_id} onChange={(e) => setForm({ ...form, instructor_id: e.target.value })} className="input-field w-full text-sm">
-                  <option value="">-- Select --</option>
-                  {users.filter((u) => u.role === "evaluator").map((u) => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                  <select value={form.instructor_id} onChange={(e) => setForm({ ...form, instructor_id: e.target.value })} className="input-field w-full text-sm">
+                    <option value="">-- Select --</option>
+                    {instructors.filter((i) => i.is_active).map((i) => <option key={i.id} value={i.id}>{i.last_name}, {i.first_name}{i.middle_name ? ` ${i.middle_name}` : ""}</option>)}
                 </select>
               </div>
             </div>

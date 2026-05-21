@@ -19,6 +19,10 @@ const AcademicConfigManager = lazy(() => import("../../../components/admin/Acade
 const UserManager = lazy(() => import("../../../components/admin/UserManager"));
 const AuditLogViewer = lazy(() => import("../../../components/admin/AuditLogViewer"));
 const SessionManager = lazy(() => import("../../../components/admin/SessionManager"));
+const AdminPreEvaluate = lazy(() => import("../../../components/admin/AdminPreEvaluate"));
+const AdminPreEnrolled = lazy(() => import("../../../components/admin/AdminPreEnrolled"));
+const Grading = lazy(() => import("../../../components/admin/Grading"));
+const SectionManager = lazy(() => import("../../../components/admin/SectionManager"));
 
 const TABLE_GROUPS = [
   { name: "Academic", tables: ["students", "subjects", "student_subjects", "student_units"] },
@@ -142,6 +146,10 @@ export default function AdminHome() {
             {activeTab === "all-users" && <UserManager />}
             {activeTab === "audit-logs" && <AuditLogViewer />}
             {activeTab === "academic_config" && <AcademicConfigManager />}
+            {activeTab === "pre-evaluate" && <AdminPreEvaluate />}
+            {activeTab === "pre-enrolled" && <AdminPreEnrolled />}
+            {activeTab === "grading" && <Grading />}
+            {activeTab === "sections" && <SectionManager />}
             {activeTab === "sessions" && <SessionManager />}
             {activeTab === "database" && <DatabaseViewer selectedTable={selectedTable} tableData={tableData} tableLoading={tableLoading} onLoadTable={loadTable} />}
           </Suspense>

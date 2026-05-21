@@ -31,7 +31,7 @@ export default function StudentManager() {
             const [sData, subjData, cData] = await Promise.all([
                 api.get("/api/admin/students"), api.get("/api/admin/subjects"), api.get("/api/admin/courses"),
             ]);
-            setStudents(sData.data ?? []); setSubjects(subjData.data ?? []); setCourses(cData.data ?? []);
+            setStudents(sData.data?.students ?? sData.data ?? []); setSubjects(subjData.data ?? []); setCourses(cData.data ?? []);
         } catch (err) { showToast(err.message, "error"); }
         finally { setLoading(false); }
     };

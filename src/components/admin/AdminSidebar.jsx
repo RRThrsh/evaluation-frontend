@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight } from "lucide-react";
+import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight, ClipboardCheck, ClipboardList, Layers, Award } from "lucide-react";
 import { useState } from "react";
 
 export function NavItem({ icon: Icon, label, active, onClick }) {
@@ -35,6 +35,10 @@ const NAV_ITEMS = {
     { key: "courses", label: "Programs", icon: BookOpen },
     { key: "subjects", label: "Subjects", icon: BookText },
     { key: "students", label: "Student Records", icon: Users },
+    { key: "pre-evaluate", label: "Pre-Evaluate", icon: ClipboardCheck },
+    { key: "pre-enrolled", label: "Pre-Enrolled", icon: ClipboardList },
+    { key: "grading", label: "Grading", icon: Award },
+    { key: "sections", label: "Sections", icon: Layers },
     { key: "users", label: "Pending Approvals", icon: UserCheck },
   ],
   system: [

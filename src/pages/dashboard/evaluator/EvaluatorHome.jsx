@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, ChevronRight, AlertTriangle } from "lucide-react";
+import { Search, ChevronRight, AlertTriangle, CheckCircle } from "lucide-react";
 import api from "../../../services/api";
 import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
 
@@ -13,12 +13,7 @@ const statusBadge = (status) =>
     "badge-gray"
   }`;
 
-const overallBadge = (overall) =>
-  overall === "qualified" ? "badge badge-green" :
-  overall === "conditional" ? "badge badge-yellow" :
-  "badge badge-red";
-
-function StudentCard({ student }) {
+function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pendingRequestedBy }) {
   return (
     <div className="card p-5">
       <div className="flex items-start justify-between">
@@ -40,11 +35,21 @@ function StudentCard({ student }) {
             <p className="font-semibold text-slate-800 mt-0.5">{YEAR_LEVELS[student.year_level] || `${student.year_level}th Year`}</p>
           </div>
         </div>
-        {student.overall && (
-          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${overallBadge(student.overall)}`}>
-            {student.overall}
-          </span>
-        )}
+        <div className="flex items-center gap-3 shrink-0">
+          {hasPendingRequest ? (
+            <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-[220px] text-right leading-relaxed">
+              Already submitted by <span className="font-semibold">{pendingRequestedBy || "another evaluator"}</span>
+            </div>
+          ) : (
+            <button
+              onClick={onSubmit}
+              disabled={submitting}
+              className="btn btn-primary btn-sm"
+            >
+              {submitting ? "Submitting..." : "Submit Evaluation"}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -102,6 +107,10 @@ export default function EvaluatorHome() {
   const [blockedCount, setBlockedCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [hasPendingRequest, setHasPendingRequest] = useState(false);
+  const [pendingRequestedBy, setPendingRequestedBy] = useState(null);
+  const [toast, setToast] = useState(null);
 
   const handleSearch = async () => {
     const q = searchValue.trim();
@@ -113,6 +122,8 @@ export default function EvaluatorHome() {
     setReplacements([]);
     setRemainingFails([]);
     setBlockedCount(0);
+    setHasPendingRequest(false);
+    setPendingRequestedBy(null);
 
     try {
       const lookupRes = await api.get(`/api/students/lookup/${encodeURIComponent(q)}`);
@@ -134,6 +145,9 @@ export default function EvaluatorHome() {
         gaps = evalRes.data?.gap_fillers || [];
         remainingFailsData = evalRes.data?.remaining_failed_subjects || [];
         blocked = evalRes.data?.summary_extras?.blocked_count || 0;
+        const pendingReq = evalRes.data?.has_pending_request;
+        setHasPendingRequest(pendingReq);
+        if (pendingReq) setPendingRequestedBy(evalRes.data?.pending_requested_by || "another evaluator");
       } catch {}
 
       setStudent({
@@ -153,6 +167,21 @@ export default function EvaluatorHome() {
   };
 
   const handleKeyDown = (e) => { if (e.key === "Enter") handleSearch(); };
+
+  const handleSubmit = async () => {
+    if (!student || submitting) return;
+    setSubmitting(true);
+    try {
+      await api.post("/api/evaluator/evaluate", { student_number: student.student_number });
+      setToast({ type: "success", message: "Evaluation request submitted" });
+      setTimeout(() => setToast(null), 3000);
+    } catch (err) {
+      setToast({ type: "error", message: err.message || "Failed to submit" });
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const currentColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
@@ -221,7 +250,16 @@ export default function EvaluatorHome() {
           </div>
         )}
 
-        {student && <StudentCard student={student} />}
+        {toast && (
+          <div className="fixed top-5 right-5 z-50">
+            <div className={`flex items-center gap-3 rounded-xl border px-4 py-3 shadow-xl bg-white ${toast.type === "success" ? "border-emerald-200 text-emerald-700" : "border-red-200 text-red-700"}`}>
+              {toast.type === "success" ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
+              <span className="text-sm font-medium">{toast.message}</span>
+            </div>
+          </div>
+        )}
+
+        {student && <StudentCard student={student} onSubmit={handleSubmit} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} />}
 
         {!student && !loading && !error && (
           <div className="text-center py-16">

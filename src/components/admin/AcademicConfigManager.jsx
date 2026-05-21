@@ -18,6 +18,8 @@ const SECTIONS = [
       { key: "passing_grade", label: "Passing Grade", type: "number", placeholder: "75", desc: "Minimum score required to pass a subject" },
       { key: "grade_pass_letters", label: "Passing Letters", type: "text", placeholder: "P", desc: "Letter grades treated as pass (comma-separated)" },
       { key: "grade_fail_letters", label: "Failing Letters", type: "text", placeholder: "F,INC,W,D", desc: "Letter grades treated as fail (comma-separated)" },
+      { key: "exam_weight", label: "Exam Weight (%)", type: "number", placeholder: "60", desc: "Weight of exam score in period grade computation" },
+      { key: "qar_weight", label: "QAR Weight (%)", type: "number", placeholder: "40", desc: "Weight of QAR score in period grade computation" },
     ],
   },
   {

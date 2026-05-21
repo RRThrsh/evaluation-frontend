@@ -2,18 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, ChevronDown } from "lucide-react";
 import api from "../../services/api";
 
-const PERIODS = ["prelim", "midterm", "finals"];
-
-const PERIOD_LABELS = {
-  prelim: "Prelim",
-  midterm: "Midterm",
-  finals: "Finals",
-  general_average: "General Average",
-};
-
-function computePeriodGrade(exam, qar) {
+function computePeriodGrade(exam, qar, examWeight, qarWeight) {
   if (exam == null || qar == null) return null;
-  return ((parseFloat(exam) + parseFloat(qar)) / 2).toFixed(2);
+  const total = parseFloat(exam) * examWeight + parseFloat(qar) * qarWeight;
+  return (total / (examWeight + qarWeight)).toFixed(2);
 }
 
 function EditableCell({ value, onSave }) {
@@ -54,26 +46,24 @@ function EditableCell({ value, onSave }) {
   );
 }
 
-function PeriodCell({ studentGrades, onUpdateGrade }) {
+function PeriodCell({ studentGrades, examWeight, qarWeight, onUpdateGrade }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("general_average");
 
-  const prelim = studentGrades.find((g) => g.period === "prelim");
-  const midterm = studentGrades.find((g) => g.period === "midterm");
-  const finals = studentGrades.find((g) => g.period === "finals");
-
   const getGrade = (period) => {
     if (period === "general_average") {
-      const scores = [prelim, midterm, finals]
-        .filter((g) => g)
-        .map((g) => computePeriodGrade(g.exam_score, g.qar_score))
+      const scores = ["prelim", "midterm", "finals"]
+        .map((p) => {
+          const g = studentGrades.find((gr) => gr.period === p);
+          return g ? computePeriodGrade(g.exam_score, g.qar_score, examWeight, qarWeight) : null;
+        })
         .filter((v) => v !== null);
       if (scores.length === 0) return null;
       return (scores.reduce((a, b) => a + parseFloat(b), 0) / scores.length).toFixed(2);
     }
-    const g = studentGrades.find((g) => g.period === period);
+    const g = studentGrades.find((gr) => gr.period === period);
     if (!g) return null;
-    return computePeriodGrade(g.exam_score, g.qar_score);
+    return computePeriodGrade(g.exam_score, g.qar_score, examWeight, qarWeight);
   };
 
   const displayGrade = getGrade(selected);
@@ -90,9 +80,10 @@ function PeriodCell({ studentGrades, onUpdateGrade }) {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[140px]">
+          <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[160px]">
             {["prelim", "midterm", "finals", "general_average"].map((p) => {
               const val = getGrade(p);
+              const labels = { prelim: "Prelim", midterm: "Midterm", finals: "Finals", general_average: "General Average" };
               return (
                 <button
                   key={p}
@@ -101,30 +92,22 @@ function PeriodCell({ studentGrades, onUpdateGrade }) {
                     selected === p ? "bg-primary-50 text-primary-700" : "hover:bg-slate-50 text-slate-700"
                   }`}
                 >
-                  <span>{PERIOD_LABELS[p]}</span>
+                  <span>{labels[p]}</span>
                   <span className="font-semibold">{val != null ? val : "\u2014"}</span>
                 </button>
               );
             })}
             <div className="border-t border-slate-100 mt-1 pt-1 px-3 py-1.5 text-xs text-slate-400 space-y-1">
-              {prelim && (
-                <div className="flex justify-between gap-2">
-                  <span>Prelim (E/Q)</span>
-                  <span>{prelim.exam_score ?? "\u2014"} / {prelim.qar_score ?? "\u2014"}</span>
-                </div>
-              )}
-              {midterm && (
-                <div className="flex justify-between gap-2">
-                  <span>Midterm (E/Q)</span>
-                  <span>{midterm.exam_score ?? "\u2014"} / {midterm.qar_score ?? "\u2014"}</span>
-                </div>
-              )}
-              {finals && (
-                <div className="flex justify-between gap-2">
-                  <span>Finals (E/Q)</span>
-                  <span>{finals.exam_score ?? "\u2014"} / {finals.qar_score ?? "\u2014"}</span>
-                </div>
-              )}
+              {["prelim", "midterm", "finals"].map((p) => {
+                const g = studentGrades.find((gr) => gr.period === p);
+                if (!g) return null;
+                return (
+                  <div key={p} className="flex justify-between gap-2">
+                    <span className="capitalize">{p} (E/Q)</span>
+                    <span>{g.exam_score ?? "\u2014"} / {g.qar_score ?? "\u2014"}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </>
@@ -142,16 +125,23 @@ export default function Grading() {
   const [loading, setLoading] = useState(false);
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [error, setError] = useState("");
+  const [examWeight, setExamWeight] = useState(60);
+  const [qarWeight, setQarWeight] = useState(40);
 
   useEffect(() => {
     (async () => {
       try {
-        const [subjRes, secRes] = await Promise.all([
+        const [subjRes, secRes, cfgRes] = await Promise.all([
           api.get("/api/admin/subjects"),
           api.get("/api/admin/sections"),
+          api.get("/api/config"),
         ]);
         setSubjects(subjRes.data ?? []);
         setSections(secRes.data ?? []);
+        if (cfgRes?.data) {
+          setExamWeight(parseFloat(cfgRes.data.exam_weight) || 60);
+          setQarWeight(parseFloat(cfgRes.data.qar_weight) || 40);
+        }
       } catch {} finally {
         setLoadingSubjects(false);
       }
@@ -330,6 +320,8 @@ export default function Grading() {
                     <td className="px-4 py-3">
                       <PeriodCell
                         studentGrades={row.periods}
+                        examWeight={examWeight}
+                        qarWeight={qarWeight}
                         onUpdateGrade={handleUpdateGrade}
                       />
                     </td>

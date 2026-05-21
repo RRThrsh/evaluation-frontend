@@ -8,7 +8,7 @@ function statusBadge(status) {
     APPROVED: { label: "Pass", cls: "badge badge-green" },
     REJECTED: { label: "Fail", cls: "badge badge-red" },
   };
-  return map[status] || { label: status || "\u2014", cls: "badge badge-gray" };
+  return map[status] || { label: status || "", cls: "badge badge-gray" };
 }
 
 function SubjectTable({ title, subjects, columns, badgeFn }) {
@@ -30,7 +30,7 @@ function SubjectTable({ title, subjects, columns, badgeFn }) {
             <tr key={s.id ?? s.subject_code ?? i} className="table-row">
               {columns.map((col) => (
                 <td key={col.key} className="table-cell">
-                  {col.render ? col.render(s) : s[col.key] ?? "\u2014"}
+                  {col.render ? col.render(s) : s[col.key] ?? ""}
                 </td>
               ))}
             </tr>
@@ -86,7 +86,7 @@ function EvalModal({ request, onClose, onPreEnroll }) {
         const label = s.prereq_failed ? "FAILED" : s.prereq_met ? "OK" : "PENDING";
         return <span className={`${badge}`}>{s.prerequisite} ({label})</span>;
       }
-      return <span className="text-slate-300">\u2014</span>;
+      return <span className="text-slate-300"></span>;
     }},
     { key: "is_retake", label: "", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : s.is_gap_filler ? <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Gap</span> : null },
   ];

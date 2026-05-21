@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { X, Eye, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
 
 import api from "../../services/api";
 
@@ -276,21 +276,16 @@ export default function AdminPreEnrolled() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {requests.map((row) => (
-                <tr key={row.id} className="transition hover:bg-primary-50/40">
+                <tr key={row.id} onClick={() => setModal(row)} className="transition hover:bg-primary-50/40 cursor-pointer">
                   <td className="px-6 py-4 text-slate-700">{row.school_year || "N/A"}</td>
                   <td className="px-6 py-4 text-slate-700">{row.semester ? `Sem ${row.semester}` : "N/A"}</td>
                   <td className="px-6 py-4 text-slate-700 font-mono">{row.student_number}</td>
                   <td className="px-6 py-4 text-slate-800 font-medium">{row.first_name} {row.last_name}</td>
                   <td className="px-6 py-4 text-slate-700">{row.course_name || "N/A"}</td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => setModal(row)} className="p-1.5 rounded-lg hover:bg-primary-100 transition-colors text-slate-400 hover:text-primary-600" title="View">
-                        <Eye size={16} />
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(row); }} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600" title="Delete">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(row); }} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600" title="Delete">
+                      <Trash2 size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}

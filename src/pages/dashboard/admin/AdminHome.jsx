@@ -38,6 +38,7 @@ export default function AdminHome() {
   const [activeTab, setActiveTab] = useState("overview");
   const [activeGroup, setActiveGroup] = useState(null);
   const [selectedTable, setSelectedTable] = useState(null);
+  const [gradingPeriod, setGradingPeriod] = useState(null);
   const [tableData, setTableData] = useState(null);
   const [tableLoading, setTableLoading] = useState(false);
 
@@ -57,8 +58,9 @@ export default function AdminHome() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const navigateTab = (key) => {
+  const navigateTab = (key, period) => {
     setActiveTab(key);
+    setGradingPeriod(key === "grading" ? period || null : null);
     setSelectedTable(null);
     setSidebarOpen(false);
   };
@@ -118,7 +120,7 @@ export default function AdminHome() {
     <div className="min-h-screen bg-slate-50">
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" />}
 
-      <AdminSidebar activeTab={activeTab} onNavigate={navigateTab} availableGroups={availableGroups} activeGroup={activeGroup} setActiveGroup={setActiveGroup} selectedTable={selectedTable} onSelectTable={loadTable} user={user} logout={logout} />
+      <AdminSidebar activeTab={activeTab} onNavigate={navigateTab} availableGroups={availableGroups} activeGroup={activeGroup} setActiveGroup={setActiveGroup} selectedTable={selectedTable} onSelectTable={loadTable} user={user} logout={logout} gradingPeriod={gradingPeriod} />
 
       <div className="md:ml-64">
         <AdminHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} activeTab={activeTab} error={error} />
@@ -149,7 +151,7 @@ export default function AdminHome() {
             {activeTab === "academic_config" && <AcademicConfigManager />}
             {activeTab === "pre-evaluate" && <AdminPreEvaluate />}
             {activeTab === "pre-enrolled" && <AdminPreEnrolled />}
-            {activeTab === "grading" && <Grading />}
+            {activeTab === "grading" && <Grading defaultPeriod={gradingPeriod} />}
             {activeTab === "sections" && <SectionManager />}
             {activeTab === "instructors" && <InstructorManager />}
             {activeTab === "sessions" && <SessionManager />}

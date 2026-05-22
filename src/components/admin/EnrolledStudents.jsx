@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Search, Upload } from "lucide-react";
+import * as XLSX from "xlsx";
 import api from "../../services/api";
 import Pagination from "../common/Pagination";
 
@@ -129,6 +130,39 @@ export default function EnrolledStudents() {
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Regular");
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const fileRef = useRef(null);
+
+  const handleFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data);
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+      const mapped = rows.map(r => ({
+        student_no: String(r["student no."] || r["student_no"] || r["Student No"] || "").trim(),
+        fullname: String(r["fullname"] || r["Fullname"] || r["full name"] || r["Full Name"] || "").trim(),
+        email: String(r["email"] || r["Email"] || "").trim(),
+        course: String(r["course"] || r["Course"] || "").trim(),
+        year: String(r["year"] || r["Year"] || "").trim(),
+        semester: String(r["semester"] || r["Semester"] || "").trim(),
+        status: String(r["status"] || r["Status"] || "").trim(),
+      }));
+      const res = await api.post("/api/admin/enrollments/import", { rows: mapped });
+      setImportResult(res.data);
+      fetchRequests(1);
+      setPage(1);
+    } catch (err) {
+      setImportResult({ imported: 0, errors: [{ message: err.message || "Import failed" }], message: "Import failed" });
+    } finally {
+      setImporting(false);
+      e.target.value = "";
+    }
+  };
 
   const fetchRequests = useCallback(async (pg) => {
     setLoading(true);
@@ -173,6 +207,10 @@ export default function EnrolledStudents() {
               <option value="Regular">Regular</option>
               <option value="Irregular">Irregular</option>
             </select>
+            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" />
+            <button onClick={() => fileRef.current?.click()} disabled={importing} className="btn btn-primary btn-sm flex items-center gap-1.5">
+              <Upload size={14} /> {importing ? "Importing..." : "Import Excel"}
+            </button>
           </div>
           {loading && (
             <span className="inline-block w-4 h-4 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
@@ -242,6 +280,18 @@ export default function EnrolledStudents() {
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium">{error}</div>
+      )}
+
+      {importResult && (
+        <div className={`p-4 border rounded-xl text-sm font-medium ${importResult.imported > 0 ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-600"}`}>
+          <p>{importResult.message}</p>
+          {importResult.errors?.length > 0 && (
+            <ul className="mt-2 text-xs space-y-0.5">
+              {importResult.errors.map((e, i) => <li key={i} className="opacity-80">{e.message}</li>)}
+            </ul>
+          )}
+          <button onClick={() => setImportResult(null)} className="mt-2 text-xs underline opacity-70 hover:opacity-100">Dismiss</button>
+        </div>
       )}
 
       {modal && <EnrolledModal request={modal} onClose={() => setModal(null)} />}

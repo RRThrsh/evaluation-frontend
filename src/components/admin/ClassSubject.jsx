@@ -1,13 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Search, X, BookOpen, Users, GraduationCap } from "lucide-react";
 import api from "../../services/api";
+import Pagination from "../common/Pagination";
+
+const PAGE_SIZE = 15;
 
 export default function ClassSubject() {
   const [subjects, setSubjects] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [courseId, setCourseId] = useState("");
   const [semester, setSemester] = useState("");
   const [yearLevel, setYearLevel] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
@@ -26,18 +32,25 @@ export default function ClassSubject() {
     { value: "2", label: "2nd Semester" },
   ];
 
+  useEffect(() => {
+    api.get("/api/admin/courses").then((res) => setCourses(res.data ?? [])).catch(() => {});
+  }, []);
+
   const loadSubjects = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
+      if (courseId) params.course_id = courseId;
       if (semester) params.semester = semester;
       if (yearLevel) params.year_level = yearLevel;
       const res = await api.get("/api/admin/class-subjects", { params });
       setSubjects(res.data ?? []);
     } catch {} finally { setLoading(false); }
-  }, [semester, yearLevel]);
+  }, [courseId, semester, yearLevel]);
 
   useEffect(() => { loadSubjects(); }, [loadSubjects]);
+
+  useEffect(() => { setPage(1); }, [search, courseId, semester, yearLevel]);
 
   const loadStudents = async (subject) => {
     setSelectedSubject(subject);
@@ -49,9 +62,14 @@ export default function ClassSubject() {
     } catch {} finally { setStudentsLoading(false); }
   };
 
-  const filtered = subjects.filter((s) =>
-    !search || `${s.subject_code} ${s.subject_name} ${s.course_name || ""}`.toLowerCase().includes(search.toLowerCase())
+  const filtered = useMemo(() =>
+    subjects.filter((s) =>
+      !search || `${s.subject_code} ${s.subject_name} ${s.course_name || ""}`.toLowerCase().includes(search.toLowerCase())
+    ), [subjects, search]
   );
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-6">
@@ -64,7 +82,7 @@ export default function ClassSubject() {
 
       <div className="card p-4 mb-6">
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative flex-1 min-w-[180px]">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -73,6 +91,10 @@ export default function ClassSubject() {
             />
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
+          <select value={courseId} onChange={(e) => setCourseId(e.target.value)} className="input-field text-sm w-auto">
+            <option value="">All Programs</option>
+            {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
           <select value={yearLevel} onChange={(e) => setYearLevel(e.target.value)} className="input-field text-sm w-auto">
             {yearOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
@@ -103,10 +125,10 @@ export default function ClassSubject() {
                     {Array.from({ length: 7 }).map((_, j) => <td key={j} className="px-5 py-3"><div className="h-4 bg-slate-100 rounded w-3/4" /></td>)}
                   </tr>
                 ))
-              ) : filtered.length === 0 ? (
+              ) : paginated.length === 0 ? (
                 <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">No subjects found</td></tr>
               ) : (
-                filtered.map((subj) => (
+                paginated.map((subj) => (
                   <tr
                     key={subj.id}
                     onClick={() => loadStudents(subj)}
@@ -130,6 +152,8 @@ export default function ClassSubject() {
           </table>
         </div>
       </div>
+
+      <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
 
       {selectedSubject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

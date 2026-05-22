@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, X, BookOpen, Users, GraduationCap } from "lucide-react";
+import { Search, X, BookOpen, Users, GraduationCap, Plus } from "lucide-react";
 import api from "../../services/api";
 import Pagination from "../common/Pagination";
 
@@ -18,6 +18,8 @@ export default function ClassSubject() {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
+  const [schoolYearModal, setSchoolYearModal] = useState(false);
+  const [newSchoolYear, setNewSchoolYear] = useState("");
 
   const curr = new Date().getFullYear();
   const schoolYearOptions = [
@@ -89,6 +91,9 @@ export default function ClassSubject() {
           <h2 className="text-lg font-bold text-slate-900">Class Subjects</h2>
           <p className="text-sm text-slate-500 mt-0.5">Browse subjects and view enrolled students</p>
         </div>
+        <button onClick={() => { setNewSchoolYear(""); setSchoolYearModal(true); }} className="btn btn-primary btn-sm flex items-center gap-1.5">
+          <Plus size={14} /> Create School Year
+        </button>
       </div>
 
       <div className="card p-4 mb-6">
@@ -168,6 +173,39 @@ export default function ClassSubject() {
       </div>
 
       <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+
+      {schoolYearModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div onClick={() => setSchoolYearModal(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 className="text-sm font-bold text-slate-900 mb-4">Create School Year</h3>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">School Year</label>
+            <input
+              value={newSchoolYear}
+              onChange={(e) => setNewSchoolYear(e.target.value)}
+              placeholder="e.g. 2026-2027"
+              className="input-field w-full text-sm mb-4"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <button onClick={() => setSchoolYearModal(false)} className="btn btn-secondary btn-sm">Cancel</button>
+              <button
+                onClick={async () => {
+                  if (!newSchoolYear.trim()) return;
+                  try {
+                    await api.patch("/api/config", { school_year_label: newSchoolYear.trim() });
+                    setSchoolYear(newSchoolYear.trim());
+                    setSchoolYearModal(false);
+                  } catch {}
+                }}
+                disabled={!newSchoolYear.trim()}
+                className="btn btn-primary btn-sm"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedSubject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

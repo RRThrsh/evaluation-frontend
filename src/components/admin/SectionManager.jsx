@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, Search, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Search, Pencil, AlertTriangle } from "lucide-react";
 import api from "../../services/api";
 
 export default function SectionManager() {
@@ -9,6 +9,7 @@ export default function SectionManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: "", course_id: "", instructor_id: "" });
   const [search, setSearch] = useState("");
 
@@ -50,6 +51,30 @@ export default function SectionManager() {
     }
   };
 
+  const handleEdit = (sec) => {
+    setEditing(sec.id);
+    setForm({ name: sec.name, course_id: sec.course_id || "", instructor_id: sec.instructor_id || "" });
+    setShowForm(true);
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    try {
+      await api.put(`/api/admin/sections/${editing}`, {
+        name: form.name.trim(),
+        course_id: form.course_id || null,
+        instructor_id: form.instructor_id || null,
+      });
+      setShowForm(false);
+      setEditing(null);
+      setForm({ name: "", course_id: "", instructor_id: "" });
+      load();
+    } catch (err) {
+      setError(err.message || "Failed to update");
+    }
+  };
+
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-6 pb-6">
       <div className="card p-4 sm:p-5">
@@ -61,7 +86,7 @@ export default function SectionManager() {
         </div>
 
         {showForm && (
-          <form onSubmit={handleCreate} className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+          <form onSubmit={editing ? handleUpdate : handleCreate} className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="text-xs font-medium text-slate-600 mb-1 block">Section Name</label>
@@ -83,8 +108,8 @@ export default function SectionManager() {
               </div>
             </div>
             <div className="flex gap-2">
-              <button type="submit" className="btn btn-primary btn-sm">Create</button>
-              <button type="button" onClick={() => setShowForm(false)} className="btn btn-ghost btn-sm">Cancel</button>
+              <button type="submit" className="btn btn-primary btn-sm">{editing ? "Update" : "Create"}</button>
+              <button type="button" onClick={() => { setShowForm(false); setEditing(null); setForm({ name: "", course_id: "", instructor_id: "" }); }} className="btn btn-ghost btn-sm">Cancel</button>
             </div>
           </form>
         )}
@@ -130,11 +155,14 @@ export default function SectionManager() {
                 )
                 .map((sec) => (
                 <tr key={sec.id} className="hover:bg-slate-50/50">
-                  <td className="px-6 py-4 text-slate-800 font-medium">Section {sec.name}</td>
+                  <td className="px-6 py-4 text-slate-800 font-medium">{sec.name}</td>
                   <td className="px-6 py-4 text-slate-700">{sec.course_name || "N/A"}</td>
                   <td className="px-6 py-4 text-slate-600 font-mono text-xs">{sec.course_code || "—"}</td>
                   <td className="px-6 py-4 text-slate-700">{sec.instructor_name || "N/A"}</td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right flex items-center justify-end gap-1">
+                    <button onClick={() => handleEdit(sec)} className="btn btn-ghost btn-sm text-slate-500 hover:text-primary-600">
+                      <Pencil size={14} />
+                    </button>
                     <button
                       onClick={async () => { if (confirm("Delete this section?")) { try { await api.delete(`/api/admin/sections/${sec.id}`); load(); } catch (err) { setError(err.message); } } }}
                       className="btn btn-ghost btn-sm text-red-500 hover:text-red-700"

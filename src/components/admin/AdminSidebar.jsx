@@ -37,6 +37,7 @@ const NAV_ITEMS = {
     { key: "students", label: "Student Records", icon: Users },
     { key: "pre-evaluate", label: "Pre-Evaluate", icon: ClipboardCheck },
     { key: "pre-enrolled", label: "Pre-Enrolled", icon: ClipboardList },
+    { key: "enrolled", label: "Enrolled Students", icon: UserCheck },
     { key: "grading", label: "Grading", icon: Award },
     { key: "sections", label: "Sections", icon: Layers },
     { key: "instructors", label: "Instructors", icon: UserCircle },

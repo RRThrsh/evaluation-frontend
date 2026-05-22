@@ -22,6 +22,7 @@ const EvaluatorLogs = lazy(() => import("../../../components/admin/EvaluatorLogs
 const SessionManager = lazy(() => import("../../../components/admin/SessionManager"));
 const AdminPreEvaluate = lazy(() => import("../../../components/admin/AdminPreEvaluate"));
 const AdminPreEnrolled = lazy(() => import("../../../components/admin/AdminPreEnrolled"));
+const EnrolledStudents = lazy(() => import("../../../components/admin/EnrolledStudents"));
 const Grading = lazy(() => import("../../../components/admin/Grading"));
 const SectionManager = lazy(() => import("../../../components/admin/SectionManager"));
 const InstructorManager = lazy(() => import("../../../components/admin/InstructorManager"));
@@ -153,6 +154,7 @@ export default function AdminHome() {
             {activeTab === "academic_config" && <AcademicConfigManager />}
             {activeTab === "pre-evaluate" && <AdminPreEvaluate />}
             {activeTab === "pre-enrolled" && <AdminPreEnrolled />}
+            {activeTab === "enrolled" && <EnrolledStudents />}
             {activeTab === "grading" && <Grading defaultPeriod={gradingPeriod} />}
             {activeTab === "sections" && <SectionManager />}
             {activeTab === "instructors" && <InstructorManager />}

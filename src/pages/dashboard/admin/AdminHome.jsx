@@ -59,7 +59,7 @@ export default function AdminHome() {
   const isSuperAdmin = user?.role === "superadmin";
 
   useEffect(() => {
-    api.get("/api/admin/my-permissions").then(r => setUserPermissions(r.data.data || [])).catch(() => {});
+    api.get("/api/admin/my-permissions").then(r => setUserPermissions(r.data || [])).catch(() => {});
   }, []);
 
   const showToast = (message, type = "success") => {

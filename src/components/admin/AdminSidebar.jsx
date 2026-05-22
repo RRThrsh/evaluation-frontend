@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight, ClipboardCheck, ClipboardList, Layers, Award, UserCircle, Activity } from "lucide-react";
+import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight, ClipboardCheck, ClipboardList, Layers, Award, UserCircle, Activity, X } from "lucide-react";
 import { useState } from "react";
 
 export function NavItem({ icon: Icon, label, active, onClick }) {
@@ -59,31 +59,38 @@ const GRADING_PERIODS = [
   { key: "general_average", label: "General Average" },
 ];
 
-export default function AdminSidebar({ activeTab, onNavigate, availableGroups, activeGroup, setActiveGroup, selectedTable, onSelectTable, user, logout, gradingPeriod }) {
+export default function AdminSidebar({ activeTab, onNavigate, availableGroups, activeGroup, setActiveGroup, selectedTable, onSelectTable, user, logout, gradingPeriod, sidebarOpen, setSidebarOpen }) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState({});
   const [gradingOpen, setGradingOpen] = useState(activeTab === "grading");
+
+  const handleNav = (key, period) => { onNavigate(key, period); setSidebarOpen?.(false); };
 
   const toggleGroup = (name) => {
     setActiveGroup(activeGroup === name ? null : name);
   };
 
   return (
-    <aside className="fixed top-0 left-0 z-40 h-screen w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
-      <div className="px-4 h-16 flex items-center gap-2.5 border-b border-slate-800">
-        <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white">
-          <GraduationCap size={16} />
+    <aside className={`fixed top-0 left-0 z-40 h-screen w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+      <div className="px-4 h-16 flex items-center justify-between border-b border-slate-800">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white">
+            <GraduationCap size={16} />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold text-white leading-tight">Academic Evaluation</h1>
+            <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Admin Console</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-sm font-bold text-white leading-tight">Academic Evaluation</h1>
-          <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Admin Console</p>
-        </div>
+        <button onClick={() => setSidebarOpen?.(false)} className="md:hidden p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+          <X size={18} />
+        </button>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         <SidebarLabel title="Navigation" />
         {NAV_ITEMS.navigation.map((item) => (
-          <NavItem key={item.key} icon={item.icon} label={item.label} active={activeTab === item.key} onClick={() => onNavigate(item.key)} />
+          <NavItem key={item.key} icon={item.icon} label={item.label} active={activeTab === item.key} onClick={() => handleNav(item.key)} />
         ))}
 
         <SidebarLabel title="Management" />
@@ -91,7 +98,7 @@ export default function AdminSidebar({ activeTab, onNavigate, availableGroups, a
           item.key === "grading" ? (
             <div key="grading">
               <button
-                onClick={() => { setGradingOpen((o) => !o); onNavigate("grading"); }}
+                onClick={() => { setGradingOpen((o) => !o); handleNav("grading"); }}
                 className={`flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === "grading" ? "bg-primary-600 text-white shadow-sm" : "text-slate-300 hover:bg-slate-800 hover:text-white"
                 }`}
@@ -105,7 +112,7 @@ export default function AdminSidebar({ activeTab, onNavigate, availableGroups, a
                   {GRADING_PERIODS.map((p) => (
                     <button
                       key={p.key}
-                      onClick={() => onNavigate("grading", p.key)}
+                      onClick={() => handleNav("grading", p.key)}
                       className={`w-full rounded-md px-3 py-1.5 text-left text-xs font-medium transition ${
                         activeTab === "grading" && gradingPeriod === p.key
                           ? "bg-primary-500/30 text-white"
@@ -119,13 +126,13 @@ export default function AdminSidebar({ activeTab, onNavigate, availableGroups, a
               )}
             </div>
           ) : (
-            <NavItem key={item.key} icon={item.icon} label={item.label} active={activeTab === item.key} onClick={() => onNavigate(item.key)} />
+            <NavItem key={item.key} icon={item.icon} label={item.label} active={activeTab === item.key} onClick={() => handleNav(item.key)} />
           )
         )}
 
         <SidebarLabel title="System" />
         {NAV_ITEMS.system.map((item) => (
-          <NavItem key={item.key} icon={item.icon} label={item.label} active={activeTab === item.key} onClick={() => onNavigate(item.key)} />
+          <NavItem key={item.key} icon={item.icon} label={item.label} active={activeTab === item.key} onClick={() => handleNav(item.key)} />
         ))}
 
         {activeTab === "database" && (

@@ -119,7 +119,7 @@ export default function AdminHome() {
     <div className="min-h-screen bg-slate-50">
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" />}
 
-      <AdminSidebar activeTab={activeTab} onNavigate={navigateTab} availableGroups={availableGroups} activeGroup={activeGroup} setActiveGroup={setActiveGroup} selectedTable={selectedTable} onSelectTable={loadTable} user={user} logout={logout} gradingPeriod={gradingPeriod} />
+      <AdminSidebar activeTab={activeTab} onNavigate={navigateTab} availableGroups={availableGroups} activeGroup={activeGroup} setActiveGroup={setActiveGroup} selectedTable={selectedTable} onSelectTable={loadTable} user={user} logout={logout} gradingPeriod={gradingPeriod} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className="md:ml-64">
         <AdminHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} activeTab={activeTab} error={error} />

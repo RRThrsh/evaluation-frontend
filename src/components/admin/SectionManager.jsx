@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Search, AlertTriangle } from "lucide-react";
 import api from "../../services/api";
 
 export default function SectionManager() {
@@ -10,6 +10,7 @@ export default function SectionManager() {
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", course_id: "", instructor_id: "" });
+  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -95,6 +96,20 @@ export default function SectionManager() {
         )}
       </div>
 
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-xs">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search sections..."
+            className="input-field w-full text-sm pl-9"
+          />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        </div>
+        <button onClick={() => setSearch(search)} className="btn btn-primary btn-sm"><Search size={14} className="mr-1" />Search</button>
+      </div>
+
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -102,19 +117,38 @@ export default function SectionManager() {
               <tr className="border-b border-slate-100 bg-slate-50/50">
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Section</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Course</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Code</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Instructor</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {sections.map((sec) => (
+              {sections
+                .filter((sec) =>
+                  !search || `${sec.name} ${sec.course_name || ""} ${sec.course_code || ""} ${sec.instructor_name || ""}`
+                    .toLowerCase().includes(search.toLowerCase())
+                )
+                .map((sec) => (
                 <tr key={sec.id} className="hover:bg-slate-50/50">
                   <td className="px-6 py-4 text-slate-800 font-medium">Section {sec.name}</td>
                   <td className="px-6 py-4 text-slate-700">{sec.course_name || "N/A"}</td>
+                  <td className="px-6 py-4 text-slate-600 font-mono text-xs">{sec.course_code || "—"}</td>
                   <td className="px-6 py-4 text-slate-700">{sec.instructor_name || "N/A"}</td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={async () => { if (confirm("Delete this section?")) { try { await api.delete(`/api/admin/sections/${sec.id}`); load(); } catch (err) { setError(err.message); } } }}
+                      className="btn btn-ghost btn-sm text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
                 </tr>
               ))}
-              {sections.length === 0 && !loading && (
-                <tr><td colSpan={3} className="px-6 py-12 text-center text-slate-400 text-sm">No sections yet.</td></tr>
+              {sections.filter((sec) =>
+                !search || `${sec.name} ${sec.course_name || ""} ${sec.course_code || ""} ${sec.instructor_name || ""}`
+                  .toLowerCase().includes(search.toLowerCase())
+              ).length === 0 && !loading && (
+                <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-400 text-sm">No sections found.</td></tr>
               )}
             </tbody>
           </table>

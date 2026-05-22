@@ -77,6 +77,7 @@ export default function Grading({ defaultPeriod }) {
   const weights = getWeights(period);
   const gaDivider = parseFloat(allWeights?.general_average_divider) || 3;
   const gradeBonus = parseFloat(allWeights?.grade_bonus) || 0;
+  const gradeFloor = parseFloat(allWeights?.grade_floor) || 0;
 
   useEffect(() => {
     (async () => {
@@ -137,7 +138,9 @@ export default function Grading({ defaultPeriod }) {
   const getGrade = (periods, p) => {
     const g = periods.find((x) => x.period === p);
     const w = getWeights(p);
-    return g ? (parseFloat(computeGrade(g.exam_score, g.qar_score, w.exam, w.qar)) + gradeBonus).toFixed(2) : null;
+    if (!g) return null;
+    const raw = parseFloat(computeGrade(g.exam_score, g.qar_score, w.exam, w.qar)) + gradeBonus;
+    return Math.max(raw, gradeFloor).toFixed(2);
   };
 
   const getGA = (periods) => {
@@ -145,7 +148,8 @@ export default function Grading({ defaultPeriod }) {
       .map((p) => getGrade(periods, p))
       .filter(Boolean);
     if (!scores.length) return null;
-    return (scores.reduce((a, b) => a + parseFloat(b), 0) / gaDivider).toFixed(2);
+    const raw = scores.reduce((a, b) => a + parseFloat(b), 0) / gaDivider;
+    return Math.max(raw, gradeFloor).toFixed(2);
   };
 
   return (

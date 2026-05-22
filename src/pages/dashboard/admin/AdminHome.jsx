@@ -77,13 +77,17 @@ export default function AdminHome() {
 
   useEffect(() => {
     api.get("/api/admin/controls").then(d => setControls(d.data?.controls ?? [])).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== "database" || tables.length > 0) return;
     api.get("/api/admin/tables").then(d => {
       const tbls = d.data ?? [];
       setTables(tbls);
       const first = TABLE_GROUPS.find((g) => g.tables.some((t) => tbls.includes(t)));
       if (first) setActiveGroup(first.name);
     }).catch(() => {});
-  }, []);
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab !== "users") return;

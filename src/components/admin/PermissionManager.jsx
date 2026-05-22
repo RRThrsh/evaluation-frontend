@@ -1,29 +1,32 @@
 import { useState, useEffect, useCallback } from "react";
-import { Search, Shield } from "lucide-react";
+import { Search, Shield, Eye, Edit3 } from "lucide-react";
 import api from "../../services/api";
 
-const PERMISSION_LABELS = {
-  dashboard: "Dashboard",
-  courses: "Courses",
-  subjects: "Subjects",
-  students: "Students",
-  users: "Users (Pending Approvals)",
-  "user-management": "All Users",
-  "audit-logs": "Audit Trail",
-  "evaluator-logs": "Evaluator Logs",
-  "academic-config": "Academic Config",
-  sessions: "Active Sessions",
-  "enrolled-students": "Enrolled Students",
-  grading: "Grading",
-  sections: "Sections",
-  instructors: "Instructors",
-  "class-subjects": "Class Subjects",
-  "pre-evaluate": "Pre-Evaluate",
-  "pre-enrolled": "Pre-Enrolled",
-  database: "Database Viewer",
-  "import-logs": "Import Logs",
-  permissions: "Permissions (control)",
-};
+const FEATURES = [
+  { key: "courses", label: "Programs" },
+  { key: "subjects", label: "Subjects" },
+  { key: "students", label: "Student Records" },
+  { key: "users", label: "Pending Approvals" },
+  { key: "user-management", label: "All Users" },
+  { key: "enrolled-students", label: "Enrolled Students" },
+  { key: "grading", label: "Grading" },
+  { key: "sections", label: "Sections" },
+  { key: "instructors", label: "Instructors" },
+  { key: "database", label: "Database Explorer" },
+];
+
+const SIMPLE_PERMS = [
+  { key: "dashboard", label: "Dashboard" },
+  { key: "audit-logs", label: "Audit Trail" },
+  { key: "evaluator-logs", label: "Evaluator Logs" },
+  { key: "academic-config", label: "Academic Config" },
+  { key: "sessions", label: "Active Sessions" },
+  { key: "class-subjects", label: "Class Subjects" },
+  { key: "pre-evaluate", label: "Pre-Evaluate" },
+  { key: "pre-enrolled", label: "Pre-Enrolled" },
+  { key: "import-logs", label: "Import Logs" },
+  { key: "permissions", label: "Permissions (control)" },
+];
 
 export default function PermissionManager() {
   const [users, setUsers] = useState([]);
@@ -70,12 +73,12 @@ export default function PermissionManager() {
     }
   };
 
+  const has = (userId, permName) => userPerms[userId]?.has(permName) ?? false;
+
   const filtered = users.filter(u =>
     u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
     u.email?.toLowerCase().includes(search.toLowerCase())
   );
-
-  const permNames = permissions.map(p => p.name);
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-6 pb-6">
@@ -96,43 +99,85 @@ export default function PermissionManager() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50">
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide w-48">Admin</th>
-                {permNames.map(p => (
-                  <th key={p} className="px-3 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wide whitespace-nowrap">
-                    {PERMISSION_LABELS[p] || p}
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide w-44">Admin</th>
+                {FEATURES.map(f => (
+                  <th key={f.key} colSpan={2} className="px-1 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wide border-l border-slate-100">
+                    {f.label}
                   </th>
+                ))}
+                {SIMPLE_PERMS.map(p => (
+                  <th key={p.key} className="px-3 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wide border-l border-slate-100 whitespace-nowrap">
+                    {p.label}
+                  </th>
+                ))}
+              </tr>
+              <tr className="border-b border-slate-100 bg-slate-50/30">
+                <th className="px-4 py-2" />
+                {FEATURES.map(f => (
+                  <th key={f.key} colSpan={2} className="px-1 py-2 text-center border-l border-slate-100">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      <Eye size={11} /> View
+                      <span className="mx-1 text-slate-200">|</span>
+                      <Edit3 size={11} /> Manage
+                    </span>
+                  </th>
+                ))}
+                {SIMPLE_PERMS.map(p => (
+                  <th key={p.key} className="px-1 py-2 text-center border-l border-slate-100" />
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.map(u => (
                 <tr key={u.id} className="hover:bg-slate-50/40">
-                  <td className="px-6 py-3">
-                    <p className="font-medium text-slate-800">{u.full_name}</p>
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-slate-800 text-sm">{u.full_name}</p>
                     <p className="text-xs text-slate-400">{u.email}</p>
                   </td>
-                  {permNames.map(p => {
-                    const has = userPerms[u.id]?.has(p);
-                    const loading = saving[`${u.id}-${p}`];
-                    return (
-                      <td key={p} className="px-3 py-3 text-center">
+                  {FEATURES.map(f => (
+                    <td key={f.key} colSpan={2} className="px-1 py-3 border-l border-slate-100">
+                      <div className="flex items-center justify-center gap-1">
                         <button
-                          onClick={() => toggle(u.id, p, !has)}
-                          disabled={loading}
+                          onClick={() => toggle(u.id, `${f.key}.view`, !has(u.id, `${f.key}.view`))}
+                          disabled={saving[`${u.id}-${f.key}.view`]}
                           className={`w-6 h-6 rounded-md border-2 transition-all ${
-                            loading ? "opacity-50 animate-pulse" :
-                            has ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300 hover:border-slate-400"
+                            saving[`${u.id}-${f.key}.view`] ? "opacity-50 animate-pulse" :
+                            has(u.id, `${f.key}.view`) ? "bg-sky-500 border-sky-500" : "bg-white border-slate-300 hover:border-slate-400"
                           }`}
                         >
-                          {has && <span className="flex items-center justify-center text-white text-xs font-bold">✓</span>}
+                          {has(u.id, `${f.key}.view`) && <span className="flex items-center justify-center text-white text-xs font-bold">✓</span>}
                         </button>
-                      </td>
-                    );
-                  })}
+                        <button
+                          onClick={() => toggle(u.id, `${f.key}.manage`, !has(u.id, `${f.key}.manage`))}
+                          disabled={saving[`${u.id}-${f.key}.manage`]}
+                          className={`w-6 h-6 rounded-md border-2 transition-all ${
+                            saving[`${u.id}-${f.key}.manage`] ? "opacity-50 animate-pulse" :
+                            has(u.id, `${f.key}.manage`) ? "bg-amber-500 border-amber-500" : "bg-white border-slate-300 hover:border-slate-400"
+                          }`}
+                        >
+                          {has(u.id, `${f.key}.manage`) && <span className="flex items-center justify-center text-white text-xs font-bold">✓</span>}
+                        </button>
+                      </div>
+                    </td>
+                  ))}
+                  {SIMPLE_PERMS.map(p => (
+                    <td key={p.key} className="px-3 py-3 text-center border-l border-slate-100">
+                      <button
+                        onClick={() => toggle(u.id, p.key, !has(u.id, p.key))}
+                        disabled={saving[`${u.id}-${p.key}`]}
+                        className={`w-6 h-6 rounded-md border-2 transition-all ${
+                          saving[`${u.id}-${p.key}`] ? "opacity-50 animate-pulse" :
+                          has(u.id, p.key) ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300 hover:border-slate-400"
+                        }`}
+                      >
+                        {has(u.id, p.key) && <span className="flex items-center justify-center text-white text-xs font-bold">✓</span>}
+                      </button>
+                    </td>
+                  ))}
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={permNames.length + 1} className="px-6 py-12 text-center text-slate-400 text-sm">No admin users found.</td></tr>
+                <tr><td colSpan={1 + FEATURES.length * 2 + SIMPLE_PERMS.length} className="px-6 py-12 text-center text-slate-400 text-sm">No admin users found.</td></tr>
               )}
             </tbody>
           </table>

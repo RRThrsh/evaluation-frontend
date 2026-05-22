@@ -3,7 +3,10 @@ import { Search, Plus, AlertTriangle } from "lucide-react";
 import api from "../../services/api";
 import { sanitizeObject } from "../../utils/sanitize";
 import ConfirmModal from "../common/ConfirmModal";
+import Pagination from "../common/Pagination";
 import SkeletonRows from "./SkeletonRows";
+
+const PAGE_SIZE = 15;
 
 export default function InstructorManager() {
   const [instructors, setInstructors] = useState([]);
@@ -16,6 +19,7 @@ export default function InstructorManager() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ employee_id: "", first_name: "", last_name: "", middle_name: "", email: "", contact_number: "", department: "" });
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [page, setPage] = useState(1);
 
   const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -66,6 +70,11 @@ export default function InstructorManager() {
       i.email?.toLowerCase().includes(q)
     );
   }, [instructors, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [search]);
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-6 pb-6">
@@ -159,7 +168,7 @@ export default function InstructorManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map((inst) => (
+                    {paginated.map((inst) => (
                 <tr key={inst.id} className="table-row">
                   <td className="table-cell font-mono font-medium text-slate-800">{inst.employee_id}</td>
                   <td className="table-cell text-slate-700">{inst.last_name}, {inst.first_name}{inst.middle_name ? ` ${inst.middle_name}` : ""}</td>
@@ -186,6 +195,7 @@ export default function InstructorManager() {
             </tbody>
           </table>
         )}
+        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       {confirmDelete && (

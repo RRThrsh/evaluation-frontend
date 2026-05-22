@@ -3,6 +3,9 @@ import api from "../../services/api";
 import exportToExcel from "../../utils/exportToExcel";
 import { sanitizeObject } from "../../utils/sanitize";
 import ConfirmModal from "../common/ConfirmModal";
+import Pagination from "../common/Pagination";
+
+const PAGE_SIZE = 10;
 
 export default function SubjectManager() {
     const [subjects, setSubjects] = useState([]);
@@ -19,6 +22,7 @@ export default function SubjectManager() {
     const [confirmAction, setConfirmAction] = useState(null);
     const [exportConfirm, setExportConfirm] = useState(null);
     const [expandedCourses, setExpandedCourses] = useState({});
+    const [page, setPage] = useState(1);
 
     const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -90,6 +94,11 @@ export default function SubjectManager() {
         }
         return result;
     }, [subjectsByCourse, YEARS, SEMESTERS]);
+
+    const totalPages = Math.max(1, Math.ceil(subjectsByCourse.length / PAGE_SIZE));
+    const paginatedGroups = subjectsByCourse.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    useEffect(() => { setPage(1); }, [search]);
 
     const toggleCourse = (courseId) => { setExpandedCourses((prev) => { const next = { ...prev }; if (next[courseId]) delete next[courseId]; else next[courseId] = true; return next; }); };
     const expandAll = () => { const all = {}; subjectsByCourse.forEach((g) => { all[g.course_id] = true; }); setExpandedCourses(all); };
@@ -173,7 +182,7 @@ export default function SubjectManager() {
                     <div className="p-10 text-center text-sm text-slate-400">{search ? "No subjects match your search" : "No subjects yet"}</div>
                 ) : (
                     <div className="p-5 space-y-4">
-                        {subjectsByCourse.map((grp) => {
+                        {paginatedGroups.map((grp) => {
                             const expanded = !!expandedCourses[grp.course_id];
                             const byYear = courseYearSemSubjects[grp.course_id] || {};
                             const totalUnits = grp.subjects.reduce((sum, s) => sum + (s.units || 0), 0);
@@ -246,6 +255,7 @@ export default function SubjectManager() {
                         })}
                     </div>
                 )}
+                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
 
             {confirmAction && <ConfirmModal title="Deactivate Subject" message={`Deactivate subject "${confirmAction.name}"?`} extra="This will hide it from the curriculum. Existing enrollments are not affected." confirmLabel="Deactivate" onConfirm={() => handleDelete(confirmAction.id)} onCancel={() => setConfirmAction(null)} />}

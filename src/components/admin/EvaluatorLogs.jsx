@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { AlertTriangle, Clock, User, FileText, CheckCircle, XCircle, Send, Eye, Search } from "lucide-react";
 import api from "../../services/api";
+import Pagination from "../common/Pagination";
+
+const PAGE_SIZE = 10;
 
 const STATUS_CONFIG = {
   PENDING: { icon: Clock, color: "text-amber-600", bg: "bg-amber-50", label: "Pending" },
@@ -30,6 +33,7 @@ export default function EvaluatorLogs() {
   const [filterStatus, setFilterStatus] = useState("");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState(null);
+  const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,11 +52,18 @@ export default function EvaluatorLogs() {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = logs.filter((log) =>
-    !search ||
-    `${log.student_name} ${log.student_number} ${log.requested_by_name || ""} ${log.reviewed_by_name || ""} ${log.course_name || ""} ${log.course_code || ""}`
-      .toLowerCase().includes(search.toLowerCase())
+  const filtered = useMemo(() =>
+    logs.filter((log) =>
+      !search ||
+      `${log.student_name} ${log.student_number} ${log.requested_by_name || ""} ${log.reviewed_by_name || ""} ${log.course_name || ""} ${log.course_code || ""}`
+        .toLowerCase().includes(search.toLowerCase())
+    ), [logs, search]
   );
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginatedLogs = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [search, filterStatus]);
 
   if (loading) {
     return (
@@ -102,7 +113,7 @@ export default function EvaluatorLogs() {
       )}
 
       <div className="space-y-3">
-        {filtered.map((log) => {
+        {paginatedLogs.map((log) => {
           const cfg = STATUS_CONFIG[log.status] || STATUS_CONFIG.PENDING;
           const Icon = cfg.icon;
           const isExpanded = expanded === log.id;
@@ -195,13 +206,15 @@ export default function EvaluatorLogs() {
           );
         })}
 
-        {filtered.length === 0 && (
+        {paginatedLogs.length === 0 && (
           <div className="card p-12 text-center">
             <FileText size={40} className="mx-auto text-slate-300 mb-3" />
             <p className="text-slate-400 text-sm">No evaluator activity found.</p>
           </div>
         )}
       </div>
+
+      <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

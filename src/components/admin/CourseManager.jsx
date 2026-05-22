@@ -3,6 +3,9 @@ import api from "../../services/api";
 import exportToExcel from "../../utils/exportToExcel";
 import { sanitizeObject } from "../../utils/sanitize";
 import ConfirmModal from "../common/ConfirmModal";
+import Pagination from "../common/Pagination";
+
+const PAGE_SIZE = 15;
 
 export default function CourseManager() {
     const [courses, setCourses] = useState([]);
@@ -14,6 +17,7 @@ export default function CourseManager() {
     const [search, setSearch] = useState("");
     const [confirmAction, setConfirmAction] = useState(null);
     const [exportConfirm, setExportConfirm] = useState(null);
+    const [page, setPage] = useState(1);
 
     const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -52,6 +56,11 @@ export default function CourseManager() {
         const q = search.toLowerCase();
         return courses.filter((c) => c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q));
     }, [courses, search]);
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    useEffect(() => { setPage(1); }, [search]);
 
     return (
         <div className="space-y-6">
@@ -99,7 +108,7 @@ export default function CourseManager() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {filtered.map((c) => (
+                            {paginated.map((c) => (
                                 <tr key={c.id} className="table-row">
                                     <td className="table-cell font-mono font-medium text-slate-800">{c.code}</td>
                                     <td className="table-cell text-slate-600">{c.name}</td>
@@ -115,6 +124,7 @@ export default function CourseManager() {
                         </tbody>
                     </table>
                 )}
+                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
 
             {confirmAction && <ConfirmModal title="Delete Course" message={`Delete course "${confirmAction.name}"?`} extra="This action cannot be undone." confirmLabel="Delete" onConfirm={() => handleDelete(confirmAction.id)} onCancel={() => setConfirmAction(null)} />}

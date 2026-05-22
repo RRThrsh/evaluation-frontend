@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle } from "lucide-react";
 import api from "../../services/api";
+import Pagination from "../common/Pagination";
+
+const PAGE_SIZE = 20;
 
 const PERIOD_LABELS = {
   prelim: "Prelim",
@@ -60,6 +63,7 @@ export default function Grading({ defaultPeriod }) {
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [error, setError] = useState("");
   const [allWeights, setAllWeights] = useState(null);
+  const [page, setPage] = useState(1);
 
   const getWeights = (p) => {
     const map = {
@@ -113,6 +117,7 @@ export default function Grading({ defaultPeriod }) {
   }, [selectedSubject, selectedSection]);
 
   useEffect(() => { fetchGrades(); }, [fetchGrades]);
+  useEffect(() => { setPage(1); }, [selectedSubject, selectedSection]);
 
   const handleUpdateGrade = async (gradeId, field, value) => {
     try {
@@ -131,6 +136,9 @@ export default function Grading({ defaultPeriod }) {
       return acc;
     }, {})
   );
+
+  const totalPages = Math.max(1, Math.ceil(studentRows.length / PAGE_SIZE));
+  const paginatedRows = studentRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const selectedSubjectObj = subjects.find((s) => s.id === selectedSubject);
   const periodLabel = PERIOD_LABELS[period];
@@ -219,7 +227,7 @@ export default function Grading({ defaultPeriod }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {studentRows.map((row) => {
+              {paginatedRows.map((row) => {
                 const pg = row.periods.find((g) => g.period === period);
                 const grade = isGA ? getGA(row.periods) : getGrade(row.periods, period);
 
@@ -254,6 +262,13 @@ export default function Grading({ defaultPeriod }) {
                   </td>
                 </tr>
               )}
+              {paginatedRows.length === 0 && studentRows.length > 0 && (
+                <tr>
+                  <td colSpan={isGA ? 4 : 6} className="px-6 py-12 text-center text-slate-400 text-sm">
+                    No students on this page.
+                  </td>
+                </tr>
+              )}
               {!selectedSubject && (
                 <tr>
                   <td colSpan={isGA ? 4 : 6} className="px-6 py-12 text-center text-slate-400 text-sm">
@@ -268,6 +283,7 @@ export default function Grading({ defaultPeriod }) {
               <span className="inline-block w-5 h-5 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
             </div>
           )}
+          {!loading && studentRows.length > 0 && <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />}
         </div>
       </div>
     </div>

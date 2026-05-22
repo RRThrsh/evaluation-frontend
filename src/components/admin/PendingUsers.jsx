@@ -1,6 +1,14 @@
+import { useState } from "react";
 import { Check, X } from "lucide-react";
+import Pagination from "../common/Pagination";
+
+const PAGE_SIZE = 10;
 
 export default function PendingUsers({ users, loading, onApprove, onReject }) {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE));
+  const paginated = users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <div className="card p-6">
       <h3 className="text-lg font-bold text-slate-900 mb-4">Pending User Approvals</h3>
@@ -10,7 +18,7 @@ export default function PendingUsers({ users, loading, onApprove, onReject }) {
         <div className="text-sm text-slate-400 py-8 text-center">No pending users</div>
       ) : (
         <div className="space-y-2">
-          {users.map((u) => (
+          {paginated.map((u) => (
             <div key={u.id} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 px-4 py-3">
               <div>
                 <p className="text-sm font-medium text-slate-800">{u.full_name}</p>
@@ -28,6 +36,7 @@ export default function PendingUsers({ users, loading, onApprove, onReject }) {
           ))}
         </div>
       )}
+      <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

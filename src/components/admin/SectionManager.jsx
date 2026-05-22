@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Plus, Trash2, Search, Pencil, AlertTriangle } from "lucide-react";
 import api from "../../services/api";
+import Pagination from "../common/Pagination";
+
+const PAGE_SIZE = 15;
 
 export default function SectionManager() {
   const [sections, setSections] = useState([]);
@@ -12,6 +15,19 @@ export default function SectionManager() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: "", course_id: "", instructor_id: "" });
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  const filteredSections = useMemo(() => {
+    return sections.filter((sec) =>
+      !search || `${sec.name} ${sec.course_name || ""} ${sec.course_code || ""} ${sec.instructor_name || ""}`
+        .toLowerCase().includes(search.toLowerCase())
+    );
+  }, [sections, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSections.length / PAGE_SIZE));
+  const paginatedSections = filteredSections.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [search]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -148,12 +164,7 @@ export default function SectionManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {sections
-                .filter((sec) =>
-                  !search || `${sec.name} ${sec.course_name || ""} ${sec.course_code || ""} ${sec.instructor_name || ""}`
-                    .toLowerCase().includes(search.toLowerCase())
-                )
-                .map((sec) => (
+              {paginatedSections.map((sec) => (
                 <tr key={sec.id} className="hover:bg-slate-50/50">
                   <td className="px-6 py-4 text-slate-800 font-medium">{sec.name}</td>
                   <td className="px-6 py-4 text-slate-700">{sec.course_name || "N/A"}</td>
@@ -172,14 +183,12 @@ export default function SectionManager() {
                   </td>
                 </tr>
               ))}
-              {sections.filter((sec) =>
-                !search || `${sec.name} ${sec.course_name || ""} ${sec.course_code || ""} ${sec.instructor_name || ""}`
-                  .toLowerCase().includes(search.toLowerCase())
-              ).length === 0 && !loading && (
+              {paginatedSections.length === 0 && !loading && (
                 <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-400 text-sm">No sections found.</td></tr>
               )}
             </tbody>
           </table>
+          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       </div>
     </div>

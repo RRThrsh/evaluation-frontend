@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Search, Upload } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Search, Upload, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import api from "../../services/api";
 import Pagination from "../common/Pagination";
@@ -164,6 +164,22 @@ export default function EnrolledStudents() {
     }
   };
 
+  const handleExport = () => {
+    const data = requests.map(r => ({
+      "student no.": r.student_number,
+      fullname: `${r.first_name} ${r.last_name}`,
+      email: r.student_email || "",
+      course: r.course_code || r.course_name || "",
+      year: r.year_level,
+      semester: r.semester,
+      status: r.enrollment_status || "Regular",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Enrolled Students");
+    XLSX.writeFile(wb, "enrolled-students.xlsx");
+  };
+
   const fetchRequests = useCallback(async (pg) => {
     setLoading(true);
     setError("");
@@ -210,6 +226,9 @@ export default function EnrolledStudents() {
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" />
             <button onClick={() => fileRef.current?.click()} disabled={importing} className="btn btn-primary btn-sm flex items-center gap-1.5">
               <Upload size={14} /> {importing ? "Importing..." : "Import Excel"}
+            </button>
+            <button onClick={handleExport} className="btn btn-secondary btn-sm flex items-center gap-1.5">
+              <Download size={14} /> Export Excel
             </button>
           </div>
           {loading && (

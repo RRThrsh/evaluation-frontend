@@ -65,7 +65,7 @@ function EnrolledModal({ request, onClose }) {
               </div>
               <div>
                 <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Status</span>
-                <p className="font-semibold text-slate-800 mt-0.5 capitalize">{request.status === "IRREGULAR_ENROLLED" ? "Irregular Enrolled" : "Enrolled"}</p>
+                <p className="font-semibold text-slate-800 mt-0.5">{request.enrollment_status || "Regular"}</p>
               </div>
             </div>
           </div>
@@ -128,13 +128,13 @@ export default function EnrolledStudents() {
   const [error, setError] = useState("");
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ENROLLED");
+  const [statusFilter, setStatusFilter] = useState("Regular");
 
   const fetchRequests = useCallback(async (pg) => {
     setLoading(true);
     setError("");
     try {
-      const params = { page: pg, limit: 20, status: statusFilter || "ENROLLED" };
+      const params = { page: pg, limit: 20, status: statusFilter || "Regular" };
       if (search.trim()) params.search = search.trim();
       const res = await api.get("/api/admin/evaluations", { params });
       setRequests(res.data.requests);
@@ -170,8 +170,8 @@ export default function EnrolledStudents() {
                 className="input-field pl-9 py-2 text-xs" />
             </div>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-field text-xs w-auto">
-              <option value="ENROLLED">Enrolled</option>
-              <option value="IRREGULAR_ENROLLED">Irregular Enrolled</option>
+              <option value="Regular">Regular</option>
+              <option value="Irregular">Irregular</option>
             </select>
           </div>
           {loading && (

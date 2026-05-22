@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, GraduationCap, Monitor, Clock, UserCheck, ClipboardCheck, ClipboardList, BookOpen, BarChart3 } from "lucide-react";
+import { Users, GraduationCap, Monitor, Clock, UserCheck, ClipboardCheck, ClipboardList, BookOpen, BookText, BarChart3 } from "lucide-react";
 import api from "../../services/api";
 
 const COLORS = ["#4f46e5", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
@@ -83,6 +83,7 @@ export default function DashboardOverview({ onNavigate }) {
   const topCards = [
     { key: "users", label: "Total Users", value: s.users ?? "\u2014", icon: Users, color: "text-indigo-600 bg-indigo-50" },
     { key: "students", label: "Students", value: s.students ?? d.studentCount ?? "\u2014", icon: GraduationCap, color: "text-emerald-600 bg-emerald-50" },
+    { key: "subjects", label: "Subjects", value: s.subjects ?? "\u2014", icon: BookText, color: "text-violet-600 bg-violet-50" },
     { key: "online", label: "Online Now", value: s.online ?? "\u2014", icon: Monitor, color: "text-sky-600 bg-sky-50" },
     { key: "pending", label: "Pending Requests", value: s.pendingRequests ?? "\u2014", icon: Clock, color: "text-amber-600 bg-amber-50" },
   ];
@@ -98,7 +99,7 @@ export default function DashboardOverview({ onNavigate }) {
     <div className="space-y-6">
 
       {/* ROW 1: System Stats */}
-      <section className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <section className="grid grid-cols-2 xl:grid-cols-5 gap-4">
         {topCards.map((card) => {
           const Icon = card.icon;
           return (
@@ -133,9 +134,8 @@ export default function DashboardOverview({ onNavigate }) {
         })}
       </section>
 
-      {/* ROW 3: Charts & Activity */}
+      {/* ROW 3: Charts */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Students per Program */}
         <div className="xl:col-span-2 card p-5">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Students per Program</h4>
@@ -146,7 +146,40 @@ export default function DashboardOverview({ onNavigate }) {
             : <p className="text-slate-400 text-xs py-6 text-center">No course data</p>}
         </div>
 
-        {/* Recent Activity */}
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Status Overview</h4>
+            <BarChart3 size={14} className="text-slate-400" />
+          </div>
+          <div className="space-y-2">
+            {(d.statusDistribution ?? []).map((s, i) => {
+              const total = d.statusDistribution.reduce((a, b) => a + b.count, 0) || 1;
+              const pct = Math.round((s.count / total) * 100);
+              return (
+                <div key={s.status} className="flex items-center gap-3">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                  <span className="text-xs text-slate-500 flex-1">{s.status}</span>
+                  <span className="text-xs font-semibold text-slate-700">{s.count}</span>
+                  <span className="text-[10px] text-slate-400 w-8 text-right">{pct}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ROW 4: Monthly Requests & Recent Activity */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Monthly Requests (12mo)</h4>
+            <span className="text-[10px] text-slate-400">{d.monthlyRequests?.length ?? 0} months</span>
+          </div>
+          {d.monthlyRequests?.length > 0
+            ? <BarChart data={d.monthlyRequests} labelKey="month" valueKey="count" />
+            : <p className="text-slate-400 text-xs py-6 text-center">No request data</p>}
+        </div>
+
         <div className="card p-5">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Recent Activity</h4>
@@ -184,41 +217,6 @@ export default function DashboardOverview({ onNavigate }) {
               <span className="text-[10px] text-slate-400">+{d.recentActivity.length - 6} more</span>
             </div>
           )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Monthly Requests */}
-        <div className="xl:col-span-2 card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Monthly Requests (12mo)</h4>
-            <span className="text-[10px] text-slate-400">{d.monthlyRequests?.length ?? 0} months</span>
-          </div>
-          {d.monthlyRequests?.length > 0
-            ? <BarChart data={d.monthlyRequests} labelKey="month" valueKey="count" />
-            : <p className="text-slate-400 text-xs py-6 text-center">No request data</p>}
-        </div>
-
-        {/* Quick Status Summary */}
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Status Overview</h4>
-            <BarChart3 size={14} className="text-slate-400" />
-          </div>
-          <div className="space-y-2">
-            {(d.statusDistribution ?? []).map((s, i) => {
-              const total = d.statusDistribution.reduce((a, b) => a + b.count, 0) || 1;
-              const pct = Math.round((s.count / total) * 100);
-              return (
-                <div key={s.status} className="flex items-center gap-3">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                  <span className="text-xs text-slate-500 flex-1">{s.status}</span>
-                  <span className="text-xs font-semibold text-slate-700">{s.count}</span>
-                  <span className="text-[10px] text-slate-400 w-8 text-right">{pct}%</span>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </div>
 

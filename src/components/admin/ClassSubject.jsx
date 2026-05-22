@@ -21,14 +21,15 @@ export default function ClassSubject() {
   const [schoolYearModal, setSchoolYearModal] = useState(false);
   const [newSchoolYear, setNewSchoolYear] = useState("");
 
-  const curr = new Date().getFullYear();
-  const schoolYearOptions = [
+  const [schoolYearList, setSchoolYearList] = useState([]);
+  const schoolYearOptions = useMemo(() => [
     { value: "", label: "All School Years" },
-    ...Array.from({ length: 5 }, (_, i) => {
-      const y = curr - 2 + i;
-      return { value: `${y}-${y + 1}`, label: `${y}-${y + 1}` };
-    }),
-  ];
+    ...schoolYearList.map(y => ({ value: y, label: y })),
+  ], [schoolYearList]);
+
+  useEffect(() => {
+    api.get("/api/admin/school-years").then(r => setSchoolYearList(r.data.data)).catch(() => {});
+  }, []);
 
   const yearOptions = [
     { value: "", label: "All Years" },

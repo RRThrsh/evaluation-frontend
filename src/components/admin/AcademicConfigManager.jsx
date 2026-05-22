@@ -45,7 +45,7 @@ const SECTIONS = [
         label: "General Average",
         sub: "(Prelim + Midterm + Finals) ÷ 3",
         fields: [
-          { key: "general_average_passing", label: "General Average Passing Grade", type: "number", placeholder: "75", desc: "Minimum General Average required (for future calculation adjustments)" },
+          { key: "general_average_divider", label: "Divider Value (N)", type: "number", placeholder: "3", desc: "General Average = (Prelim + Midterm + Finals) ÷ N" },
         ],
       },
     ],

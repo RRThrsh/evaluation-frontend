@@ -75,6 +75,7 @@ export default function Grading({ defaultPeriod }) {
   };
 
   const weights = getWeights(period);
+  const gaDivider = parseFloat(allWeights?.general_average_divider) || 3;
 
   useEffect(() => {
     (async () => {
@@ -143,7 +144,7 @@ export default function Grading({ defaultPeriod }) {
       .map((p) => getGrade(periods, p))
       .filter(Boolean);
     if (!scores.length) return null;
-    return (scores.reduce((a, b) => a + parseFloat(b), 0) / scores.length).toFixed(2);
+    return (scores.reduce((a, b) => a + parseFloat(b), 0) / gaDivider).toFixed(2);
   };
 
   return (

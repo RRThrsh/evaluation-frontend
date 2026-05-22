@@ -170,8 +170,8 @@ export default function EnrolledStudents() {
                 className="input-field pl-9 py-2 text-xs" />
             </div>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-field text-xs w-auto">
-              <option value="ENROLLED">Regular</option>
-              <option value="IRREGULAR_ENROLLED">Irregular</option>
+              <option value="ENROLLED">Enrolled</option>
+              <option value="IRREGULAR_ENROLLED">Irregular Enrolled</option>
             </select>
           </div>
           {loading && (
@@ -188,7 +188,8 @@ export default function EnrolledStudents() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Year</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">School Year</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Semester</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Status</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wide">Fails</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Standing</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide"></th>
               </tr>
             </thead>
@@ -201,9 +202,14 @@ export default function EnrolledStudents() {
                   <td className="px-6 py-4 text-slate-600">{row.year_level ? `${row.year_level}th` : "N/A"}</td>
                   <td className="px-6 py-4 text-slate-600">{row.school_year || "N/A"}</td>
                   <td className="px-6 py-4 text-slate-600">{row.semester ? `Sem ${row.semester}` : "N/A"}</td>
+                  <td className="px-6 py-4 text-center">
+                    <span className={`text-xs font-semibold ${(row.failed_subjects_count || 0) > 0 ? "text-red-500" : "text-emerald-500"}`}>
+                      {row.failed_subjects_count ?? 0}
+                    </span>
+                  </td>
                   <td className="px-6 py-4">
-                    <span className={`badge ${row.status === "IRREGULAR_ENROLLED" ? "badge-purple" : "badge-green"}`}>
-                      {row.status === "IRREGULAR_ENROLLED" ? "Irregular" : "Enrolled"}
+                    <span className={`badge ${row.enrollment_status === "Irregular" ? "badge-red" : "badge-green"}`}>
+                      {row.enrollment_status || "Regular"}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -212,7 +218,7 @@ export default function EnrolledStudents() {
                 </tr>
               ))}
               {requests.length === 0 && !loading && (
-                <tr><td colSpan={8} className="px-6 py-12 text-center text-slate-400 text-sm">No enrolled students.</td></tr>
+                <tr><td colSpan={9} className="px-6 py-12 text-center text-slate-400 text-sm">No enrolled students.</td></tr>
               )}
             </tbody>
           </table>

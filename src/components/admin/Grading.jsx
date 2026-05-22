@@ -236,11 +236,8 @@ export default function Grading({ defaultPeriod }) {
                             onSave={(v) => pg && handleUpdateGrade(pg.grade_id, "exam_score", v)}
                           />
                         </td>
-                        <td className="px-4 py-3">
-                          <EditableCell
-                            value={pg?.qar_score}
-                            onSave={(v) => pg && handleUpdateGrade(pg.grade_id, "qar_score", v)}
-                          />
+                        <td className="px-4 py-3 text-slate-600 text-xs">
+                          {pg?.qar_score ?? "—"}
                         </td>
                       </>
                     )}

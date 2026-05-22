@@ -10,6 +10,7 @@ export default function ClassSubject() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [courseId, setCourseId] = useState("");
+  const [schoolYear, setSchoolYear] = useState("");
   const [semester, setSemester] = useState("");
   const [yearLevel, setYearLevel] = useState("");
   const [search, setSearch] = useState("");
@@ -17,6 +18,15 @@ export default function ClassSubject() {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
+
+  const curr = new Date().getFullYear();
+  const schoolYearOptions = [
+    { value: "", label: "All School Years" },
+    ...Array.from({ length: 5 }, (_, i) => {
+      const y = curr - 2 + i;
+      return { value: `${y}-${y + 1}`, label: `${y}-${y + 1}` };
+    }),
+  ];
 
   const yearOptions = [
     { value: "", label: "All Years" },
@@ -41,16 +51,17 @@ export default function ClassSubject() {
     try {
       const params = {};
       if (courseId) params.course_id = courseId;
+      if (schoolYear) params.school_year = schoolYear;
       if (semester) params.semester = semester;
       if (yearLevel) params.year_level = yearLevel;
       const res = await api.get("/api/admin/class-subjects", { params });
       setSubjects(res.data ?? []);
     } catch {} finally { setLoading(false); }
-  }, [courseId, semester, yearLevel]);
+  }, [courseId, schoolYear, semester, yearLevel]);
 
   useEffect(() => { loadSubjects(); }, [loadSubjects]);
 
-  useEffect(() => { setPage(1); }, [search, courseId, semester, yearLevel]);
+  useEffect(() => { setPage(1); }, [search, courseId, schoolYear, semester, yearLevel]);
 
   const loadStudents = async (subject) => {
     setSelectedSubject(subject);
@@ -94,6 +105,9 @@ export default function ClassSubject() {
           <select value={courseId} onChange={(e) => setCourseId(e.target.value)} className="input-field text-sm w-auto">
             <option value="">All Programs</option>
             {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <select value={schoolYear} onChange={(e) => setSchoolYear(e.target.value)} className="input-field text-sm w-auto">
+            {schoolYearOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
           <select value={yearLevel} onChange={(e) => setYearLevel(e.target.value)} className="input-field text-sm w-auto">
             {yearOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}

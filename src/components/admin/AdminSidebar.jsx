@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight, ClipboardCheck, ClipboardList, Layers, Award, UserCircle } from "lucide-react";
+import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight, ClipboardCheck, ClipboardList, Layers, Award, UserCircle, Activity } from "lucide-react";
 import { useState } from "react";
 
 export function NavItem({ icon: Icon, label, active, onClick }) {
@@ -45,6 +45,7 @@ const NAV_ITEMS = {
   system: [
     { key: "all-users", label: "All Users", icon: Users },
     { key: "audit-logs", label: "Audit Trail", icon: FileText },
+    { key: "evaluator-logs", label: "Evaluator Logs", icon: Activity },
     { key: "academic_config", label: "Academic Config", icon: Settings },
     { key: "sessions", label: "Active Sessions", icon: Users },
   ],

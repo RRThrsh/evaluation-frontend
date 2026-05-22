@@ -18,6 +18,7 @@ const StudentManager = lazy(() => import("../../../components/admin/StudentManag
 const AcademicConfigManager = lazy(() => import("../../../components/admin/AcademicConfigManager"));
 const UserManager = lazy(() => import("../../../components/admin/UserManager"));
 const AuditLogViewer = lazy(() => import("../../../components/admin/AuditLogViewer"));
+const EvaluatorLogs = lazy(() => import("../../../components/admin/EvaluatorLogs"));
 const SessionManager = lazy(() => import("../../../components/admin/SessionManager"));
 const AdminPreEvaluate = lazy(() => import("../../../components/admin/AdminPreEvaluate"));
 const AdminPreEnrolled = lazy(() => import("../../../components/admin/AdminPreEnrolled"));
@@ -148,6 +149,7 @@ export default function AdminHome() {
             {activeTab === "users" && <PendingUsers users={pendingUsers} loading={pendingUsersLoading} onApprove={handleApprove} onReject={handleReject} />}
             {activeTab === "all-users" && <UserManager />}
             {activeTab === "audit-logs" && <AuditLogViewer />}
+            {activeTab === "evaluator-logs" && <EvaluatorLogs />}
             {activeTab === "academic_config" && <AcademicConfigManager />}
             {activeTab === "pre-evaluate" && <AdminPreEvaluate />}
             {activeTab === "pre-enrolled" && <AdminPreEnrolled />}

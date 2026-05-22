@@ -176,6 +176,7 @@ export default function AdminPreEnrolled() {
   const [error, setError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [modal, setModal] = useState(null);
   const { can } = usePermissions();
 
   const fetchRequests = useCallback(async (pg) => {

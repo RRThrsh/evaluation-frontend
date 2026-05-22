@@ -76,15 +76,13 @@ export default function AdminHome() {
   };
 
   useEffect(() => {
-    Promise.all([api.get("/api/admin/controls"), api.get("/api/admin/tables")])
-      .then(([controlsData, tablesData]) => {
-        setControls(controlsData.data?.controls ?? []);
-        const tbls = tablesData.data ?? [];
-        setTables(tbls);
-        const first = TABLE_GROUPS.find((g) => g.tables.some((t) => tbls.includes(t)));
-        if (first) setActiveGroup(first.name);
-      })
-      .catch((err) => setError(err.message));
+    api.get("/api/admin/controls").then(d => setControls(d.data?.controls ?? [])).catch(() => {});
+    api.get("/api/admin/tables").then(d => {
+      const tbls = d.data ?? [];
+      setTables(tbls);
+      const first = TABLE_GROUPS.find((g) => g.tables.some((t) => tbls.includes(t)));
+      if (first) setActiveGroup(first.name);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {

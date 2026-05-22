@@ -1,11 +1,10 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, CheckCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
 import api from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
 import AdminSidebar from "../../../components/admin/AdminSidebar";
 import AdminHeader from "../../../components/admin/AdminHeader";
-import StatsCards from "../../../components/admin/StatsCards";
 import ConfirmModal from "../../../components/common/ConfirmModal";
 import { sanitizeInput } from "../../../utils/sanitize";
 
@@ -44,7 +43,6 @@ export default function AdminHome() {
   const [tableData, setTableData] = useState(null);
   const [tableLoading, setTableLoading] = useState(false);
 
-  const [stats, setStats] = useState(null);
   const [controls, setControls] = useState([]);
   const [broadcast, setBroadcast] = useState("");
   const [error, setError] = useState("");
@@ -68,9 +66,8 @@ export default function AdminHome() {
   };
 
   useEffect(() => {
-    Promise.all([api.get("/api/admin/stats"), api.get("/api/admin/controls"), api.get("/api/admin/tables")])
-      .then(([statsData, controlsData, tablesData]) => {
-        setStats(statsData.data);
+    Promise.all([api.get("/api/admin/controls"), api.get("/api/admin/tables")])
+      .then(([controlsData, tablesData]) => {
         setControls(controlsData.data?.controls ?? []);
         const tbls = tablesData.data ?? [];
         setTables(tbls);
@@ -137,11 +134,9 @@ export default function AdminHome() {
         )}
 
         <main className="p-4 md:p-8 space-y-8">
-          {stats && <StatsCards stats={stats} />}
-
           <Suspense fallback={<div className="flex items-center justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" /></div>}>
             {activeTab === "overview" && (
-              <DashboardOverview broadcast={broadcast} setBroadcast={setBroadcast} onSend={handleBroadcast} controls={controls} onToggle={toggleControl} onShutdown={() => setConfirmAction({ action: "shutdown" })} />
+              <DashboardOverview onNavigate={navigateTab} />
             )}
 
             {activeTab === "courses" && <CourseManager />}

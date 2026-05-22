@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 import api from "../../services/api";
 import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
@@ -45,12 +46,10 @@ export default function ImportLogs() {
       ip: l.ip_address || "",
       created_at: new Date(l.created_at).toLocaleString(),
     }));
-    import("xlsx").then(({ default: XLSX }) => {
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Import Logs");
-      XLSX.writeFile(wb, "import-logs.xlsx");
-    });
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Import Logs");
+    XLSX.writeFile(wb, "import-logs.xlsx");
   };
 
   return (

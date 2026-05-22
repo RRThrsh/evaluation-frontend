@@ -75,7 +75,8 @@ async function request(endpoint, options = {}) {
   }
 
   if (!res.ok) {
-    throw new ApiError(res.status, data.message || data.error || `Request failed (${res.status})`);
+    const msg = data?.error?.message || data?.message || data?.error || `Request failed (${res.status})`;
+    throw new ApiError(res.status, msg);
   }
 
   if (isGet) setCache(cacheKey, data);

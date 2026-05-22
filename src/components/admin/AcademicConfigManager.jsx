@@ -18,12 +18,36 @@ const SECTIONS = [
       { key: "passing_grade", label: "Passing Grade", type: "number", placeholder: "75", desc: "Minimum score required to pass a subject" },
       { key: "grade_pass_letters", label: "Passing Letters", type: "text", placeholder: "P", desc: "Letter grades treated as pass (comma-separated)" },
       { key: "grade_fail_letters", label: "Failing Letters", type: "text", placeholder: "F,INC,W,D", desc: "Letter grades treated as fail (comma-separated)" },
-      { key: "exam_weight_prelim", label: "Prelim Exam Weight (%)", type: "number", placeholder: "60", desc: "Weight of exam score in Prelim grade computation" },
-      { key: "qar_weight_prelim", label: "Prelim QAR Weight (%)", type: "number", placeholder: "40", desc: "Weight of QAR score in Prelim grade computation" },
-      { key: "exam_weight_midterm", label: "Midterm Exam Weight (%)", type: "number", placeholder: "60", desc: "Weight of exam score in Midterm grade computation" },
-      { key: "qar_weight_midterm", label: "Midterm QAR Weight (%)", type: "number", placeholder: "40", desc: "Weight of QAR score in Midterm grade computation" },
-      { key: "exam_weight_finals", label: "Finals Exam Weight (%)", type: "number", placeholder: "60", desc: "Weight of exam score in Finals grade computation" },
-      { key: "qar_weight_finals", label: "Finals QAR Weight (%)", type: "number", placeholder: "40", desc: "Weight of QAR score in Finals grade computation" },
+    ],
+    groups: [
+      {
+        label: "Prelim",
+        fields: [
+          { key: "exam_weight_prelim", label: "Exam Weight (%)", type: "number", placeholder: "60", desc: "Weight of exam score in Prelim grade computation" },
+          { key: "qar_weight_prelim", label: "QAR Weight (%)", type: "number", placeholder: "40", desc: "Weight of QAR score in Prelim grade computation" },
+        ],
+      },
+      {
+        label: "Midterm",
+        fields: [
+          { key: "exam_weight_midterm", label: "Exam Weight (%)", type: "number", placeholder: "60", desc: "Weight of exam score in Midterm grade computation" },
+          { key: "qar_weight_midterm", label: "QAR Weight (%)", type: "number", placeholder: "40", desc: "Weight of QAR score in Midterm grade computation" },
+        ],
+      },
+      {
+        label: "Finals",
+        fields: [
+          { key: "exam_weight_finals", label: "Exam Weight (%)", type: "number", placeholder: "60", desc: "Weight of exam score in Finals grade computation" },
+          { key: "qar_weight_finals", label: "QAR Weight (%)", type: "number", placeholder: "40", desc: "Weight of QAR score in Finals grade computation" },
+        ],
+      },
+      {
+        label: "General Average",
+        sub: "(Prelim + Midterm + Finals) ÷ 3",
+        fields: [
+          { key: "general_average_passing", label: "General Average Passing Grade", type: "number", placeholder: "75", desc: "Minimum General Average required (for future calculation adjustments)" },
+        ],
+      },
     ],
   },
   {
@@ -87,16 +111,35 @@ export default function AcademicConfigManager() {
               <div className="p-1.5 rounded-lg bg-primary-50 text-primary-600"><SvgIcon path={section.icon} className="w-4 h-4" /></div>
               <h3 className="text-sm font-semibold text-slate-800">{section.title}</h3>
             </div>
-            <div className="px-6 py-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {section.fields.map(({ key, label, type, placeholder, desc }, idx) => (
-                  <div key={key} className={section.fields.length % 2 === 1 && idx === section.fields.length - 1 ? "md:col-span-2" : ""}>
-                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">{label}</label>
-                    <input type={type} value={config[key] ?? ""} onChange={(e) => handleChange(key, e.target.value)} placeholder={placeholder} className="input-field" />
-                    <p className="text-xs text-slate-400 mt-1">{desc}</p>
+            <div className="px-6 py-5 space-y-5">
+              {section.fields && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {section.fields.map(({ key, label, type, placeholder, desc }, idx) => (
+                    <div key={key} className={section.fields.length % 2 === 1 && idx === section.fields.length - 1 ? "md:col-span-2" : ""}>
+                      <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">{label}</label>
+                      <input type={type} value={config[key] ?? ""} onChange={(e) => handleChange(key, e.target.value)} placeholder={placeholder} className="input-field" />
+                      <p className="text-xs text-slate-400 mt-1">{desc}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {section.groups?.map((group) => (
+                <div key={group.label}>
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <h4 className="text-sm font-bold text-slate-800">{group.label}</h4>
+                    {group.sub && <span className="text-xs text-slate-400">{group.sub}</span>}
                   </div>
-                ))}
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {group.fields.map(({ key, label, type, placeholder, desc }, idx) => (
+                      <div key={key} className={group.fields.length % 2 === 1 && idx === group.fields.length - 1 ? "md:col-span-2" : ""}>
+                        <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">{label}</label>
+                        <input type={type} value={config[key] ?? ""} onChange={(e) => handleChange(key, e.target.value)} placeholder={placeholder} className="input-field" />
+                        <p className="text-xs text-slate-400 mt-1">{desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ))}

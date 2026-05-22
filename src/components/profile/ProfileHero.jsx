@@ -1,6 +1,7 @@
 import { Edit3 } from "lucide-react";
 
 const roleStyles = {
+  superadmin: { badge: "bg-rose-50 text-rose-700 border-rose-200", glow: "from-rose-600 to-pink-500" },
   admin: { badge: "bg-indigo-50 text-indigo-700 border-indigo-200", glow: "from-indigo-600 to-violet-500" },
   evaluator: { badge: "bg-primary-50 text-primary-700 border-primary-200", glow: "from-primary-600 to-indigo-500" },
 };

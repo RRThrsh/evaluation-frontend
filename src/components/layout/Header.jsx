@@ -13,6 +13,7 @@ const Header = () => {
   const navLinks = [];
 
   const roleDashboard = {
+    superadmin: "/admin",
     admin: "/admin",
     evaluator: "/evaluator",
   };

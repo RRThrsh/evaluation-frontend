@@ -23,7 +23,7 @@ const Login = () => {
     try {
       const data = await login(sanitizeInput(email), password);
       const role = data.data?.user?.role;
-      const routes = { admin: "/admin", evaluator: "/evaluator" };
+      const routes = { superadmin: "/admin", admin: "/admin", evaluator: "/evaluator" };
       navigate(routes[role] || "/");
     } catch (err) {
       setError(err.message);

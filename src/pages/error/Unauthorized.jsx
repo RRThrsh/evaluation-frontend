@@ -7,6 +7,7 @@ const Unauthorized = () => {
   const { user, logout } = useAuth();
 
   const roleDashboard = {
+    superadmin: "/admin",
     admin: "/admin",
     evaluator: "/evaluator",
   };

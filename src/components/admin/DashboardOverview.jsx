@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, GraduationCap, Monitor, Clock, UserCheck, ClipboardCheck, ClipboardList, BookOpen, Send, Power, BarChart3, ArrowRight } from "lucide-react";
+import { Users, GraduationCap, Monitor, Clock, UserCheck, ClipboardCheck, ClipboardList, BookOpen, BarChart3 } from "lucide-react";
 import api from "../../services/api";
 
 const COLORS = ["#4f46e5", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
@@ -120,19 +120,14 @@ export default function DashboardOverview({ onNavigate }) {
         {middleCards.map((card) => {
           const Icon = card.icon;
           return (
-            <div
-              key={card.key}
-              onClick={() => onNavigate?.(card.key === "users" ? "users" : card.key)}
-              className="card p-4 flex items-center gap-4 cursor-pointer card-hover relative group"
-            >
+            <div className="card p-4 flex items-center gap-4">
               <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${card.color}`}>
                 <Icon size={20} />
               </div>
-              <div className="flex-1">
+              <div>
                 <p className="text-xs text-slate-400 font-medium">{card.label}</p>
                 <h3 className="text-2xl font-bold text-slate-900">{card.value}</h3>
               </div>
-              <ArrowRight size={14} className="text-slate-300 group-hover:text-slate-500 transition -mr-1" />
             </div>
           );
         })}

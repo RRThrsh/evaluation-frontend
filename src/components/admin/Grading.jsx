@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle } from "lucide-react";
 import api from "../../services/api";
+import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
 
 const PAGE_SIZE = 20;
@@ -20,10 +21,14 @@ function computeGrade(exam, qar, examW, qarW) {
 function EditableCell({ value, onSave }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(value ?? "");
+  const { can } = usePermissions();
 
   useEffect(() => { setVal(value ?? ""); }, [value]);
 
   const save = () => { onSave(val === "" ? null : parseFloat(val)); setEditing(false); };
+
+  if (!can("grading.manage"))
+    return <span className="px-2 py-1 block min-h-[24px]">{value != null ? value : "—"}</span>;
 
   if (!editing)
     return (

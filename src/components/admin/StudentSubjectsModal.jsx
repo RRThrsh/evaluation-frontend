@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { usePermissions } from "../../context/PermissionContext";
 import api from "../../services/api";
 
 function statusBadge(status) {
@@ -91,6 +92,7 @@ function CurriculumView({ curriculum, loading, onBack }) {
 }
 
 export default function StudentSubjectsModal({ student, subjects, config, onClose, onToast }) {
+  const { can } = usePermissions();
   const [tab, setTab] = useState("subjects");
   const [studentSubjects, setStudentSubjects] = useState([]);
   const [profileData, setProfileData] = useState(null);
@@ -294,7 +296,7 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
             {toEnroll.length > 0 && (
               <div className="flex items-center justify-between bg-emerald-100/50 rounded-lg px-4 py-2.5">
                 <span className="text-xs text-emerald-700"><strong>{toEnroll.length}</strong> subject{toEnroll.length !== 1 ? "s" : ""} ready to enroll</span>
-                <button onClick={handleEnrollSemester} disabled={saving} className="btn btn-primary btn-sm">{saving ? "..." : `Enroll All (${toEnroll.length})`}</button>
+                {can("students.manage") && <button onClick={handleEnrollSemester} disabled={saving} className="btn btn-primary btn-sm">{saving ? "..." : `Enroll All (${toEnroll.length})`}</button>}
               </div>
             )}
           </div>
@@ -307,7 +309,7 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                 <span className="text-sm font-semibold text-slate-800">Enrolled Subjects</span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{studentSubjects.length} subjects</span>
-                  <button onClick={async () => { setManagingSubjects(true); await loadSubjects(); }} className="btn btn-primary btn-sm">Manage</button>
+                  {can("students.manage") && <button onClick={async () => { setManagingSubjects(true); await loadSubjects(); }} className="btn btn-primary btn-sm">Manage</button>}
                 </div>
               </div>
               {studentSubjects.length === 0 ? (
@@ -321,7 +323,7 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                       <th className="px-5 py-3">Units</th>
                       <th className="px-5 py-3">Grade</th>
                       <th className="px-5 py-3">Status</th>
-                      <th className="px-5 py-3 w-16">Action</th>
+                      {can("students.manage") && <th className="px-5 py-3 w-16">Action</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -349,11 +351,13 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                           )}
                         </td>
                         <td className="table-cell"><span className={statusBadge(ss.status).cls}>{statusBadge(ss.status).label}</span></td>
+                        {can("students.manage") && (
                         <td className="table-cell">
                           <button onClick={() => { setEditingGradeId(ss.id); setGradeInputs({ ...gradeInputs, [ss.id]: ss.grade ?? "" }); }} className="btn btn-ghost btn-sm text-amber-500">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
                         </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -367,7 +371,7 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                   <option value="">Enroll in a subject...</option>
                   {availableSubjects.map((s) => <option key={s.id} value={s.id}>{s.subject_code} — {s.subject_name} (Y{s.year_level} S{s.semester})</option>)}
                 </select>
-                <button onClick={handleEnroll} disabled={!enrollSubjectId || saving} className="btn btn-primary btn-sm">{saving ? "..." : "Enroll"}</button>
+                {can("students.manage") && <button onClick={handleEnroll} disabled={!enrollSubjectId || saving} className="btn btn-primary btn-sm">{saving ? "..." : "Enroll"}</button>}
               </div>
             )}
           </>

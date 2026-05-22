@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api from "../../services/api";
+import { usePermissions } from "../../context/PermissionContext";
 import SvgIcon from "../common/SvgIcon";
 import SkeletonRows from "./SkeletonRows";
 import DeleteModal from "./DeleteModal";
@@ -17,6 +18,7 @@ function formatCell(value) {
 
 export default function DatabaseViewer({ selectedTable, tableData, tableLoading, onLoadTable }) {
   const pkColumn = tableData?.pkColumn || "id";
+  const { can } = usePermissions();
   const [deleting, setDeleting] = useState(false);
   const [editRow, setEditRow] = useState(null);
   const [editFormData, setEditFormData] = useState({});
@@ -75,7 +77,7 @@ export default function DatabaseViewer({ selectedTable, tableData, tableLoading,
                 {tableData.columns.map((col) => (
                   <th key={col} className="whitespace-nowrap border-b border-slate-200 px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{col}</th>
                 ))}
-                <th className="border-b border-slate-200 px-5 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Action</th>
+                {can("database.manage") && <th className="border-b border-slate-200 px-5 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Action</th>}
               </tr>
             </thead>
             <tbody>
@@ -84,12 +86,14 @@ export default function DatabaseViewer({ selectedTable, tableData, tableLoading,
                   {tableData.columns.map((col) => (
                     <td key={col} className="max-w-[240px] truncate whitespace-nowrap px-5 py-4 text-slate-700">{formatCell(row[col])}</td>
                   ))}
+                  {can("database.manage") && (
                   <td className="px-5 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => { setEditRow(row); setEditFormData({ ...row }); }} className="btn btn-ghost btn-sm text-amber-500"><SvgIcon path="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" className="w-3.5 h-3.5" /></button>
                       <button onClick={() => setDeleteTarget({ tableName: selectedTable, rowId: row[pkColumn] })} className="btn btn-ghost btn-sm text-red-400"><SvgIcon path="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" className="w-3.5 h-3.5" /></button>
                     </div>
                   </td>
+                  )}
                 </tr>
               ))}
             </tbody>

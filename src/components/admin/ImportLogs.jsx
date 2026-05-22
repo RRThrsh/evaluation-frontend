@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import api from "../../services/api";
+import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
 
 const PAGE_SIZE = 15;
@@ -12,6 +13,7 @@ export default function ImportLogs() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
+  const { can } = usePermissions();
 
   const fetch = useCallback(async (pg) => {
     setLoading(true);
@@ -58,9 +60,11 @@ export default function ImportLogs() {
           <h3 className="font-semibold text-sm text-slate-700 shrink-0">
             Import Logs {!loading && <span className="text-slate-400 font-normal">({total})</span>}
           </h3>
+          {can("import-logs") && (
           <button onClick={exportLogs} className="btn btn-secondary btn-sm flex items-center gap-1.5">
             <Download size={14} /> Export
           </button>
+          )}
           {loading && <span className="inline-block w-4 h-4 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />}
         </div>
         <div className="overflow-x-auto">

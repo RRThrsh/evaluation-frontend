@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import api from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
+import { PermissionProvider } from "../../../context/PermissionContext";
 import AdminSidebar from "../../../components/admin/AdminSidebar";
 import AdminHeader from "../../../components/admin/AdminHeader";
 import ConfirmModal from "../../../components/common/ConfirmModal";
@@ -144,6 +145,7 @@ export default function AdminHome() {
 
         <main className="p-4 md:p-8 space-y-8">
           <Suspense fallback={<div className="flex items-center justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" /></div>}>
+            <PermissionProvider value={{ userPermissions, isSuperAdmin }}>
             {activeTab === "overview" && (
               <DashboardOverview onNavigate={navigateTab} />
             )}
@@ -167,6 +169,7 @@ export default function AdminHome() {
             {activeTab === "import-logs" && <ImportLogs />}
             {activeTab === "permissions" && <PermissionManager />}
             {activeTab === "database" && <DatabaseViewer selectedTable={selectedTable} tableData={tableData} tableLoading={tableLoading} onLoadTable={loadTable} />}
+            </PermissionProvider>
           </Suspense>
         </main>
       </div>

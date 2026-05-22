@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Search, X, BookOpen, Users, GraduationCap, Plus } from "lucide-react";
 import api from "../../services/api";
+import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
 
 const PAGE_SIZE = 15;
@@ -22,6 +23,7 @@ export default function ClassSubject() {
   const [newSchoolYear, setNewSchoolYear] = useState("");
 
   const [schoolYearList, setSchoolYearList] = useState([]);
+  const { can } = usePermissions();
   const schoolYearOptions = useMemo(() => [
     { value: "", label: "All School Years" },
     ...schoolYearList.map(y => ({ value: y, label: y })),
@@ -92,9 +94,11 @@ export default function ClassSubject() {
           <h2 className="text-lg font-bold text-slate-900">Class Subjects</h2>
           <p className="text-sm text-slate-500 mt-0.5">Browse subjects and view enrolled students</p>
         </div>
+        {can("academic-config") && (
         <button onClick={() => { setNewSchoolYear(""); setSchoolYearModal(true); }} className="btn btn-primary btn-sm flex items-center gap-1.5">
           <Plus size={14} /> Create School Year
         </button>
+        )}
       </div>
 
       <div className="card p-4 mb-6">

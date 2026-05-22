@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Search, Plus, AlertTriangle } from "lucide-react";
 import api from "../../services/api";
 import { sanitizeObject } from "../../utils/sanitize";
+import { usePermissions } from "../../context/PermissionContext";
 import ConfirmModal from "../common/ConfirmModal";
 import Pagination from "../common/Pagination";
 import SkeletonRows from "./SkeletonRows";
@@ -20,6 +21,7 @@ export default function InstructorManager() {
   const [form, setForm] = useState({ employee_id: "", first_name: "", last_name: "", middle_name: "", email: "", contact_number: "", department: "" });
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [page, setPage] = useState(1);
+  const { can } = usePermissions();
 
   const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -87,12 +89,14 @@ export default function InstructorManager() {
       <div className="card p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-slate-700">Instructor Management</h2>
+          {can("instructors.manage") && (
           <button onClick={() => { resetForm(); setShowForm(!showForm); }} className="btn btn-primary btn-sm">
             <Plus size={14} className="mr-1" /> {showForm ? "Cancel" : "Add Instructor"}
           </button>
+          )}
         </div>
 
-        {showForm && (
+        {showForm && can("instructors.manage") && (
           <form onSubmit={handleSave} className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -164,7 +168,7 @@ export default function InstructorManager() {
                 <th className="px-5 py-3">Department</th>
                 <th className="px-5 py-3">Contact</th>
                 <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3 w-20">Actions</th>
+                {can("instructors.manage") && <th className="px-5 py-3 w-20">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -180,6 +184,7 @@ export default function InstructorManager() {
                       inst.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
                     }`}>{inst.is_active ? "Active" : "Inactive"}</span>
                   </td>
+                  {can("instructors.manage") && (
                   <td className="table-cell">
                     <div className="flex gap-1">
                       <button onClick={() => handleEdit(inst)} className="btn btn-ghost btn-sm text-amber-500 hover:text-amber-700">
@@ -190,6 +195,7 @@ export default function InstructorManager() {
                       </button>
                     </div>
                   </td>
+                  )}
                 </tr>
               ))}
             </tbody>

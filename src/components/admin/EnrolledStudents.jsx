@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, Search, Upload, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import api from "../../services/api";
+import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
 
 function EnrolledModal({ request, onClose }) {
@@ -133,6 +134,7 @@ export default function EnrolledStudents() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const fileRef = useRef(null);
+  const { can } = usePermissions();
 
   const handleFile = async (e) => {
     const file = e.target.files[0];
@@ -223,13 +225,17 @@ export default function EnrolledStudents() {
               <option value="Regular">Regular</option>
               <option value="Irregular">Irregular</option>
             </select>
-            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" />
+            {can("enrolled-students.manage") && (
+            <><input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" />
             <button onClick={() => fileRef.current?.click()} disabled={importing} className="btn btn-primary btn-sm flex items-center gap-1.5">
               <Upload size={14} /> {importing ? "Importing..." : "Import Excel"}
-            </button>
+            </button></>
+            )}
+            {can("enrolled-students.manage") && (
             <button onClick={handleExport} className="btn btn-secondary btn-sm flex items-center gap-1.5">
               <Download size={14} /> Export Excel
             </button>
+            )}
           </div>
           {loading && (
             <span className="inline-block w-4 h-4 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />

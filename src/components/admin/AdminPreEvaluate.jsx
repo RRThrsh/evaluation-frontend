@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Search, X, Eye, ChevronLeft, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
+import { usePermissions } from "../../context/PermissionContext";
 import api from "../../services/api";
 
 function SubjectTable({ title, subjects, columns }) {
@@ -45,6 +46,7 @@ function formatNote(raw) {
 
 function EvalModal({ request, onClose, onPreEnroll }) {
   const overlayRef = useRef(null);
+  const { can } = usePermissions();
   const [evalData, setEvalData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [preEnrolling, setPreEnrolling] = useState(false);
@@ -157,12 +159,14 @@ function EvalModal({ request, onClose, onPreEnroll }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={onClose} className="btn btn-ghost btn-sm">Close</button>
+                  {can("enrolled-students.manage") && (
                   <button
                     onClick={async () => { setPreEnrolling(true); await onPreEnroll(request.id); setPreEnrolling(false); onClose(); }}
                     disabled={preEnrolling}
                     className="btn btn-primary btn-sm">
                     {preEnrolling ? "..." : "Recommend to Pre-Enrolled"}
                   </button>
+                  )}
                 </div>
               </div>
             </>

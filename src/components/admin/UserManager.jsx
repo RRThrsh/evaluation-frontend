@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search, RotateCcw } from "lucide-react";
 import api from "../../services/api";
+import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
 
 const ROLES = ["admin", "evaluator"];
@@ -15,6 +16,7 @@ export default function UserManager() {
   const [toast, setToast] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
   const [page, setPage] = useState(1);
+  const { can } = usePermissions();
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -120,22 +122,32 @@ export default function UserManager() {
                     <td className="table-cell font-medium text-slate-800">{u.full_name}</td>
                     <td className="table-cell text-slate-500">{u.email}</td>
                     <td className="table-cell">
+                      {can("user-management.manage") ? (
                       <select value={u.role} onChange={(e) => changeRole(u.id, e.target.value)} className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500/30">
                         {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                       </select>
+                      ) : (
+                      <span className="text-xs font-medium text-slate-700 capitalize">{u.role}</span>
+                      )}
                     </td>
                     <td className="table-cell">{statusBadge(u.status)}</td>
                     <td className="table-cell">
+                      {can("user-management.manage") ? (
                       <button onClick={() => toggleActive(u.id)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition ${u.active !== false ? "bg-emerald-400" : "bg-slate-300"}`}>
                         <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition ${u.active !== false ? "translate-x-[18px]" : "translate-x-0.5"}`} />
                       </button>
+                      ) : (
+                      <span className={`text-xs font-medium ${u.active !== false ? "text-emerald-600" : "text-slate-400"}`}>{u.active !== false ? "Active" : "Inactive"}</span>
+                      )}
                     </td>
                     <td className="table-cell text-xs text-slate-400">{new Date(u.created_at).toLocaleDateString()}</td>
                     <td className="table-cell text-right">
+                      {can("user-management.manage") && (
                       <button onClick={() => setConfirmAction({ user: u, type: "reset" })} className="btn btn-ghost btn-sm text-primary-600 hover:text-primary-700">
                         <RotateCcw size={13} />
                         Reset Password
                       </button>
+                      )}
                     </td>
                   </tr>
                 ))

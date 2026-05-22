@@ -9,8 +9,11 @@ function ordinal(n) {
   return `${n}th`;
 }
 
+import { usePermissions } from "../../context/PermissionContext";
+
 export default function StudentForm({ open, editingStudent, form, setForm, saving, YEARS, courses, onSave, onClose }) {
-  if (!open) return null;
+  const { can } = usePermissions();
+  if (!open || !can("students.manage")) return null;
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content max-w-2xl p-6" onClick={(e) => e.stopPropagation()}>

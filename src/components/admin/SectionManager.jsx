@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Plus, Trash2, Search, Pencil, AlertTriangle } from "lucide-react";
 import api from "../../services/api";
+import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
 
 const PAGE_SIZE = 15;
@@ -16,6 +17,7 @@ export default function SectionManager() {
   const [form, setForm] = useState({ name: "", course_id: "", instructor_id: "" });
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const { can } = usePermissions();
 
   const filteredSections = useMemo(() => {
     return sections.filter((sec) =>
@@ -96,12 +98,14 @@ export default function SectionManager() {
       <div className="card p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-slate-700">Section Management</h2>
+          {can("sections.manage") && (
           <button onClick={() => setShowForm(!showForm)} className="btn btn-primary btn-sm">
             <Plus size={14} className="mr-1" /> Add Section
           </button>
+          )}
         </div>
 
-        {showForm && (
+        {showForm && can("sections.manage") && (
           <form onSubmit={editing ? handleUpdate : handleCreate} className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -160,7 +164,7 @@ export default function SectionManager() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Course</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Code</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Instructor</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide">Action</th>
+                {can("sections.manage") && <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide">Action</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -171,15 +175,19 @@ export default function SectionManager() {
                   <td className="px-6 py-4 text-slate-600 font-mono text-xs">{sec.course_code || "—"}</td>
                   <td className="px-6 py-4 text-slate-700">{sec.instructor_name || "N/A"}</td>
                   <td className="px-6 py-4 text-right flex items-center justify-end gap-1">
+                    {can("sections.manage") && (
                     <button onClick={() => handleEdit(sec)} className="btn btn-ghost btn-sm text-slate-500 hover:text-primary-600">
                       <Pencil size={14} />
                     </button>
+                    )}
+                    {can("sections.manage") && (
                     <button
                       onClick={async () => { if (confirm("Delete this section?")) { try { await api.delete(`/api/admin/sections/${sec.id}`); load(); } catch (err) { setError(err.message); } } }}
                       className="btn btn-ghost btn-sm text-red-500 hover:text-red-700"
                     >
                       <Trash2 size={14} />
                     </button>
+                    )}
                   </td>
                 </tr>
               ))}

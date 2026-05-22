@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
-
+import { usePermissions } from "../../context/PermissionContext";
 import api from "../../services/api";
 
 function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
@@ -174,9 +174,9 @@ export default function AdminPreEnrolled() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [modal, setModal] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const { can } = usePermissions();
 
   const fetchRequests = useCallback(async (pg) => {
     setLoading(true);
@@ -235,7 +235,7 @@ export default function AdminPreEnrolled() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Student No.</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Course</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide">Actions</th>
+                {can("enrolled-students.manage") && <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -246,11 +246,13 @@ export default function AdminPreEnrolled() {
                   <td className="px-6 py-4 text-slate-700 font-mono">{row.student_number}</td>
                   <td className="px-6 py-4 text-slate-800 font-medium">{row.first_name} {row.last_name}</td>
                   <td className="px-6 py-4 text-slate-700">{row.course_name || "N/A"}</td>
+                  {can("enrolled-students.manage") && (
                   <td className="px-6 py-4 text-right">
                     <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(row); }} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600" title="Delete">
                       <Trash2 size={16} />
                     </button>
                   </td>
+                  )}
                 </tr>
               ))}
               {requests.length === 0 && !loading && (

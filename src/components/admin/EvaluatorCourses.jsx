@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
+import { usePermissions } from "../../context/PermissionContext";
 
 function SvgIcon({ path, className = "w-5 h-5" }) {
   return (
@@ -18,6 +19,7 @@ export default function EvaluatorCourses() {
   const [selectedCourses, setSelectedCourses] = useState([]);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const { can } = usePermissions();
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -130,6 +132,7 @@ export default function EvaluatorCourses() {
                   <h3 className="text-sm font-semibold text-slate-700">{selectedEval.full_name}</h3>
                   <p className="text-xs text-slate-400">{selectedEval.email}</p>
                 </div>
+                {can("instructors.manage") && (
                 <button
                   onClick={save}
                   disabled={saving}
@@ -142,6 +145,7 @@ export default function EvaluatorCourses() {
                   )}
                   Save Assignments
                 </button>
+                )}
               </div>
               <div className="p-5">
                 <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">Available Courses</p>

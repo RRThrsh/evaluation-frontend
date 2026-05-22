@@ -33,13 +33,13 @@ export default function PermissionManager() {
   const [saving, setSaving] = useState({});
 
   useEffect(() => {
-    api.get("/api/admin/permissions").then(r => setPermissions(r.data.data)).catch(() => {});
+    api.get("/api/admin/permissions").then(r => setPermissions(r.data || [])).catch(() => {});
   }, []);
 
   const loadUsers = useCallback(async () => {
     try {
       const res = await api.get("/api/admin/users", { params: { role: "admin", limit: 100 } });
-      setUsers((res.data.data || []).filter(u => u.role === "admin"));
+      setUsers((res.data || []).filter(u => u.role === "admin"));
     } catch {}
   }, []);
 
@@ -48,7 +48,7 @@ export default function PermissionManager() {
   const loadUserPerms = async (userId) => {
     try {
       const res = await api.get(`/api/admin/users/${userId}/permissions`);
-      setUserPerms(prev => ({ ...prev, [userId]: new Set(res.data.data) }));
+      setUserPerms(prev => ({ ...prev, [userId]: new Set(res.data || []) }));
     } catch {}
   };
 

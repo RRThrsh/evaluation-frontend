@@ -14,6 +14,7 @@ export default function ImportLogs() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
+  const [showExportModal, setShowExportModal] = useState(false);
   const { can } = usePermissions();
 
   const fetch = useCallback(async (pg) => {
@@ -60,7 +61,7 @@ export default function ImportLogs() {
             Import Logs {!loading && <span className="text-slate-400 font-normal">({total})</span>}
           </h3>
           {can("import-logs") && (
-          <button onClick={exportLogs} className="btn btn-secondary btn-sm flex items-center gap-1.5">
+          <button onClick={() => setShowExportModal(true)} className="btn btn-secondary btn-sm flex items-center gap-1.5">
             <Download size={14} /> Export
           </button>
           )}
@@ -143,6 +144,18 @@ export default function ImportLogs() {
           </div>
         )}
       </div>
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowExportModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">Export Import Logs</h3>
+            <p className="text-sm text-slate-500 mb-6">Are you sure you want to export the import logs to an Excel file?</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowExportModal(false)} className="btn btn-outline btn-sm">Cancel</button>
+              <button onClick={() => { exportLogs(); setShowExportModal(false); }} className="btn btn-primary btn-sm">Export</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

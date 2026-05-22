@@ -76,6 +76,7 @@ export default function Grading({ defaultPeriod }) {
 
   const weights = getWeights(period);
   const gaDivider = parseFloat(allWeights?.general_average_divider) || 3;
+  const gradeBonus = parseFloat(allWeights?.grade_bonus) || 0;
 
   useEffect(() => {
     (async () => {
@@ -136,7 +137,7 @@ export default function Grading({ defaultPeriod }) {
   const getGrade = (periods, p) => {
     const g = periods.find((x) => x.period === p);
     const w = getWeights(p);
-    return g ? computeGrade(g.exam_score, g.qar_score, w.exam, w.qar) : null;
+    return g ? (parseFloat(computeGrade(g.exam_score, g.qar_score, w.exam, w.qar)) + gradeBonus).toFixed(2) : null;
   };
 
   const getGA = (periods) => {

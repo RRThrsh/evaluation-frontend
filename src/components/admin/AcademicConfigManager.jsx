@@ -46,6 +46,7 @@ const SECTIONS = [
         sub: "(Prelim + Midterm + Finals) ÷ 3",
         fields: [
           { key: "general_average_divider", label: "Divider Value (N)", type: "number", placeholder: "3", desc: "General Average = (Prelim + Midterm + Finals) ÷ N" },
+          { key: "grade_bonus", label: "Grade Bonus", type: "number", placeholder: "0", desc: "Value added to each period's computed grade (e.g. 42)" },
         ],
       },
     ],

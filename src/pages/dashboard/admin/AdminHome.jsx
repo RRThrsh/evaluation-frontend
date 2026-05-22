@@ -27,6 +27,7 @@ const SectionManager = lazy(() => import("../../../components/admin/SectionManag
 const InstructorManager = lazy(() => import("../../../components/admin/InstructorManager"));
 const ClassSubject = lazy(() => import("../../../components/admin/ClassSubject"));
 const ImportLogs = lazy(() => import("../../../components/admin/ImportLogs"));
+const PermissionManager = lazy(() => import("../../../components/admin/PermissionManager"));
 
 const TABLE_GROUPS = [
   { name: "Academic", tables: ["students", "subjects", "student_subjects", "student_units"] },
@@ -54,6 +55,12 @@ export default function AdminHome() {
 
   const [pendingUsers, setPendingUsers] = useState([]);
   const [pendingUsersLoading, setPendingUsersLoading] = useState(false);
+  const [userPermissions, setUserPermissions] = useState([]);
+  const isSuperAdmin = user?.role === "superadmin";
+
+  useEffect(() => {
+    api.get("/api/admin/my-permissions").then(r => setUserPermissions(r.data.data || [])).catch(() => {});
+  }, []);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -121,7 +128,7 @@ export default function AdminHome() {
     <div className="min-h-screen bg-slate-50">
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" />}
 
-      <AdminSidebar activeTab={activeTab} onNavigate={navigateTab} availableGroups={availableGroups} activeGroup={activeGroup} setActiveGroup={setActiveGroup} selectedTable={selectedTable} onSelectTable={loadTable} user={user} logout={logout} gradingPeriod={gradingPeriod} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <AdminSidebar activeTab={activeTab} onNavigate={navigateTab} availableGroups={availableGroups} activeGroup={activeGroup} setActiveGroup={setActiveGroup} selectedTable={selectedTable} onSelectTable={loadTable} user={user} logout={logout} gradingPeriod={gradingPeriod} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} userPermissions={userPermissions} isSuperAdmin={isSuperAdmin} />
 
       <div className="md:ml-64">
         <AdminHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} activeTab={activeTab} error={error} />
@@ -158,6 +165,7 @@ export default function AdminHome() {
             {activeTab === "sessions" && <SessionManager />}
             {activeTab === "class-subjects" && <ClassSubject />}
             {activeTab === "import-logs" && <ImportLogs />}
+            {activeTab === "permissions" && <PermissionManager />}
             {activeTab === "database" && <DatabaseViewer selectedTable={selectedTable} tableData={tableData} tableLoading={tableLoading} onLoadTable={loadTable} />}
           </Suspense>
         </main>

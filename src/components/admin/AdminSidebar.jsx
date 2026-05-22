@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight, ClipboardCheck, ClipboardList, Layers, Award, UserCircle, Activity, X, Clipboard, Upload } from "lucide-react";
-import { useState } from "react";
+import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight, ClipboardCheck, ClipboardList, Layers, Award, UserCircle, Activity, X, Clipboard, Upload, Shield } from "lucide-react";
+import { useState, useMemo } from "react";
 
 export function NavItem({ icon: Icon, label, active, onClick }) {
   return (
@@ -51,7 +51,31 @@ const NAV_ITEMS = {
     { key: "import-logs", label: "Import Logs", icon: Upload },
     { key: "academic_config", label: "Academic Config", icon: Settings },
     { key: "sessions", label: "Active Sessions", icon: Users },
+    { key: "permissions", label: "Permissions", icon: Shield },
   ],
+};
+
+const PERMISSION_MAP = {
+  overview: "dashboard",
+  database: "database",
+  courses: "courses",
+  subjects: "subjects",
+  students: "students",
+  "pre-evaluate": "pre-evaluate",
+  "pre-enrolled": "pre-enrolled",
+  enrolled: "enrolled-students",
+  grading: "grading",
+  sections: "sections",
+  instructors: "instructors",
+  users: "users",
+  "class-subjects": "class-subjects",
+  "all-users": "user-management",
+  "audit-logs": "audit-logs",
+  "evaluator-logs": "evaluator-logs",
+  "import-logs": "import-logs",
+  academic_config: "academic-config",
+  sessions: "sessions",
+  permissions: "permissions",
 };
 
 const GRADING_PERIODS = [
@@ -61,7 +85,7 @@ const GRADING_PERIODS = [
   { key: "general_average", label: "General Average" },
 ];
 
-export default function AdminSidebar({ activeTab, onNavigate, availableGroups, activeGroup, setActiveGroup, selectedTable, onSelectTable, user, logout, gradingPeriod, sidebarOpen, setSidebarOpen }) {
+export default function AdminSidebar({ activeTab, onNavigate, availableGroups, activeGroup, setActiveGroup, selectedTable, onSelectTable, user, logout, gradingPeriod, sidebarOpen, setSidebarOpen, userPermissions = [], isSuperAdmin = false }) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState({});
   const [gradingOpen, setGradingOpen] = useState(activeTab === "grading");
@@ -71,6 +95,17 @@ export default function AdminSidebar({ activeTab, onNavigate, availableGroups, a
   const toggleGroup = (name) => {
     setActiveGroup(activeGroup === name ? null : name);
   };
+
+  const filteredNav = useMemo(() => {
+    const filter = (items) => items.filter(item =>
+      isSuperAdmin || userPermissions.includes(PERMISSION_MAP[item.key])
+    );
+    return {
+      navigation: filter(NAV_ITEMS.navigation),
+      management: filter(NAV_ITEMS.management),
+      system: filter(NAV_ITEMS.system),
+    };
+  }, [userPermissions, isSuperAdmin]);
 
   return (
     <aside className={`fixed top-0 left-0 z-40 h-screen w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
@@ -91,12 +126,12 @@ export default function AdminSidebar({ activeTab, onNavigate, availableGroups, a
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         <SidebarLabel title="Navigation" />
-        {NAV_ITEMS.navigation.map((item) => (
+        {filteredNav.navigation.map((item) => (
           <NavItem key={item.key} icon={item.icon} label={item.label} active={activeTab === item.key} onClick={() => handleNav(item.key)} />
         ))}
 
         <SidebarLabel title="Management" />
-        {NAV_ITEMS.management.map((item) =>
+        {filteredNav.management.map((item) =>
           item.key === "grading" ? (
             <div key="grading">
               <button
@@ -132,8 +167,8 @@ export default function AdminSidebar({ activeTab, onNavigate, availableGroups, a
           )
         )}
 
-        <SidebarLabel title="System" />
-        {NAV_ITEMS.system.map((item) => (
+        {filteredNav.system.length > 0 && <SidebarLabel title="System" />}
+        {filteredNav.system.map((item) => (
           <NavItem key={item.key} icon={item.icon} label={item.label} active={activeTab === item.key} onClick={() => handleNav(item.key)} />
         ))}
 

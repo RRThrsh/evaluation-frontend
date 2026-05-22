@@ -1,0 +1,200 @@
+import { useState, useEffect, useCallback } from "react";
+import { Search, X, BookOpen, Users, GraduationCap } from "lucide-react";
+import api from "../../services/api";
+
+export default function ClassSubject() {
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [semester, setSemester] = useState("");
+  const [yearLevel, setYearLevel] = useState("");
+  const [search, setSearch] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+
+  const yearOptions = [
+    { value: "", label: "All Years" },
+    { value: "1", label: "1st Year" },
+    { value: "2", label: "2nd Year" },
+    { value: "3", label: "3rd Year" },
+    { value: "4", label: "4th Year" },
+  ];
+
+  const semesterOptions = [
+    { value: "", label: "All Semesters" },
+    { value: "1", label: "1st Semester" },
+    { value: "2", label: "2nd Semester" },
+  ];
+
+  const loadSubjects = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (semester) params.semester = semester;
+      if (yearLevel) params.year_level = yearLevel;
+      const res = await api.get("/api/admin/class-subjects", { params });
+      setSubjects(res.data ?? []);
+    } catch {} finally { setLoading(false); }
+  }, [semester, yearLevel]);
+
+  useEffect(() => { loadSubjects(); }, [loadSubjects]);
+
+  const loadStudents = async (subject) => {
+    setSelectedSubject(subject);
+    setStudentsLoading(true);
+    setStudents([]);
+    try {
+      const res = await api.get(`/api/admin/class-subjects/${subject.id}/students`);
+      setStudents(res.data ?? []);
+    } catch {} finally { setStudentsLoading(false); }
+  };
+
+  const filtered = subjects.filter((s) =>
+    !search || `${s.subject_code} ${s.subject_name} ${s.course_name || ""}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">Class Subjects</h2>
+          <p className="text-sm text-slate-500 mt-0.5">Browse subjects and view enrolled students</p>
+        </div>
+      </div>
+
+      <div className="card p-4 mb-6">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search subject code or name..."
+              className="input-field w-full text-sm pl-9"
+            />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+          <select value={yearLevel} onChange={(e) => setYearLevel(e.target.value)} className="input-field text-sm w-auto">
+            {yearOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <select value={semester} onChange={(e) => setSemester(e.target.value)} className="input-field text-sm w-auto">
+            {semesterOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="table-header border-b border-slate-200">
+                <th className="text-left px-5 py-3.5">Code</th>
+                <th className="text-left px-5 py-3.5">Subject</th>
+                <th className="text-left px-5 py-3.5">Program</th>
+                <th className="text-center px-5 py-3.5">Year</th>
+                <th className="text-center px-5 py-3.5">Sem</th>
+                <th className="text-center px-5 py-3.5">Units</th>
+                <th className="text-center px-5 py-3.5">Enrolled</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    {Array.from({ length: 7 }).map((_, j) => <td key={j} className="px-5 py-3"><div className="h-4 bg-slate-100 rounded w-3/4" /></td>)}
+                  </tr>
+                ))
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">No subjects found</td></tr>
+              ) : (
+                filtered.map((subj) => (
+                  <tr
+                    key={subj.id}
+                    onClick={() => loadStudents(subj)}
+                    className="table-row cursor-pointer"
+                  >
+                    <td className="px-5 py-3 font-mono text-xs text-slate-500">{subj.subject_code}</td>
+                    <td className="px-5 py-3 font-medium text-slate-800">{subj.subject_name}</td>
+                    <td className="px-5 py-3 text-xs text-slate-500">{subj.course_name || "\u2014"}</td>
+                    <td className="px-5 py-3 text-center text-xs text-slate-600">{subj.year_level}</td>
+                    <td className="px-5 py-3 text-center text-xs text-slate-600">{subj.semester}</td>
+                    <td className="px-5 py-3 text-center text-xs text-slate-600">{subj.units}</td>
+                    <td className="px-5 py-3 text-center">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
+                        <Users size={12} />{subj.enrolled_count ?? 0}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {selectedSubject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div onClick={() => setSelectedSubject(null)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary-50 text-primary-600">
+                  <BookOpen size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">{selectedSubject.subject_name}</h3>
+                  <p className="text-xs text-slate-500">{selectedSubject.subject_code} &middot; {selectedSubject.course_name || "No program"} &middot; Year {selectedSubject.year_level}, Sem {selectedSubject.semester}</p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedSubject(null)} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {studentsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="animate-pulse flex items-center gap-3 p-3 rounded-xl bg-slate-50">
+                      <div className="w-8 h-8 bg-slate-200 rounded-full" />
+                      <div className="flex-1 space-y-1.5"><div className="h-3 bg-slate-200 rounded w-1/3" /><div className="h-2.5 bg-slate-100 rounded w-1/4" /></div>
+                    </div>
+                  ))}
+                </div>
+              ) : students.length === 0 ? (
+                <div className="text-center py-12">
+                  <GraduationCap size={40} className="mx-auto text-slate-300 mb-3" />
+                  <p className="text-sm text-slate-400">No students enrolled in this subject</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-slate-500 font-medium mb-3">{students.length} student(s) enrolled</p>
+                  {students.map((st) => (
+                    <div key={st.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition">
+                      <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-xs font-bold">
+                        {st.student_name.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-800">{st.student_name}</p>
+                        <p className="text-xs text-slate-500">
+                          {st.student_number} &middot; {st.course_name || "N/A"} &middot; Year {st.year_level}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        {st.grade && <span className="text-xs font-semibold text-slate-700">{st.grade}</span>}
+                        <p className="text-[10px] text-slate-400">{st.enrollment_status}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-3 border-t border-slate-100 text-right">
+              <button onClick={() => setSelectedSubject(null)} className="btn btn-secondary btn-sm">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

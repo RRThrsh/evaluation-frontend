@@ -59,8 +59,22 @@ export default function Grading({ defaultPeriod }) {
   const [loading, setLoading] = useState(false);
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [error, setError] = useState("");
-  const [examWeight, setExamWeight] = useState(60);
-  const [qarWeight, setQarWeight] = useState(40);
+  const [allWeights, setAllWeights] = useState(null);
+
+  const getWeights = (p) => {
+    const map = {
+      prelim: { exam: "exam_weight_prelim", qar: "qar_weight_prelim" },
+      midterm: { exam: "exam_weight_midterm", qar: "qar_weight_midterm" },
+      finals: { exam: "exam_weight_finals", qar: "qar_weight_finals" },
+    };
+    const keys = map[p] || map.prelim;
+    return {
+      exam: parseFloat(allWeights?.[keys.exam]) || 60,
+      qar: parseFloat(allWeights?.[keys.qar]) || 40,
+    };
+  };
+
+  const weights = getWeights(period);
 
   useEffect(() => {
     (async () => {
@@ -72,10 +86,7 @@ export default function Grading({ defaultPeriod }) {
         ]);
         setSubjects(subjRes.data ?? []);
         setSections(secRes.data ?? []);
-        if (cfgRes?.data) {
-          setExamWeight(parseFloat(cfgRes.data.exam_weight) || 60);
-          setQarWeight(parseFloat(cfgRes.data.qar_weight) || 40);
-        }
+        if (cfgRes?.data) setAllWeights(cfgRes.data);
       } catch {} finally {
         setLoadingSubjects(false);
       }
@@ -123,7 +134,8 @@ export default function Grading({ defaultPeriod }) {
 
   const getGrade = (periods, p) => {
     const g = periods.find((x) => x.period === p);
-    return g ? computeGrade(g.exam_score, g.qar_score, examWeight, qarWeight) : null;
+    const w = getWeights(p);
+    return g ? computeGrade(g.exam_score, g.qar_score, w.exam, w.qar) : null;
   };
 
   const getGA = (periods) => {

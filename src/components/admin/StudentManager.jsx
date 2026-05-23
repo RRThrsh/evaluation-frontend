@@ -3,6 +3,7 @@ import api from "../../services/api";
 import { sanitizeObject } from "../../utils/sanitize";
 import StudentForm from "./StudentForm";
 import StudentSubjectsModal from "./StudentSubjectsModal";
+import StudentGradeWizard from "./StudentGradeWizard";
 import StudentList from "./StudentList";
 import ConfirmModal from "../common/ConfirmModal";
 
@@ -21,6 +22,8 @@ export default function StudentManager() {
     const [editingStudent, setEditingStudent] = useState(null);
     const [saving, setSaving] = useState(false);
     const [confirmAction, setConfirmAction] = useState(null);
+    const [wizardStudent, setWizardStudent] = useState(null);
+    const [wizardCurriculum, setWizardCurriculum] = useState([]);
 
     const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -59,11 +62,24 @@ export default function StudentManager() {
             if (editingStudent) {
                 await api.put(`/api/admin/students/${editingStudent}`, sanitizeObject({ email: form.email.trim() || null, first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, extension_name: form.extension_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null, enrollment_type: form.enrollment_type, status: form.status, is_transfer: form.is_transfer, previous_school: form.previous_school.trim() || null, previous_school_address: form.previous_school_address.trim() || null, previous_year_level: form.previous_year_level || null }));
                 showToast("Student updated");
+                setShowForm(false); await load();
             } else {
-                await api.post("/api/admin/students", sanitizeObject({ email: form.email.trim() || null, student_number: form.student_number.toUpperCase(), first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, extension_name: form.extension_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null, enrollment_type: form.enrollment_type, is_transfer: form.is_transfer, previous_school: form.previous_school.trim() || null, previous_school_address: form.previous_school_address.trim() || null, previous_year_level: form.previous_year_level || null }));
+                const res = await api.post("/api/admin/students", sanitizeObject({ email: form.email.trim() || null, student_number: form.student_number.toUpperCase(), first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, extension_name: form.extension_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null, enrollment_type: form.enrollment_type, is_transfer: form.is_transfer, previous_school: form.previous_school.trim() || null, previous_school_address: form.previous_school_address.trim() || null, previous_year_level: form.previous_year_level || null }));
                 showToast("Student created");
+                setShowForm(false); await load();
+                const newStudent = res.data?.data ?? res.data;
+                if (newStudent?.id) {
+                    try {
+                        const cur = await api.get(`/api/admin/students/${newStudent.id}/curriculum`);
+                        const curriculum = cur.data ?? [];
+                        const hasSubjects = curriculum.some((s) => s.year_level <= newStudent.year_level);
+                        if (hasSubjects) {
+                            setWizardStudent(newStudent);
+                            setWizardCurriculum(curriculum);
+                        }
+                    } catch {}
+                }
             }
-            setShowForm(false); await load();
         } catch (err) { showToast(err.message, "error"); }
         finally { setSaving(false); }
     };
@@ -87,6 +103,10 @@ export default function StudentManager() {
             <StudentForm open={showForm} editingStudent={editingStudent} form={form} setForm={setForm} saving={saving} YEARS={YEARS} courses={courses} onSave={handleSaveStudent} onClose={() => { setShowForm(false); setEditingStudent(null); }} />
 
             {selectedStudent && <StudentSubjectsModal student={selectedStudent} subjects={subjects} config={config} onClose={() => setSelectedStudent(null)} onToast={showToast} />}
+
+            {wizardStudent && wizardCurriculum.length > 0 && (
+              <StudentGradeWizard student={wizardStudent} curriculum={wizardCurriculum} onClose={() => { setWizardStudent(null); setWizardCurriculum([]); }} onToast={showToast} />
+            )}
 
             <StudentList students={filteredStudents} allStudents={students} loading={loading} search={search} setSearch={setSearch} onSelect={setSelectedStudent} onEdit={openEditForm} onAdd={openCreateForm} onDelete={(s) => setConfirmAction({ id: s.id, name: `${s.first_name} ${s.last_name}` })} />
 

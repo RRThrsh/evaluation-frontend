@@ -80,7 +80,8 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      const subjects = Object.entries(grades).map(([subject_id, grade]) => ({ subject_id, grade: grade || null }));
+      const allSubjects = sections.flatMap((s) => s.subjects);
+      const subjects = allSubjects.map((sub) => ({ subject_id: sub.id, grade: grades[sub.id] || null }));
       await api.post(`/api/admin/students/${student.id}/bulk-enroll`, { subjects });
       onToast("Grades saved");
       setDone(true);
@@ -102,7 +103,10 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
             <Check size={28} className="text-emerald-600" />
           </div>
           <h3 className="text-lg font-bold text-slate-800">Grades Saved</h3>
-          <p className="text-sm text-slate-500 mt-1">{gradedCount} of {subjectCount} subjects graded</p>
+          <p className="text-sm text-slate-500 mt-1">{subjectCount} subjects processed</p>
+          <p className="text-xs text-slate-400 mt-1">
+            {gradedCount} with grade{gradedCount !== 1 ? "s" : ""} &middot; {subjectCount - gradedCount} marked as INC
+          </p>
           <button onClick={onDone} className="btn btn-primary btn-md mt-6 w-full">Done</button>
         </div>
       </div>
@@ -162,8 +166,8 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
                         type="number" min={0} max={100}
                         value={grades[sub.id] ?? ""}
                         onChange={(e) => handleGrade(sub.id, e.target.value)}
-                        placeholder="INC"
-                        className="input-field w-24 sm:w-28 py-2 text-sm text-center font-mono [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-amber-400 placeholder:font-bold"
+                        placeholder="Grade"
+                        className="input-field w-24 sm:w-28 py-2 text-sm text-center font-mono [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
                     </div>
                   </div>

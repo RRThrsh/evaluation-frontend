@@ -1,58 +1,175 @@
-import { useNavigate } from "react-router-dom";
-import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight, ClipboardCheck, ClipboardList, Activity, X, Clipboard, Shield, History } from "lucide-react";
-import { useState, useMemo } from "react";
+import {
+  useNavigate,
+} from "react-router-dom";
 
-export function NavItem({ icon: Icon, label, active, onClick }) {
+import {
+  GraduationCap,
+  LayoutDashboard,
+  Database,
+  BookOpen,
+  BookText,
+  Users,
+  UserCheck,
+  FileText,
+  Settings,
+  LogOut,
+  ChevronDown,
+  ChevronRight,
+  ClipboardCheck,
+  ClipboardList,
+  Activity,
+  X,
+  Clipboard,
+  Shield,
+  History,
+} from "lucide-react";
+
+import { useMemo } from "react";
+
+/* ---------- Nav Item ---------- */
+export function NavItem({
+  icon: Icon,
+  label,
+  active,
+  onClick,
+}) {
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+      className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
         active
-          ? "bg-primary-600 text-white shadow-sm"
-          : "text-slate-300 hover:bg-slate-800 hover:text-white"
+          ? "bg-slate-100 text-slate-900 shadow-sm"
+          : "text-slate-500 hover:bg-slate-800/40 hover:text-white"
       }`}
     >
-      {Icon && <Icon size={18} />}
-      <span>{label}</span>
+      {/* active indicator */}
+      {active && (
+        <div className="absolute left-0 top-2 h-6 w-1 rounded-r-full bg-primary-600" />
+      )}
+
+      {Icon && (
+        <Icon
+          size={18}
+          className={`transition ${
+            active
+              ? "text-primary-600"
+              : "text-slate-500 group-hover:text-white"
+          }`}
+        />
+      )}
+
+      <span className="truncate">{label}</span>
     </button>
   );
 }
 
+/* ---------- Section Label ---------- */
 export function SidebarLabel({ title }) {
   return (
     <div className="px-3 pt-5 pb-1">
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{title}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500">
+        {title}
+      </p>
     </div>
   );
 }
 
+/* ---------- NAV DATA ---------- */
 const NAV_ITEMS = {
   navigation: [
-    { key: "overview", label: "Admin Console", icon: LayoutDashboard },
-    { key: "database", label: "Database Explorer", icon: Database },
+    {
+      key: "overview",
+      label: "Admin Console",
+      icon: LayoutDashboard,
+    },
+    {
+      key: "database",
+      label: "Database Explorer",
+      icon: Database,
+    },
   ],
   management: [
-    { key: "courses", label: "Programs", icon: BookOpen },
-    { key: "subjects", label: "Subjects", icon: BookText },
-    { key: "students", label: "Student Records", icon: Users },
-    { key: "pre-evaluate", label: "Pre-Evaluate", icon: ClipboardCheck },
-    { key: "pre-enrolled", label: "Pre-Enrolled", icon: ClipboardList },
-    { key: "enrolled", label: "Enrolled Students", icon: UserCheck },
-
-    { key: "users", label: "Pending Approvals", icon: UserCheck },
-    { key: "class-subjects", label: "Class Subjects", icon: Clipboard },
+    {
+      key: "courses",
+      label: "Programs",
+      icon: BookOpen,
+    },
+    {
+      key: "subjects",
+      label: "Subjects",
+      icon: BookText,
+    },
+    {
+      key: "students",
+      label: "Student Records",
+      icon: Users,
+    },
+    {
+      key: "pre-evaluate",
+      label: "Pre-Evaluate",
+      icon: ClipboardCheck,
+    },
+    {
+      key: "pre-enrolled",
+      label: "Pre-Enrolled",
+      icon: ClipboardList,
+    },
+    {
+      key: "enrolled",
+      label: "Enrolled Students",
+      icon: UserCheck,
+    },
+    {
+      key: "users",
+      label: "Pending Approvals",
+      icon: UserCheck,
+    },
+    {
+      key: "class-subjects",
+      label: "Class Subjects",
+      icon: Clipboard,
+    },
   ],
   system: [
-    { key: "all-users", label: "All Users", icon: Users },
-    { key: "audit-logs", label: "Audit Trail", icon: FileText },
-    { key: "evaluator-logs", label: "Evaluator Logs", icon: Activity },
-    { key: "academic_config", label: "Academic Config", icon: Settings },
-    { key: "sessions", label: "Active Sessions", icon: Users },
-    { key: "permissions", label: "Permissions", icon: Shield },
-    { key: "snapshots", label: "Snapshots", icon: History },
+    {
+      key: "all-users",
+      label: "All Users",
+      icon: Users,
+    },
+    {
+      key: "audit-logs",
+      label: "Audit Trail",
+      icon: FileText,
+    },
+    {
+      key: "evaluator-logs",
+      label: "Evaluator Logs",
+      icon: Activity,
+    },
+    {
+      key: "academic_config",
+      label: "Academic Config",
+      icon: Settings,
+    },
+    {
+      key: "sessions",
+      label: "Sessions",
+      icon: Users,
+    },
+    {
+      key: "permissions",
+      label: "Permissions",
+      icon: Shield,
+    },
+    {
+      key: "snapshots",
+      label: "Snapshots",
+      icon: History,
+    },
   ],
 };
 
+/* ---------- PERMISSIONS ---------- */
 const PERMISSION_MAP = {
   overview: "dashboard",
   database: "database.view",
@@ -62,7 +179,6 @@ const PERMISSION_MAP = {
   "pre-evaluate": "pre-evaluate",
   "pre-enrolled": "pre-enrolled",
   enrolled: "enrolled-students.view",
-
   users: "users.view",
   "class-subjects": "class-subjects",
   "all-users": "user-management.view",
@@ -74,82 +190,183 @@ const PERMISSION_MAP = {
   snapshots: "snapshots",
 };
 
-export default function AdminSidebar({ activeTab, onNavigate, availableGroups, activeGroup, setActiveGroup, selectedTable, onSelectTable, user, logout, sidebarOpen, setSidebarOpen, userPermissions = [], isSuperAdmin = false }) {
+/* ---------- SIDEBAR ---------- */
+export default function AdminSidebar({
+  activeTab,
+  onNavigate,
+  availableGroups,
+  activeGroup,
+  setActiveGroup,
+  selectedTable,
+  onSelectTable,
+  user,
+  logout,
+  sidebarOpen,
+  setSidebarOpen,
+  userPermissions = [],
+  isSuperAdmin = false,
+}) {
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState({});
 
-
-  const handleNav = (key, period) => { onNavigate(key, period); setSidebarOpen?.(false); };
-
-  const toggleGroup = (name) => {
-    setActiveGroup(activeGroup === name ? null : name);
+  const handleNav = (key) => {
+    onNavigate(key);
+    setSidebarOpen?.(false);
   };
 
   const filteredNav = useMemo(() => {
-    const filter = (items) => items.filter(item =>
-      isSuperAdmin || userPermissions.includes(PERMISSION_MAP[item.key])
-    );
+    const filter = (items) =>
+      items.filter(
+        (item) =>
+          isSuperAdmin ||
+          userPermissions.includes(
+            PERMISSION_MAP[item.key]
+          )
+      );
+
     return {
-      navigation: filter(NAV_ITEMS.navigation),
-      management: filter(NAV_ITEMS.management),
+      navigation: filter(
+        NAV_ITEMS.navigation
+      ),
+      management: filter(
+        NAV_ITEMS.management
+      ),
       system: filter(NAV_ITEMS.system),
     };
   }, [userPermissions, isSuperAdmin]);
 
   return (
-    <aside className={`fixed top-0 left-0 z-40 h-screen w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
-      <div className="px-4 h-16 flex items-center justify-between border-b border-slate-800">
+    <aside
+      className={`fixed left-0 top-0 z-40 flex h-screen w-72 flex-col border-r border-slate-200 bg-white transition-transform md:translate-x-0 ${
+        sidebarOpen
+          ? "translate-x-0"
+          : "-translate-x-full"
+      }`}
+    >
+      {/* HEADER */}
+      <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-sm">
             <GraduationCap size={16} />
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-white leading-tight">Academic Evaluation</h1>
-            <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Admin Console</p>
+
+          <div className="leading-tight">
+            <p className="text-sm font-bold text-slate-900">
+              Academic Evaluation
+            </p>
+            <p className="text-[10px] uppercase tracking-widest text-slate-400">
+              Admin Console
+            </p>
           </div>
         </div>
-        <button onClick={() => setSidebarOpen?.(false)} className="md:hidden p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+
+        <button
+          onClick={() =>
+            setSidebarOpen?.(false)
+          }
+          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 md:hidden"
+        >
           <X size={18} />
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+      {/* NAV */}
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         <SidebarLabel title="Navigation" />
-        {filteredNav.navigation.map((item) => (
-          <NavItem key={item.key} icon={item.icon} label={item.label} active={activeTab === item.key} onClick={() => handleNav(item.key)} />
-        ))}
+        {filteredNav.navigation.map(
+          (item) => (
+            <NavItem
+              key={item.key}
+              icon={item.icon}
+              label={item.label}
+              active={
+                activeTab === item.key
+              }
+              onClick={() =>
+                handleNav(item.key)
+              }
+            />
+          )
+        )}
 
         <SidebarLabel title="Management" />
-        {filteredNav.management.map((item) => (
-          <NavItem key={item.key} icon={item.icon} label={item.label} active={activeTab === item.key} onClick={() => handleNav(item.key)} />
-        ))}
+        {filteredNav.management.map(
+          (item) => (
+            <NavItem
+              key={item.key}
+              icon={item.icon}
+              label={item.label}
+              active={
+                activeTab === item.key
+              }
+              onClick={() =>
+                handleNav(item.key)
+              }
+            />
+          )
+        )}
 
-        {filteredNav.system.length > 0 && <SidebarLabel title="System" />}
-        {filteredNav.system.map((item) => (
-          <NavItem key={item.key} icon={item.icon} label={item.label} active={activeTab === item.key} onClick={() => handleNav(item.key)} />
-        ))}
+        <SidebarLabel title="System" />
+        {filteredNav.system.map(
+          (item) => (
+            <NavItem
+              key={item.key}
+              icon={item.icon}
+              label={item.label}
+              active={
+                activeTab === item.key
+              }
+              onClick={() =>
+                handleNav(item.key)
+              }
+            />
+          )
+        )}
 
+        {/* DATABASE */}
         {activeTab === "database" && (
-          <div className="mt-3 space-y-1">
+          <div className="pt-3">
             <SidebarLabel title="Tables" />
-            {availableGroups.map((group) => {
-              const expanded = activeGroup === group.name;
+
+            {availableGroups.map((g) => {
+              const open =
+                activeGroup === g.name;
+
               return (
-                <div key={group.name} className="rounded-lg overflow-hidden">
+                <div key={g.name}>
                   <button
-                    onClick={() => toggleGroup(group.name)}
-                    className="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition"
+                    onClick={() =>
+                      setActiveGroup(
+                        open
+                          ? null
+                          : g.name
+                      )
+                    }
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-100"
                   >
-                    <span className="font-medium">{group.name}</span>
-                    {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    <span>{g.name}</span>
+                    {open ? (
+                      <ChevronDown size={14} />
+                    ) : (
+                      <ChevronRight
+                        size={14}
+                      />
+                    )}
                   </button>
-                  {expanded && (
-                    <div className="ml-2 mt-1 space-y-0.5">
-                      {group.tables.map((t) => (
+
+                  {open && (
+                    <div className="ml-2 space-y-1">
+                      {g.tables.map((t) => (
                         <button
                           key={t}
-                          onClick={() => onSelectTable(t)}
-                          className={`w-full rounded-md px-3 py-1.5 text-left text-xs font-mono transition ${selectedTable === t ? "bg-primary-600 text-white" : "text-slate-500 hover:bg-slate-800 hover:text-slate-300"}`}
+                          onClick={() =>
+                            onSelectTable(t)
+                          }
+                          className={`w-full rounded-md px-3 py-1.5 text-left text-xs font-mono transition ${
+                            selectedTable ===
+                            t
+                              ? "bg-slate-900 text-white"
+                              : "text-slate-500 hover:bg-slate-100"
+                          }`}
                         >
                           {t}
                         </button>
@@ -163,13 +380,28 @@ export default function AdminSidebar({ activeTab, onNavigate, availableGroups, a
         )}
       </nav>
 
-      <div className="border-t border-slate-800 p-3">
-        <div className="flex items-center justify-between rounded-lg bg-slate-800/50 px-3 py-2">
-          <button onClick={() => navigate("/profile")} className="min-w-0 text-left">
-            <p className="truncate text-sm font-medium text-white">{user?.full_name ?? "Admin"}</p>
-            <p className="text-xs text-slate-500">Administrator</p>
+      {/* FOOTER */}
+      <div className="border-t border-slate-200 p-3">
+        <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+          <button
+            onClick={() =>
+              navigate("/profile")
+            }
+            className="min-w-0 text-left"
+          >
+            <p className="truncate text-sm font-semibold text-slate-900">
+              {user?.full_name ??
+                "Admin"}
+            </p>
+            <p className="text-xs capitalize text-slate-400">
+              {user?.role ?? "Admin"}
+            </p>
           </button>
-          <button onClick={logout} className="rounded-lg p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition">
+
+          <button
+            onClick={logout}
+            className="rounded-lg p-1.5 text-slate-400 hover:text-red-500"
+          >
             <LogOut size={16} />
           </button>
         </div>

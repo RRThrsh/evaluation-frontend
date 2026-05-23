@@ -1,6 +1,6 @@
 # Evaluation Frontend
 
-Frontend for the Student Evaluation Workflow System — a role-based platform where staff submit evaluation requests, moderators review with full subject management, and administrators oversee users, enrollments, and system config.
+Frontend for the Academic Evaluation System — a role-based platform where evaluators submit clearance evaluations, and administrators manage students, courses, subjects, enrollments, and system configuration.
 
 Built with **React 19**, **Vite**, **Tailwind CSS 4**, **Framer Motion**, and **React Router 7**.
 
@@ -8,36 +8,40 @@ Built with **React 19**, **Vite**, **Tailwind CSS 4**, **Framer Motion**, and **
 
 | Route | Role | Description |
 |---|---|---|
-| `/` | Public | Landing page + student lookup search |
-| `/login`, `/register`, `/forgot-password` | Public | Authentication (register creates pending account) |
-| `/staff` | staff, admin | Submit evaluations, view submissions |
-| `/moderator` | moderator, admin | Review evaluations, edit student subjects |
-| `/admin` | admin | Full admin dashboard |
+| `/login`, `/register`, `/forgot-password`, `/reset-password/:token` | Public | Authentication (register creates pending account) |
+| `/evaluator` | evaluator, admin | Evaluation Hub — search students, review grades, submit evaluations |
+| `/admin` | admin, superadmin | Full admin dashboard with all management panels |
 | `/profile` | Any authenticated | Profile management |
 | `/401`, `/429`, `/maintenance` | Public | Error pages |
 
 ## Features
 
 - **Admin approval flow**: New accounts = `pending`; admin approves before login
-- **Public student search**: Look up any student by number + enrolled subjects
-- **Staff submits PENDING request** — no auto-evaluation; moderator reviews
-- **Staff submission tracking**: Submissions split into **Pending** (yellow, unseen), **Response Received** (green with blue dot on unread items), and **Seen** (gray) — all with pagination
-- **Moderator evaluation**: Grade checking, carry-over/retake/prerequisite detection; always sets FOR_ENROLLMENT
-- **Moderator request list**: Shows assigned course name/code for each student
-- **Irregular handling**: >2 failed subjects → moderator marks irregular → admin decides enrollment
-- **Admin enrollment**: Clickable row opens modal with Confirm/Reject buttons
-- **Moderator-course assignment**: Moderators only see students in their assigned courses
+- **Evaluator search**: Look up any student by student number, review subjects, grades, and prerequisites
+- **Evaluation engine**: Auto-detects pass/fail/INC per subject; checks prerequisite chains; identifies retakes and gap-filler minor subjects; produces qualified/conditional/disqualified status
+- **Evaluator workflow**: Submit PENDING evaluation → admin reviews and promotes to PRE_ENROLLED → admin finalizes enrollment
+- **Evaluator-course assignment**: Evaluators only see students in their assigned courses
+- **Irregular handling**: >1 failed subject → student flagged as irregular
+- **Admin dashboard**: Stats cards, bar chart (students per program), pie chart (status distribution), monthly trends, recent activity feed, quick actions
+- **System controls**: Toggle evaluator access, maintenance mode, send broadcasts, emergency shutdown
+- **Course/Subject/Student CRUD**: Full management panels with search, sort, pagination
 - **Auto-generated student numbers**: `{PREFIX}-{SEQUENCE:04d}` format, configurable prefix
-- **Real-time notifications**: Bell badge + dropdown with sound; auto-polls every 15s; plays audio chime on new notifications
-- **Click sounds**: Subtle audio feedback on all button clicks
-- **Excel export**: Client-side SheetJS export for Evaluated and Pre Enroll sections
-- **Dashboard overview**: Stats cards, donut chart (status distribution), bar charts (students per course, monthly trends), recent activity feed, quick actions
-- **Academic Config**: Admin-managed grading rules, thresholds, labels, and student number prefix
-- **Database browser**: Admin can view/edit any table with dynamic PK detection
-- **Pagination**: 15/page admin tables, 10/page moderator/staff lists
-- **Modal behavior**: All modals close on backdrop click and Escape key
-- **SVG icons**: All Edit/Delete text buttons replaced with pencil/trash icons
+- **Class Subjects**: Section assignment per student enrollment; student search/add bar
+- **Pre-Evaluate panel**: Review and evaluate students for next semester enrollment
+- **Pre-Enrolled panel**: Admin reviews PENDING evaluations and promotes to PRE_ENROLLED, stores immutable snapshots
+- **Snapshots**: Point-in-time captures of evaluation state at evaluator_submit and admin_pre_enroll
+- **Enrolled Students**: View all enrolled students, export to Excel, import from Excel
+- **Evaluator Logs**: Comprehensive view of all subject_requests with filtering
+- **Grading panel**: Per-period grade management (prelim, midterm, finals) with section filtering
+- **Permission management**: Granular per-user permission overrides with a management UI
+- **Academic Config**: Admin-managed passing grade, irregular threshold, year levels, semesters per year, student number prefix
+- **Database browser**: Admin can view/edit/delete any database table
+- **Audit trail**: All actions logged with user, timestamp, old/new data
+- **Real-time notifications**: Bell badge + dropdown; auto-polls every 15s; audio chime on new notifications
+- **Excel export**: Client-side SheetJS export for enrolled students and other data
 - **In-memory cache**: GET responses cached 60s; cleared on mutations (prefix: 4 URL segments)
+- **Pagination**: 15/page admin tables, 10/page evaluator lists
+- **Modal behavior**: All modals close on backdrop click and Escape key
 
 ## Project Structure
 
@@ -45,31 +49,37 @@ Built with **React 19**, **Vite**, **Tailwind CSS 4**, **Framer Motion**, and **
 src/
 ├── components/
 │   ├── admin/           # AdminHome, Sidebar, StatsCards, DashboardOverview,
-│   │                    # PendingEnrollments, CompletedEnrollments, UserManager,
-│   │                    # StudentManager, CourseManager, SubjectManager,
-│   │                    # AcademicConfigManager, ModeratorCourses, DatabaseViewer,
-│   │                    # AuditLogViewer, RoleManager, EnrollmentHistory
-│   ├── moderator/       # ModeratorHome, ModeratorHeader, RequestList,
+│   │                    # CourseManager, SubjectManager, StudentManager,
+│   │                    # AcademicConfigManager, ClassSubject, Grading,
+│   │                    # PreEvaluate, PreEnrolled, EnrolledStudents,
+│   │                    # PermissionManager, DatabaseViewer, AuditLogViewer,
+│   │                    # EvaluatorLogs, SessionManager, Snapshots,
+│   │                    # EvaluatorEvaluations, EvaluatorCourses,
+│   │                    # AcademicRecord, ImportLogs, PendingUsers,
+│   │                    # RoleManager, StudentSubjectsModal, StudentGradeWizard,
+│   │                    # AdminHeader, DeleteModal, SkeletonRows, StudentForm,
+│   │                    # StudentList
+│   ├── evaluator/       # EvaluatorHome, EvaluatorHeader, RequestList,
 │   │                    # SubjectEditor, DetailModal, EvaluationReport
-│   ├── staff/           # StaffHome, StaffHeader, SubmitForm, SubmissionsList,
-│   │                    # DetailModal, EvaluationReport
-│   ├── common/          # NotificationBell, ClickSoundProvider, SvgIcon,
-│   │                    # ConfirmModal, Pagination
-│   ├── layout/          # Header, Footer
+│   ├── common/          # NotificationBell, ClickSoundProvider, ErrorBoundary,
+│   │                    # ConfirmModal, Pagination, SvgIcon,
+│   │                    # Button, InputField (with subdirs)
+│   ├── layout/          # Header, Sidebar, Footer
 │   ├── profile/         # ProfileHeader, ProfileHero, ProfileInfo, ProfileFAQ,
-│   │                    # ProfileSidebar
+│   │                    # ProfileSidebar, ProfileActivity, ChangePasswordModal
 │   └── ProtectedRoute.jsx
 ├── context/
-│   └── AuthContext.jsx
+│   ├── AuthContext.jsx
+│   └── PermissionContext.jsx
 ├── pages/
-│   ├── public/          # Home (with student search), About, Contact
-│   ├── auth/            # Login, Register, ForgotPassword
-│   ├── dashboard/       # StaffHome, ModeratorHome, AdminHome, Profile
+│   ├── auth/            # Login, Register, ForgotPassword, ResetPassword
+│   ├── dashboard/       # EvaluatorHome, AdminHome, Profile
 │   └── error/           # 401, 429, Maintenance, NotFound
 ├── services/
 │   └── api.js           # HTTP client with caching + error handling
 ├── utils/
-│   └── exportToExcel.js # SheetJS export with nested object flattening
+│   ├── exportToExcel.js # SheetJS export with nested object flattening
+│   └── sanitize.js      # Input sanitization
 ├── styles/
 │   └── index.css        # Tailwind CSS entry point
 └── App.jsx              # Root with routes + ClickSoundProvider
@@ -96,7 +106,7 @@ Frontend is served via nginx in production. Build with backend's `docker-compose
 
 ```bash
 cd evaluation-backend
-docker compose up -d
+docker compose up -d --build
 
 # Frontend: http://localhost:80
 # Backend:  http://localhost:3002

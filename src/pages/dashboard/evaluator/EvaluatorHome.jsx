@@ -103,6 +103,7 @@ export default function EvaluatorHome() {
   const [subjects, setSubjects] = useState({ taken: [], available: [] });
   const [replacements, setReplacements] = useState([]);
   const [remainingFails, setRemainingFails] = useState([]);
+  const [unresolvedFails, setUnresolvedFails] = useState([]);
   const [blockedCount, setBlockedCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -120,6 +121,7 @@ export default function EvaluatorHome() {
     setSubjects({ taken: [], available: [] });
     setReplacements([]);
     setRemainingFails([]);
+    setUnresolvedFails([]);
     setBlockedCount(0);
     setHasPendingRequest(false);
     setPendingRequestedBy(null);
@@ -134,6 +136,7 @@ export default function EvaluatorHome() {
       let next = [];
       let gaps = [];
       let remainingFailsData = [];
+      let unresolvedFailsData = [];
       let blocked = 0;
       let enrollmentType = "regular";
       try {
@@ -144,6 +147,7 @@ export default function EvaluatorHome() {
         next = evalRes.data?.next_semester_subjects || [];
         gaps = evalRes.data?.gap_fillers || [];
         remainingFailsData = evalRes.data?.remaining_failed_subjects || [];
+        unresolvedFailsData = evalRes.data?.unresolved_failed_subjects || [];
         blocked = evalRes.data?.summary_extras?.blocked_count || 0;
         enrollmentType = evalRes.data?.student?.enrollment_type || "regular";
         const pendingReq = evalRes.data?.has_pending_request;
@@ -160,6 +164,7 @@ export default function EvaluatorHome() {
       setSubjects({ taken: current, available: next });
       setReplacements(gaps);
       setRemainingFails(remainingFailsData);
+      setUnresolvedFails(unresolvedFailsData);
       setBlockedCount(blocked);
     } catch (err) {
       setError(err.message || "Student not found");
@@ -188,7 +193,6 @@ export default function EvaluatorHome() {
   const currentColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
     { key: "subject_name", label: "Subject", width: "45%" },
-    { key: "grade", label: "Grade", align: "right", width: "15%", className: "whitespace-nowrap", render: (s) => s.grade || "\u2014" },
     { key: "status", label: "Grade", width: "25%", render: (s) => <span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span> },
   ], []);
 
@@ -332,6 +336,17 @@ export default function EvaluatorHome() {
               )}
             </div>
           </div>
+
+          {unresolvedFails.length > 0 && (
+            <div className="border-t border-slate-200 pt-6">
+              <SubjectTable
+                title="Failed Subjects — Not Offered Next Semester"
+                subjects={unresolvedFails}
+                columns={remainingColumns}
+                emptyMsg="No unresolved failed subjects."
+              />
+            </div>
+          )}
 
           {remainingFails.length > 0 && (
             <div className="border-t border-slate-200 pt-6">

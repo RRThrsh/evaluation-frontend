@@ -26,6 +26,7 @@ const SIMPLE_PERMS = [
   { key: "pre-enrolled",    label: "Pre-Enrolled" },
   { key: "import-logs",     label: "Import Logs" },
   { key: "permissions",     label: "Permissions" },
+  { key: "snapshots",       label: "Snapshots" },
 ];
 
 const initials = (name) => name?.split(" ").map((n) => n[0]).join("").slice(0, 2) ?? "?";

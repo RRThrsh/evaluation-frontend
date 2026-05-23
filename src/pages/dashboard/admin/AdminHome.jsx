@@ -29,6 +29,7 @@ const InstructorManager = lazy(() => import("../../../components/admin/Instructo
 const ClassSubject = lazy(() => import("../../../components/admin/ClassSubject"));
 const ImportLogs = lazy(() => import("../../../components/admin/ImportLogs"));
 const PermissionManager = lazy(() => import("../../../components/admin/PermissionManager"));
+const Snapshots = lazy(() => import("../../../components/admin/Snapshots"));
 
 const TABLE_GROUPS = [
   { name: "Academic", tables: ["students", "subjects", "student_subjects", "student_units"] },
@@ -170,6 +171,7 @@ export default function AdminHome() {
             {activeTab === "class-subjects" && <ClassSubject />}
             {activeTab === "import-logs" && <ImportLogs />}
             {activeTab === "permissions" && <PermissionManager />}
+            {activeTab === "snapshots" && <Snapshots />}
             {activeTab === "database" && <DatabaseViewer selectedTable={selectedTable} tableData={tableData} tableLoading={tableLoading} onLoadTable={loadTable} />}
             </PermissionProvider>
           </Suspense>

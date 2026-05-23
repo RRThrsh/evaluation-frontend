@@ -50,6 +50,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const [grades, setGrades] = useState({});
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const [confirm, setConfirm] = useState(false);
 
   const sections = useMemo(() => {
     const byYearSem = {};
@@ -138,6 +139,19 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
 
         {/* ── Content ── */}
         <div className="p-6 space-y-4">
+          {confirm && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
+              <span className="text-amber-600 font-bold text-sm shrink-0 mt-0.5">!</span>
+              <div>
+                <p className="text-sm font-semibold text-amber-800">Ready to save?</p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  This will enroll <strong>{subjectCount} subjects</strong> with the grades above.
+                  {subjectCount - gradedCount > 0 && <span> Subjects without a grade will be marked as <strong>INC</strong>.</span>}
+                  Click <strong>Confirm</strong> to proceed or <strong>Cancel</strong> to review.
+                </p>
+              </div>
+            </div>
+          )}
           {current && (
             <>
               <div className="flex items-center justify-between">
@@ -180,7 +194,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
         {/* ── Footer ── */}
         <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between">
           <button
-            onClick={() => setStep((s) => Math.max(0, s - 1))}
+            onClick={() => { setConfirm(false); setStep((s) => Math.max(0, s - 1)); }}
             disabled={step === 0}
             className="btn btn-ghost btn-sm gap-1 disabled:opacity-30"
           >
@@ -190,13 +204,20 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
           <div className="flex gap-2">
             <button onClick={onClose} className="btn btn-secondary btn-sm">Cancel</button>
             {!isLast ? (
-              <button onClick={() => setStep((s) => Math.min(sections.length - 1, s + 1))} className="btn btn-primary btn-sm gap-1">
+              <button onClick={() => { setConfirm(false); setStep((s) => Math.min(sections.length - 1, s + 1)); }} className="btn btn-primary btn-sm gap-1">
                 Next <ChevronRight size={14} />
               </button>
-            ) : (
-              <button onClick={handleSubmit} disabled={saving} className="btn btn-primary btn-sm">
-                {saving ? "Saving..." : "Save All Grades"}
+            ) : !confirm ? (
+              <button onClick={() => setConfirm(true)} className="btn btn-primary btn-sm">
+                Save All Grades
               </button>
+            ) : (
+              <div className="flex gap-2">
+                <button onClick={() => setConfirm(false)} className="btn btn-secondary btn-sm">Cancel</button>
+                <button onClick={handleSubmit} disabled={saving} className="btn btn-primary btn-sm">
+                  {saving ? "Saving..." : `Confirm — Save ${subjectCount} Subjects`}
+                </button>
+              </div>
             )}
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { AlertTriangle, Clock, User, FileText, Search, Send, CheckCircle } from "lucide-react";
 import api from "../../services/api";
 import Pagination from "../common/Pagination";
@@ -28,36 +28,37 @@ export default function Snapshots() {
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState(null);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const params = { page, limit: PAGE_SIZE };
+      const params = { limit: 1000 };
       if (filterType) params.type = filterType;
       const res = await api.get("/api/admin/snapshots", { params });
       const data = res.data || {};
       setSnapshots(data.snapshots || []);
-      setTotal(data.total || 0);
-      setTotalPages(data.totalPages || 1);
     } catch (err) {
       setError(err.message || "Failed to load");
     } finally {
       setLoading(false);
     }
-  }, [page, filterType]);
+  }, [filterType]);
 
   useEffect(() => { load(); }, [load]);
 
-  useEffect(() => { setPage(1); }, [filterType]);
+  useEffect(() => { setPage(1); }, [filterType, search]);
 
-  const filtered = snapshots.filter((s) =>
-    !search ||
-    `${s.student_name || ""} ${s.student_number || ""} ${s.requested_by_name || ""} ${s.reviewed_by_name || ""} ${s.course_name || ""} ${s.course_code || ""}`
-      .toLowerCase().includes(search.toLowerCase())
+  const filtered = useMemo(() =>
+    snapshots.filter((s) =>
+      !search ||
+      `${s.student_name || ""} ${s.student_number || ""} ${s.requested_by_name || ""} ${s.reviewed_by_name || ""} ${s.course_name || ""} ${s.course_code || ""}`
+        .toLowerCase().includes(search.toLowerCase())
+    ), [snapshots, search]
   );
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const formatSnapshotData = (evalResult) => {
     if (!evalResult) return null;
@@ -85,7 +86,7 @@ export default function Snapshots() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6 pb-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-slate-900">Evaluation Snapshots</h2>
-        <p className="text-sm text-slate-400">{total} total</p>
+        <p className="text-sm text-slate-400">{filtered.length} total</p>
       </div>
 
       <div className="card p-4">
@@ -114,7 +115,7 @@ export default function Snapshots() {
       )}
 
       <div className="space-y-3">
-        {filtered.map((s) => {
+        {paginated.map((s) => {
           const evalResult = s.evaluation_result ? (typeof s.evaluation_result === "string" ? JSON.parse(s.evaluation_result) : s.evaluation_result) : null;
           const snapType = evalResult?.snapshot_type || "unknown";
           const snapData = formatSnapshotData(evalResult);
@@ -257,7 +258,7 @@ export default function Snapshots() {
           );
         })}
 
-        {filtered.length === 0 && !loading && (
+        {paginated.length === 0 && !loading && (
           <div className="card p-12 text-center">
             <FileText size={40} className="mx-auto text-slate-300 mb-3" />
             <p className="text-slate-400 text-sm">No snapshots found.</p>

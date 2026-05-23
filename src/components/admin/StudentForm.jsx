@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { usePermissions } from "../../context/PermissionContext";
 
 const GENDERS = ["Male", "Female", "Other"];
 
@@ -9,11 +10,12 @@ function ordinal(n) {
   return `${n}th`;
 }
 
-import { usePermissions } from "../../context/PermissionContext";
-
 export default function StudentForm({ open, editingStudent, form, setForm, saving, YEARS, courses, onSave, onClose }) {
   const { can } = usePermissions();
   if (!open || !can("students.manage")) return null;
+
+  const isTransfer = form.is_transfer;
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content max-w-2xl p-6" onClick={(e) => e.stopPropagation()}>
@@ -86,6 +88,38 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
               </div>
             )}
           </div>
+
+          {!editingStudent && (
+            <div className="flex items-center gap-3 py-2 border-t border-slate-100">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={isTransfer} onChange={(e) => setForm({ ...form, is_transfer: e.target.checked })} className="sr-only peer" />
+                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+              <span className="text-xs font-medium text-slate-600">This student is a transferee</span>
+            </div>
+          )}
+
+          {isTransfer && (
+            <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 space-y-4">
+              <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wide">Previous School Information</h4>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Previous School</label>
+                <input value={form.previous_school} onChange={(e) => setForm({ ...form, previous_school: e.target.value })} className="input-field" placeholder="Name of previous school" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">School Address</label>
+                <textarea value={form.previous_school_address} onChange={(e) => setForm({ ...form, previous_school_address: e.target.value })} className="input-field resize-none" rows={2} placeholder="(optional)" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Year Level at Previous School</label>
+                <select value={form.previous_year_level} onChange={(e) => setForm({ ...form, previous_year_level: Number(e.target.value) })} className="input-field">
+                  <option value="">— Select —</option>
+                  {YEARS.map((y) => <option key={y} value={y}>{ordinal(y)} Year</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Address</label>
             <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field resize-none" rows={2} placeholder="(optional)" />

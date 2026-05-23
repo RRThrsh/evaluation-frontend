@@ -17,7 +17,7 @@ export default function StudentManager() {
     const [toast, setToast] = useState(null);
     const [search, setSearch] = useState("");
     const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", extension_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, current_semester: 1, course_id: "", enrollment_type: "regular", status: "active" });
+    const [form, setForm] = useState({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", extension_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, current_semester: 1, course_id: "", enrollment_type: "regular", status: "active", is_transfer: false, previous_school: "", previous_school_address: "", previous_year_level: "" });
     const [editingStudent, setEditingStudent] = useState(null);
     const [saving, setSaving] = useState(false);
     const [confirmAction, setConfirmAction] = useState(null);
@@ -39,14 +39,14 @@ export default function StudentManager() {
     useEffect(() => { load(); }, []);
 
     const openCreateForm = async () => {
-        setForm({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", extension_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, current_semester: 1, course_id: "", enrollment_type: "regular", status: "active" });
+        setForm({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", extension_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, current_semester: 1, course_id: "", enrollment_type: "regular", status: "active", is_transfer: false, previous_school: "", previous_school_address: "", previous_year_level: "" });
         setEditingStudent(null);
         setShowForm(true);
         try { const res = await api.get("/api/admin/students/next-number"); if (res?.data?.student_number) setForm((prev) => ({ ...prev, student_number: res.data.student_number })); } catch {}
     };
 
     const openEditForm = (student) => {
-        setForm({ email: student.email || "", student_number: student.student_number, first_name: student.first_name || "", last_name: student.last_name || "", middle_name: student.middle_name || "", extension_name: student.extension_name || "", date_of_birth: student.date_of_birth ? student.date_of_birth.slice(0, 10) : "", gender: student.gender || "", address: student.address || "", contact_number: student.contact_number || "", year_level: student.year_level || 1, current_semester: student.current_semester || 1, course_id: student.course_id || "", enrollment_type: student.enrollment_type || "regular", status: student.status || "active" });
+        setForm({ email: student.email || "", student_number: student.student_number, first_name: student.first_name || "", last_name: student.last_name || "", middle_name: student.middle_name || "", extension_name: student.extension_name || "", date_of_birth: student.date_of_birth ? student.date_of_birth.slice(0, 10) : "", gender: student.gender || "", address: student.address || "", contact_number: student.contact_number || "", year_level: student.year_level || 1, current_semester: student.current_semester || 1, course_id: student.course_id || "", enrollment_type: student.enrollment_type || "regular", status: student.status || "active", is_transfer: student.is_transfer || false, previous_school: student.previous_school || "", previous_school_address: student.previous_school_address || "", previous_year_level: student.previous_year_level || "" });
         setEditingStudent(student.id);
         setShowForm(true);
     };
@@ -57,10 +57,10 @@ export default function StudentManager() {
         setSaving(true);
         try {
             if (editingStudent) {
-                await api.put(`/api/admin/students/${editingStudent}`, sanitizeObject({ email: form.email.trim() || null, first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, extension_name: form.extension_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null, enrollment_type: form.enrollment_type, status: form.status }));
+                await api.put(`/api/admin/students/${editingStudent}`, sanitizeObject({ email: form.email.trim() || null, first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, extension_name: form.extension_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null, enrollment_type: form.enrollment_type, status: form.status, is_transfer: form.is_transfer, previous_school: form.previous_school.trim() || null, previous_school_address: form.previous_school_address.trim() || null, previous_year_level: form.previous_year_level || null }));
                 showToast("Student updated");
             } else {
-                await api.post("/api/admin/students", sanitizeObject({ email: form.email.trim() || null, student_number: form.student_number.toUpperCase(), first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, extension_name: form.extension_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null, enrollment_type: form.enrollment_type }));
+                await api.post("/api/admin/students", sanitizeObject({ email: form.email.trim() || null, student_number: form.student_number.toUpperCase(), first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, extension_name: form.extension_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null, enrollment_type: form.enrollment_type, is_transfer: form.is_transfer, previous_school: form.previous_school.trim() || null, previous_school_address: form.previous_school_address.trim() || null, previous_year_level: form.previous_year_level || null }));
                 showToast("Student created");
             }
             setShowForm(false); await load();

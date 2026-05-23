@@ -152,7 +152,7 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
               <div className="p-5 grid grid-cols-2 gap-4 text-sm">
                 <Field label="Student No." value={profileData.student_number} />
                 <Field label="Full Name" value={fullName(profileData)} />
-                <Field label="Email" value={profileData.email} />
+                <Field label="Email" value={profileData.email || "\u2014"} />
                 <Field label="Date of Birth" value={formatDate(profileData.date_of_birth)} />
                 <Field label="Gender" value={profileData.gender || "\u2014"} />
                 <Field label="Contact No." value={profileData.contact_number || "\u2014"} />
@@ -160,6 +160,16 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                 <Field label="Course" value={profileData.course_name || "\u2014"} />
                 <Field label="Year Level" value={profileData.year_level ? `${ordinal(profileData.year_level)} Year` : "\u2014"} />
                 <Field label="Current Semester" value={profileData.current_semester ? `${ordinal(profileData.current_semester)} Semester` : "\u2014"} />
+                {profileData.is_transfer && (
+                  <>
+                    <div className="col-span-2 border-t border-blue-100 pt-3 mt-1">
+                      <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wide">Transfer Information</span>
+                    </div>
+                    <Field label="Previous School" value={profileData.previous_school || "\u2014"} />
+                    <Field label="School Address" value={profileData.previous_school_address || "\u2014"} />
+                    <Field label="Previous Year Level" value={profileData.previous_year_level ? `${ordinal(profileData.previous_year_level)} Year` : "\u2014"} />
+                  </>
+                )}
               </div>
             ) : (
               <div className="p-10 text-center text-sm text-slate-400">No data available</div>

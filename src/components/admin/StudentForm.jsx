@@ -23,14 +23,10 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
         </div>
         <form onSubmit={onSave} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Email</label>
-            <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-field" placeholder="student@example.com" required={!editingStudent} />
-          </div>
-          <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Student Number {!editingStudent && <span className="text-primary-500 font-normal">(auto-generated)</span>}</label>
             <input value={form.student_number} readOnly className="input-field bg-slate-50 text-slate-500 uppercase cursor-not-allowed" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">First Name</label>
               <input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} className="input-field" required />
@@ -43,8 +39,22 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
               <label className="block text-xs font-medium text-slate-500 mb-1">Last Name</label>
               <input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} className="input-field" required />
             </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Extension</label>
+              <input value={form.extension_name} onChange={(e) => setForm({ ...form, extension_name: e.target.value })} className="input-field" placeholder="Jr., III" />
+            </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Email</label>
+              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-field" placeholder="student@example.com" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Contact Number</label>
+              <input value={form.contact_number} onChange={(e) => setForm({ ...form, contact_number: e.target.value })} className="input-field" placeholder="09XX-XXX-XXXX" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Date of Birth</label>
               <input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} className="input-field" />
@@ -57,9 +67,24 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Contact Number</label>
-              <input value={form.contact_number} onChange={(e) => setForm({ ...form, contact_number: e.target.value })} className="input-field" placeholder="09XX-XXX-XXXX" />
+              <label className="block text-xs font-medium text-slate-500 mb-1">Enrollment Type</label>
+              <select value={form.enrollment_type} onChange={(e) => setForm({ ...form, enrollment_type: e.target.value })} className="input-field">
+                <option value="regular">Regular</option>
+                <option value="irregular">Irregular</option>
+              </select>
             </div>
+            {editingStudent && (
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Status</label>
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="input-field">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="graduated">Graduated</option>
+                  <option value="dropped">Dropped</option>
+                  <option value="transferred">Transferred</option>
+                </select>
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Address</label>

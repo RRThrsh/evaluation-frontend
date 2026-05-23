@@ -174,7 +174,6 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
 
   const activeSubjects = subjects.filter((s) => s.is_active !== false);
   const enrolledSubjectIds = new Set(studentSubjects.map((ss) => ss.subject_id));
-  const availableSubjects = activeSubjects.filter((s) => !enrolledSubjectIds.has(s.id));
   const previewSubjects = activeSubjects.filter((s) => s.course_id === student.course_id && s.year_level === enrollYear && s.semester === enrollSem);
   const toEnroll = previewSubjects.filter((s) => !enrolledSubjectIds.has(s.id));
 
@@ -364,16 +363,6 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                 </table>
               )}
             </div>
-
-            {availableSubjects.length > 0 && (
-              <div className="flex gap-2">
-                <select value={enrollSubjectId} onChange={(e) => setEnrollSubjectId(e.target.value)} className="input-field flex-1">
-                  <option value="">Enroll in a subject...</option>
-                  {availableSubjects.map((s) => <option key={s.id} value={s.id}>{s.subject_code} — {s.subject_name} (Y{s.year_level} S{s.semester})</option>)}
-                </select>
-                {can("students.manage") && <button onClick={handleEnroll} disabled={!enrollSubjectId || saving} className="btn btn-primary btn-sm">{saving ? "..." : "Enroll"}</button>}
-              </div>
-            )}
           </>
         )}
 

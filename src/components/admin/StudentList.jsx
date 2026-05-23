@@ -58,8 +58,9 @@ function StudentTable({ students, onSelect, onEdit, onDelete }) {
             <th className="px-5 py-3">Name</th>
             <th className="px-5 py-3">Year</th>
             <th className="px-5 py-3">Program</th>
+            <th className="px-5 py-3">Type</th>
+            <th className="px-5 py-3">Status</th>
             <th className="px-5 py-3">Subjects</th>
-            <th className="px-5 py-3">Contact</th>
             {can("students.manage") && <th className="px-5 py-3 w-28">Actions</th>}
           </tr>
         </thead>
@@ -73,9 +74,14 @@ function StudentTable({ students, onSelect, onEdit, onDelete }) {
               </td>
               <td className="table-cell text-slate-500">{s.course_code || "\u2014"}</td>
               <td className="table-cell">
+                <span className={`badge ${s.enrollment_type === "irregular" ? "badge-amber" : "badge-green"}`}>{s.enrollment_type || "regular"}</span>
+              </td>
+              <td className="table-cell">
+                <span className={`badge ${s.status === "active" ? "badge-green" : s.status === "graduated" ? "badge-blue" : s.status === "dropped" || s.status === "transferred" ? "badge-red" : "badge-gray"}`}>{s.status || "active"}</span>
+              </td>
+              <td className="table-cell">
                 <span className="badge badge-blue">{s.enrolled_count ?? 0} subjects</span>
               </td>
-              <td className="table-cell text-slate-400">{s.contact_number || "\u2014"}</td>
               {can("students.manage") && (
               <td className="table-cell">
                 <div onClick={(e) => e.stopPropagation()} className="flex gap-1">

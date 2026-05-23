@@ -24,7 +24,6 @@ const SIMPLE_PERMS = [
   { key: "class-subjects",  label: "Class Subjects" },
   { key: "pre-evaluate",    label: "Pre-Evaluate" },
   { key: "pre-enrolled",    label: "Pre-Enrolled" },
-  { key: "import-logs",     label: "Import Logs" },
   { key: "permissions",     label: "Permissions" },
   { key: "snapshots",       label: "Snapshots" },
 ];

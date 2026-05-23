@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight, ClipboardCheck, ClipboardList, Layers, UserCircle, Activity, X, Clipboard, Upload, Shield, History } from "lucide-react";
+import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight, ClipboardCheck, ClipboardList, Layers, UserCircle, Activity, X, Clipboard, Shield, History } from "lucide-react";
 import { useState, useMemo } from "react";
 
 export function NavItem({ icon: Icon, label, active, onClick }) {
@@ -47,7 +47,6 @@ const NAV_ITEMS = {
     { key: "all-users", label: "All Users", icon: Users },
     { key: "audit-logs", label: "Audit Trail", icon: FileText },
     { key: "evaluator-logs", label: "Evaluator Logs", icon: Activity },
-    { key: "import-logs", label: "Import Logs", icon: Upload },
     { key: "academic_config", label: "Academic Config", icon: Settings },
     { key: "sessions", label: "Active Sessions", icon: Users },
     { key: "permissions", label: "Permissions", icon: Shield },
@@ -71,7 +70,6 @@ const PERMISSION_MAP = {
   "all-users": "user-management.view",
   "audit-logs": "audit-logs",
   "evaluator-logs": "evaluator-logs",
-  "import-logs": "import-logs",
   academic_config: "academic-config",
   sessions: "sessions",
   permissions: "permissions",

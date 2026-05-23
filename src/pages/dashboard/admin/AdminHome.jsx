@@ -26,7 +26,6 @@ const EnrolledStudents = lazy(() => import("../../../components/admin/EnrolledSt
 const SectionManager = lazy(() => import("../../../components/admin/SectionManager"));
 const InstructorManager = lazy(() => import("../../../components/admin/InstructorManager"));
 const ClassSubject = lazy(() => import("../../../components/admin/ClassSubject"));
-const ImportLogs = lazy(() => import("../../../components/admin/ImportLogs"));
 const PermissionManager = lazy(() => import("../../../components/admin/PermissionManager"));
 const Snapshots = lazy(() => import("../../../components/admin/Snapshots"));
 
@@ -166,7 +165,6 @@ export default function AdminHome() {
             {activeTab === "instructors" && <InstructorManager />}
             {activeTab === "sessions" && <SessionManager />}
             {activeTab === "class-subjects" && <ClassSubject />}
-            {activeTab === "import-logs" && <ImportLogs />}
             {activeTab === "permissions" && <PermissionManager />}
             {activeTab === "snapshots" && <Snapshots />}
             {activeTab === "database" && <DatabaseViewer selectedTable={selectedTable} tableData={tableData} tableLoading={tableLoading} onLoadTable={loadTable} />}

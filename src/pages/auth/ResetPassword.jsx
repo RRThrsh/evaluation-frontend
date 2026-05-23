@@ -15,7 +15,8 @@ const ResetPassword = () => {
     e.preventDefault();
     setError("");
     if (!password || !confirm) { setError("All fields are required"); return; }
-    if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
+    if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/.test(password)) { setError("Password must contain uppercase, lowercase, number, and special character"); return; }
     if (password !== confirm) { setError("Passwords do not match"); return; }
     setLoading(true);
     try {

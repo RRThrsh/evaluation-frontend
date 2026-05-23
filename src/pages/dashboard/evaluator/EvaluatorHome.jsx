@@ -199,14 +199,7 @@ export default function EvaluatorHome() {
   const nextColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
     { key: "subject_name", label: "Subject", width: "40%" },
-    { key: "prerequisite", label: "Prereq", width: "30%", render: (s) => {
-      if (s.prerequisite) {
-        const badge = s.prereq_failed ? "badge badge-red" : s.prereq_met ? "badge badge-green" : "badge badge-yellow";
-        const label = s.prereq_failed ? "FAILED" : s.prereq_met ? "OK" : "PENDING";
-        return <span className="flex flex-col gap-0.5"><span className={`${badge} w-fit`}>{s.prerequisite} ({label})</span>{s.prereq_name && <span className="text-[10px] text-slate-400 leading-tight">{s.prereq_name}</span>}</span>;
-      }
-      return <span className="text-slate-300">—</span>;
-    }},
+    { key: "prerequisite", label: "Prereq", width: "30%", render: (s) => s.prerequisite || "\u2014" },
     { key: "is_retake", label: "", width: "15%", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
   ], []);
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Lock, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import api from "../../services/api";
+import { sanitizeInput } from "../../utils/sanitize";
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -20,7 +21,7 @@ const ResetPassword = () => {
     if (password !== confirm) { setError("Passwords do not match"); return; }
     setLoading(true);
     try {
-      const res = await api.post("/api/auth/reset-password", { token, password });
+      const res = await api.post("/api/auth/reset-password", { token: sanitizeInput(token), password });
       if (res.success) setSuccess(true);
     } catch (err) {
       setError(err.message);

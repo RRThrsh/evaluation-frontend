@@ -18,7 +18,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const data = await forgotPassword(sanitizeInput(email));
-      setResetUrl(data.resetUrl || "");
+      setResetUrl(data?.data?.resetUrl || "");
       setSent(true);
     } catch (err) {
       setError(err.message);

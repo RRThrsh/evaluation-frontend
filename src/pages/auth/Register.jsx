@@ -26,8 +26,24 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     if (form.password !== form.confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/.test(form.password)) {
+      setError("Password must contain uppercase, lowercase, number, and special character.");
+      return;
+    }
+
+    if (!agreed) {
+      setError("You must agree to the Terms and Privacy Policy.");
       return;
     }
     if (!agreed) {
@@ -82,7 +98,7 @@ const Register = () => {
               <label className="text-xs font-medium text-slate-600 mb-1.5 block">Password</label>
               <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Lock size={15} /></div>
-                <input type={showPassword ? "text" : "password"} name="password" value={form.password} onChange={handleChange} placeholder="Min. 6 characters" className="input-field pl-9 pr-10" required />
+                <input type={showPassword ? "text" : "password"} name="password" value={form.password} onChange={handleChange}                   placeholder="Min. 8 characters" className="input-field pl-9 pr-10" required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>

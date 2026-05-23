@@ -105,7 +105,21 @@ export default function StudentManager() {
             {selectedStudent && <StudentSubjectsModal student={selectedStudent} subjects={subjects} config={config} onClose={() => setSelectedStudent(null)} onToast={showToast} />}
 
             {wizardStudent && wizardCurriculum.length > 0 && (
-              <StudentGradeWizard student={wizardStudent} curriculum={wizardCurriculum} onClose={() => { setWizardStudent(null); setWizardCurriculum([]); }} onToast={showToast} />
+              <StudentGradeWizard
+                student={wizardStudent}
+                curriculum={wizardCurriculum}
+                onClose={async () => {
+                  try {
+                    await api.delete(`/api/admin/students/${wizardStudent.id}`);
+                    showToast("Student creation cancelled");
+                    await load();
+                  } catch {}
+                  setWizardStudent(null);
+                  setWizardCurriculum([]);
+                }}
+                onDone={() => { setWizardStudent(null); setWizardCurriculum([]); }}
+                onToast={showToast}
+              />
             )}
 
             <StudentList students={filteredStudents} allStudents={students} loading={loading} search={search} setSearch={setSearch} onSelect={setSelectedStudent} onEdit={openEditForm} onAdd={openCreateForm} onDelete={(s) => setConfirmAction({ id: s.id, name: `${s.first_name} ${s.last_name}` })} />

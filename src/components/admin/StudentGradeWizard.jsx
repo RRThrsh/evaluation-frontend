@@ -11,7 +11,7 @@ function ordinal(n) {
 
 const SEM_LABELS = { 1: "Sem 1", 2: "Sem 2", 3: "Sem 3" };
 
-export default function StudentGradeWizard({ student, curriculum, onClose, onToast }) {
+export default function StudentGradeWizard({ student, curriculum, onClose, onDone, onToast }) {
   const [step, setStep] = useState(0);
   const [grades, setGrades] = useState({});
   const [saving, setSaving] = useState(false);
@@ -67,7 +67,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onToa
           <p className="text-sm text-slate-500 mt-1">
             {gradedCount} of {subjectCount} subjects graded
           </p>
-          <button onClick={onClose} className="btn btn-primary btn-md mt-6">Done</button>
+          <button onClick={onDone} className="btn btn-primary btn-md mt-6">Done</button>
         </div>
       </div>
     );

@@ -71,13 +71,15 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
                 {GENDERS.map((g) => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Enrollment Type</label>
-              <select value={form.enrollment_type} onChange={(e) => setForm({ ...form, enrollment_type: e.target.value })} className="input-field">
-                <option value="regular">Regular</option>
-                <option value="irregular">Irregular</option>
-              </select>
-            </div>
+            {editingStudent && (
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Enrollment Type</label>
+                <select value={form.enrollment_type} onChange={(e) => setForm({ ...form, enrollment_type: e.target.value })} className="input-field">
+                  <option value="regular">Regular</option>
+                  <option value="irregular">Irregular</option>
+                </select>
+              </div>
+            )}
             {editingStudent && (
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Status</label>

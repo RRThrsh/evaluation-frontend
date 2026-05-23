@@ -55,8 +55,10 @@ export default function AcademicRecord({ studentId, curriculum: propCurriculum, 
     );
   }
 
+  const takenData = data.filter((sub) => sub.enrollment_status);
+
   const byYearSem = {};
-  for (const sub of data) {
+  for (const sub of takenData) {
     const key = `${sub.year_level}-${sub.semester}`;
     if (!byYearSem[key]) byYearSem[key] = { year: sub.year_level, sem: sub.semester, subjects: [] };
     byYearSem[key].subjects.push(sub);
@@ -80,12 +82,23 @@ export default function AcademicRecord({ studentId, curriculum: propCurriculum, 
   let totalFailed = 0;
   let totalInc = 0;
 
-  for (const sub of data) {
-    if (!sub.enrollment_status) continue;
+  for (const sub of takenData) {
     totalUnits += Number(sub.units || 0);
     if (isPassed(sub.grade)) totalPassed++;
     else if (isFailed(sub.grade)) totalFailed++;
     else totalInc++;
+  }
+
+  if (sections.length === 0) {
+    return (
+      <div className="card overflow-hidden">
+        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+          <span className="text-sm font-semibold text-slate-800">Academic Record</span>
+          {onBack && <button onClick={onBack} className="btn btn-ghost btn-sm">Back</button>}
+        </div>
+        <div className="p-10 text-center text-sm text-slate-400">No subjects taken yet</div>
+      </div>
+    );
   }
 
   return (
@@ -130,8 +143,8 @@ export default function AcademicRecord({ studentId, curriculum: propCurriculum, 
                     </td>
                     <td className="table-cell text-center text-slate-600">{sub.units}</td>
                     <td className="table-cell text-center">
-                      {sub.enrollment_status ? <GradeBadge grade={sub.grade} /> : <span className="text-[10px] text-slate-300 italic">Not taken</span>}
-                    </td>
+                        <GradeBadge grade={sub.grade} />
+                      </td>
                   </tr>
                 ))}
               </tbody>

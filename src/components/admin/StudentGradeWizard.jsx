@@ -51,6 +51,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [enrollmentType, setEnrollmentType] = useState(null);
 
   const sections = useMemo(() => {
     const byYearSem = {};
@@ -83,7 +84,8 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     try {
       const allSubjects = sections.flatMap((s) => s.subjects);
       const subjects = allSubjects.map((sub) => ({ subject_id: sub.id, grade: grades[sub.id] || null }));
-      await api.post(`/api/admin/students/${student.id}/bulk-enroll`, { subjects });
+      const res = await api.post(`/api/admin/students/${student.id}/bulk-enroll`, { subjects });
+      setEnrollmentType(res.data?.enrollment_type || (res.data?.data?.enrollment_type) || null);
       onToast("Grades saved");
       setDone(true);
     } catch (err) {
@@ -108,6 +110,11 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
           <p className="text-xs text-slate-400 mt-1">
             {gradedCount} with grade{gradedCount !== 1 ? "s" : ""} &middot; {subjectCount - gradedCount} marked as INC
           </p>
+          {enrollmentType && (
+            <p className="text-xs mt-2">
+              Enrollment: <span className={`font-semibold ${enrollmentType === "regular" ? "text-emerald-600" : "text-amber-600"}`}>{enrollmentType}</span>
+            </p>
+          )}
           <button onClick={onDone} className="btn btn-primary btn-md mt-6 w-full">Done</button>
         </div>
       </div>

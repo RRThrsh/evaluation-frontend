@@ -39,8 +39,6 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
   const [profileData, setProfileData] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [managingSubjects, setManagingSubjects] = useState(false);
-  const [editingGradeId, setEditingGradeId] = useState(null);
-  const [gradeInputs, setGradeInputs] = useState({});
   const [enrollYear, setEnrollYear] = useState(1);
   const [enrollSem, setEnrollSem] = useState(1);
   const [saving, setSaving] = useState(false);
@@ -63,11 +61,6 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
 
   const loadSubjects = async () => {
     try { const d = await api.get(`/api/admin/students/${student.id}/subjects`); setStudentSubjects(d.data ?? []); }
-    catch (err) { onToast(err.message, "error"); }
-  };
-
-  const handleGrade = async (ssId, grade) => {
-    try { await api.put(`/api/admin/students/grade/${ssId}`, { grade }); onToast("Grade saved"); await loadSubjects(); }
     catch (err) { onToast(err.message, "error"); }
   };
 
@@ -275,8 +268,6 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                       <th className="px-5 py-3">Type</th>
                       <th className="px-5 py-3">Units</th>
                       <th className="px-5 py-3">Grade</th>
-                      <th className="px-5 py-3">Status</th>
-                      {can("students.manage") && <th className="px-5 py-3 w-16" />}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -286,29 +277,11 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                           <span className="font-mono font-medium text-slate-800">{ss.subject_code}</span>
                           <p className="text-[11px] text-slate-500">{ss.subject_name}</p>
                         </td>
-                        <td className="table-cell"><span className={`badge ${ss.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{ss.subject_type}</span></td>
-                        <td className="table-cell text-slate-600">{ss.units}</td>
                         <td className="table-cell">
-                          {editingGradeId === ss.id ? (
-                            <input type="number" min={0} max={100}
-                              value={gradeInputs[ss.id] ?? ss.grade ?? ""}
-                              onChange={(e) => setGradeInputs({ ...gradeInputs, [ss.id]: e.target.value })}
-                              onBlur={(e) => { const val = e.target.value; if (val) handleGrade(ss.id, Number(val)); setEditingGradeId(null); }}
-                              onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); if (e.key === "Escape") setEditingGradeId(null); }}
-                              className="input-field w-16 py-1 text-xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              autoFocus />
-                          ) : (
-                            <span className="text-sm text-slate-700 font-medium">{ss.grade ?? "—"}</span>
-                          )}
+                          <span className={`badge ${ss.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{ss.subject_type}</span>
                         </td>
+                        <td className="table-cell text-slate-600">{ss.units}</td>
                         <td className="table-cell">{ss.grade ? <span className="badge badge-green">{ss.grade}</span> : <span className="badge badge-yellow">INC</span>}</td>
-                        {can("students.manage") && (
-                          <td className="table-cell">
-                            <button onClick={() => { setEditingGradeId(ss.id); setGradeInputs({ ...gradeInputs, [ss.id]: ss.grade ?? "" }); }} className="btn btn-ghost btn-sm text-amber-500">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                            </button>
-                          </td>
-                        )}
                       </tr>
                     ))}
                   </tbody>

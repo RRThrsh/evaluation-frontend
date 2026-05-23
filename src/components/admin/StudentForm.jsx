@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { usePermissions } from "../../context/PermissionContext";
+import { sanitizeInput } from "../../utils/sanitize";
 
 const GENDERS = ["Male", "Female", "Other"];
 
@@ -15,6 +16,8 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
   if (!open || !can("students.manage")) return null;
 
   const isTransfer = form.is_transfer;
+  const s = (fn) => (e) => setForm({ ...form, [fn]: sanitizeInput(e.target.value) });
+  const sNum = (fn) => (e) => setForm({ ...form, [fn]: e.target.value.replace(/\D/g, "") });
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -31,29 +34,29 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">First Name</label>
-              <input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} className="input-field" required />
+              <input value={form.first_name} onChange={s("first_name")} className="input-field" required />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Middle Name</label>
-              <input value={form.middle_name} onChange={(e) => setForm({ ...form, middle_name: e.target.value })} className="input-field" placeholder="(optional)" />
+              <input value={form.middle_name} onChange={s("middle_name")} className="input-field" placeholder="(optional)" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Last Name</label>
-              <input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} className="input-field" required />
+              <input value={form.last_name} onChange={s("last_name")} className="input-field" required />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Extension</label>
-              <input value={form.extension_name} onChange={(e) => setForm({ ...form, extension_name: e.target.value })} className="input-field" placeholder="Jr., III" />
+              <input value={form.extension_name} onChange={s("extension_name")} className="input-field" placeholder="Jr., III" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Email</label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-field" placeholder="student@example.com" />
+              <input type="email" value={form.email} onChange={s("email")} className="input-field" placeholder="student@example.com" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Contact Number</label>
-              <input value={form.contact_number} onChange={(e) => setForm({ ...form, contact_number: e.target.value })} className="input-field" placeholder="09XX-XXX-XXXX" />
+              <input value={form.contact_number} onChange={sNum("contact_number")} className="input-field" placeholder="09XX-XXX-XXXX" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -104,11 +107,11 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
               <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wide">Previous School Information</h4>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Previous School</label>
-                <input value={form.previous_school} onChange={(e) => setForm({ ...form, previous_school: e.target.value })} className="input-field" placeholder="Name of previous school" />
+                <input value={form.previous_school} onChange={s("previous_school")} className="input-field" placeholder="Name of previous school" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">School Address</label>
-                <textarea value={form.previous_school_address} onChange={(e) => setForm({ ...form, previous_school_address: e.target.value })} className="input-field resize-none" rows={2} placeholder="(optional)" />
+                <textarea value={form.previous_school_address} onChange={s("previous_school_address")} className="input-field resize-none" rows={2} placeholder="(optional)" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Year Level at Previous School</label>
@@ -122,7 +125,7 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
 
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Address</label>
-            <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field resize-none" rows={2} placeholder="(optional)" />
+            <textarea value={form.address} onChange={s("address")} className="input-field resize-none" rows={2} placeholder="(optional)" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>

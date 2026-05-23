@@ -8,7 +8,7 @@ function ordinal(n) {
   return `${n}th`;
 }
 
-const SEM_LABELS = { 1: "Sem 1", 2: "Sem 2", 3: "Sem 3" };
+const SEM_LABELS = { 1: "Sem 1", 2: "Sem 2" };
 
 function GradeBadge({ grade }) {
   if (!grade) return <span className="badge badge-yellow">INC</span>;

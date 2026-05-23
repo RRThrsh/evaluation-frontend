@@ -13,47 +13,6 @@ const SECTIONS = [
     ],
   },
   {
-    title: "Grading",
-    icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z",
-    fields: [
-      { key: "passing_grade", label: "Passing Grade", type: "number", placeholder: "75", desc: "Minimum score required to pass a subject" },
-      { key: "grade_pass_letters", label: "Passing Letters", type: "text", placeholder: "P", desc: "Letter grades treated as pass (comma-separated)" },
-      { key: "grade_fail_letters", label: "Failing Letters", type: "text", placeholder: "F,INC,W,D", desc: "Letter grades treated as fail (comma-separated)" },
-    ],
-    groups: [
-      {
-        label: "Prelim",
-        fields: [
-          { key: "exam_weight_prelim", label: "Exam Weight (%)", type: "number", placeholder: "60", desc: "Weight of exam score in Prelim grade computation" },
-          { key: "qar_weight_prelim", label: "QAR Weight (%)", type: "number", placeholder: "40", desc: "Weight of QAR score in Prelim grade computation" },
-        ],
-      },
-      {
-        label: "Midterm",
-        fields: [
-          { key: "exam_weight_midterm", label: "Exam Weight (%)", type: "number", placeholder: "60", desc: "Weight of exam score in Midterm grade computation" },
-          { key: "qar_weight_midterm", label: "QAR Weight (%)", type: "number", placeholder: "40", desc: "Weight of QAR score in Midterm grade computation" },
-        ],
-      },
-      {
-        label: "Finals",
-        fields: [
-          { key: "exam_weight_finals", label: "Exam Weight (%)", type: "number", placeholder: "60", desc: "Weight of exam score in Finals grade computation" },
-          { key: "qar_weight_finals", label: "QAR Weight (%)", type: "number", placeholder: "40", desc: "Weight of QAR score in Finals grade computation" },
-        ],
-      },
-      {
-        label: "General Average",
-        sub: "(Prelim + Midterm + Finals) ÷ 3",
-        fields: [
-          { key: "general_average_divider", label: "Divider Value (N)", type: "number", placeholder: "3", desc: "General Average = (Prelim + Midterm + Finals) ÷ N" },
-          { key: "grade_bonus", label: "Grade Bonus", type: "number", placeholder: "0", desc: "Value added to each period's computed grade (e.g. 42)" },
-          { key: "grade_floor", label: "Grade Floor", type: "number", placeholder: "70", desc: "Minimum grade — if computed grade is below this, it's bumped up" },
-        ],
-      },
-    ],
-  },
-  {
     title: "Progression & Limits",
     icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6",
     fields: [
@@ -111,7 +70,7 @@ export default function AcademicConfigManager() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Academic Configuration</h2>
-          <p className="text-sm text-slate-500 mt-1">Manage grading rules, academic periods, and progression limits</p>
+          <p className="text-sm text-slate-500 mt-1">Manage academic periods, progression limits, and system settings</p>
         </div>
       </div>
 

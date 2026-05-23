@@ -23,7 +23,6 @@ const SessionManager = lazy(() => import("../../../components/admin/SessionManag
 const AdminPreEvaluate = lazy(() => import("../../../components/admin/AdminPreEvaluate"));
 const AdminPreEnrolled = lazy(() => import("../../../components/admin/AdminPreEnrolled"));
 const EnrolledStudents = lazy(() => import("../../../components/admin/EnrolledStudents"));
-const Grading = lazy(() => import("../../../components/admin/Grading"));
 const SectionManager = lazy(() => import("../../../components/admin/SectionManager"));
 const InstructorManager = lazy(() => import("../../../components/admin/InstructorManager"));
 const ClassSubject = lazy(() => import("../../../components/admin/ClassSubject"));
@@ -44,7 +43,6 @@ export default function AdminHome() {
   const [activeTab, setActiveTab] = useState("overview");
   const [activeGroup, setActiveGroup] = useState(null);
   const [selectedTable, setSelectedTable] = useState(null);
-  const [gradingPeriod, setGradingPeriod] = useState(null);
   const [tableData, setTableData] = useState(null);
   const [tableLoading, setTableLoading] = useState(false);
 
@@ -69,9 +67,8 @@ export default function AdminHome() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const navigateTab = (key, period) => {
+  const navigateTab = (key) => {
     setActiveTab(key);
-    setGradingPeriod(key === "grading" ? period || null : null);
     setSelectedTable(null);
     setSidebarOpen(false);
   };
@@ -132,7 +129,7 @@ export default function AdminHome() {
     <div className="min-h-screen bg-slate-50">
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" />}
 
-        <AdminSidebar activeTab={activeTab} onNavigate={navigateTab} availableGroups={availableGroups} activeGroup={activeGroup} setActiveGroup={setActiveGroup} selectedTable={selectedTable} onSelectTable={loadTable} user={user} logout={logout} gradingPeriod={gradingPeriod} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} userPermissions={userPermissions} isSuperAdmin={isSuperAdmin} />
+        <AdminSidebar activeTab={activeTab} onNavigate={navigateTab} availableGroups={availableGroups} activeGroup={activeGroup} setActiveGroup={setActiveGroup} selectedTable={selectedTable} onSelectTable={loadTable} user={user} logout={logout} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} userPermissions={userPermissions} isSuperAdmin={isSuperAdmin} />
 
       <div className="md:ml-64">
         <AdminHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} activeTab={activeTab} error={error} />
@@ -164,7 +161,7 @@ export default function AdminHome() {
             {activeTab === "pre-evaluate" && <AdminPreEvaluate />}
             {activeTab === "pre-enrolled" && <AdminPreEnrolled />}
             {activeTab === "enrolled" && <EnrolledStudents />}
-            {activeTab === "grading" && <Grading defaultPeriod={gradingPeriod} />}
+
             {activeTab === "sections" && <SectionManager />}
             {activeTab === "instructors" && <InstructorManager />}
             {activeTab === "sessions" && <SessionManager />}

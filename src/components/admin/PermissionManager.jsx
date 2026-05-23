@@ -9,7 +9,7 @@ const FEATURES = [
   { key: "users",             label: "Pending Approvals" },
   { key: "user-management",   label: "All Users" },
   { key: "enrolled-students", label: "Enrolled Students" },
-  { key: "grading",           label: "Grading" },
+
   { key: "sections",          label: "Sections" },
   { key: "instructors",       label: "Instructors" },
   { key: "database",          label: "Database Explorer" },

@@ -10,8 +10,6 @@ const FEATURES = [
   { key: "user-management",   label: "All Users" },
   { key: "enrolled-students", label: "Enrolled Students" },
 
-  { key: "sections",          label: "Sections" },
-  { key: "instructors",       label: "Instructors" },
   { key: "database",          label: "Database Explorer" },
 ];
 

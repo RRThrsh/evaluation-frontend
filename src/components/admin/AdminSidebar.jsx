@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight, ClipboardCheck, ClipboardList, Layers, UserCircle, Activity, X, Clipboard, Shield, History } from "lucide-react";
+import { GraduationCap, LayoutDashboard, Database, BookOpen, BookText, Users, UserCheck, FileText, Settings, LogOut, ChevronDown, ChevronRight, ClipboardCheck, ClipboardList, Activity, X, Clipboard, Shield, History } from "lucide-react";
 import { useState, useMemo } from "react";
 
 export function NavItem({ icon: Icon, label, active, onClick }) {
@@ -38,8 +38,7 @@ const NAV_ITEMS = {
     { key: "pre-evaluate", label: "Pre-Evaluate", icon: ClipboardCheck },
     { key: "pre-enrolled", label: "Pre-Enrolled", icon: ClipboardList },
     { key: "enrolled", label: "Enrolled Students", icon: UserCheck },
-    { key: "sections", label: "Sections", icon: Layers },
-    { key: "instructors", label: "Instructors", icon: UserCircle },
+
     { key: "users", label: "Pending Approvals", icon: UserCheck },
     { key: "class-subjects", label: "Class Subjects", icon: Clipboard },
   ],
@@ -63,8 +62,7 @@ const PERMISSION_MAP = {
   "pre-evaluate": "pre-evaluate",
   "pre-enrolled": "pre-enrolled",
   enrolled: "enrolled-students.view",
-  sections: "sections.view",
-  instructors: "instructors.view",
+
   users: "users.view",
   "class-subjects": "class-subjects",
   "all-users": "user-management.view",

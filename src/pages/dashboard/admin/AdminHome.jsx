@@ -23,8 +23,6 @@ const SessionManager = lazy(() => import("../../../components/admin/SessionManag
 const AdminPreEvaluate = lazy(() => import("../../../components/admin/AdminPreEvaluate"));
 const AdminPreEnrolled = lazy(() => import("../../../components/admin/AdminPreEnrolled"));
 const EnrolledStudents = lazy(() => import("../../../components/admin/EnrolledStudents"));
-const SectionManager = lazy(() => import("../../../components/admin/SectionManager"));
-const InstructorManager = lazy(() => import("../../../components/admin/InstructorManager"));
 const ClassSubject = lazy(() => import("../../../components/admin/ClassSubject"));
 const PermissionManager = lazy(() => import("../../../components/admin/PermissionManager"));
 const Snapshots = lazy(() => import("../../../components/admin/Snapshots"));
@@ -161,9 +159,6 @@ export default function AdminHome() {
             {activeTab === "pre-enrolled" && <AdminPreEnrolled />}
             {activeTab === "enrolled" && <EnrolledStudents />}
 
-            {activeTab === "sections" && <SectionManager />}
-            {activeTab === "instructors" && <InstructorManager />}
-            {activeTab === "sessions" && <SessionManager />}
             {activeTab === "class-subjects" && <ClassSubject />}
             {activeTab === "permissions" && <PermissionManager />}
             {activeTab === "snapshots" && <Snapshots />}

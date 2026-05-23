@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Search, X, Eye, ChevronLeft, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
+import { usePermissions } from "../../context/PermissionContext";
 import api from "../../services/api";
 
 function SubjectTable({ title, subjects, columns }) {
@@ -32,8 +33,20 @@ function SubjectTable({ title, subjects, columns }) {
   );
 }
 
+function formatNote(raw) {
+  const txt = raw.replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&#39;/g, "'");
+  const prereqMatch = txt.match(/Prerequisite "(.+?)" for "(.+?)" is FAILED/);
+  if (prereqMatch) return `${prereqMatch[2]} requires ${prereqMatch[1]} — must retake first`;
+  const awaitMatch = txt.match(/(\d+) currently enrolled subject/);
+  if (awaitMatch) return `${awaitMatch[1]} subject(s) still awaiting grading`;
+  const notOfferedMatch = txt.match(/previously failed subject\(s\) NOT offered next semester: (.+)/);
+  if (notOfferedMatch) return `Failed subject(s) not offered next semester: ${notOfferedMatch[1]}`;
+  return txt;
+}
+
 function EvalModal({ request, onClose, onPreEnroll }) {
   const overlayRef = useRef(null);
+  const { can } = usePermissions();
   const [evalData, setEvalData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [preEnrolling, setPreEnrolling] = useState(false);
@@ -71,13 +84,13 @@ function EvalModal({ request, onClose, onPreEnroll }) {
   const nextColumns = [
     { key: "subject_code", label: "Code" },
     { key: "subject_name", label: "Subject" },
-    { key: "prerequisite", label: "Prereq", render: (s) => s.prerequisite || "\u2014" },
+    { key: "prerequisite", label: "Prereq", render: (s) => s.prerequisite ? <span className="flex flex-col gap-0.5"><span className="font-mono">{s.prerequisite}</span>{s.prereq_name && <span className="text-[10px] text-slate-400 leading-tight">{s.prereq_name}</span>}</span> : "\u2014" },
   ];
 
   const overallBadge = (overall) => {
     if (overall === "qualified") return <span className="badge badge-green text-sm px-3 py-1">Qualified</span>;
     if (overall === "conditional") return <span className="badge badge-yellow text-sm px-3 py-1">Conditional</span>;
-    return <span className="badge badge-red text-sm px-3 py-1">Disqualified</span>;
+    return null;
   };
 
   return (
@@ -112,7 +125,6 @@ function EvalModal({ request, onClose, onPreEnroll }) {
                 </div>
               </div>
               <div className="text-right">
-                {evalData && overallBadge(evalData.overall)}
                 {evalData?.has_pending_request && (
                   <div className="mt-2 text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
                     ⚠ Pending request already exists{evalData.pending_requested_by ? ` (by ${evalData.pending_requested_by})` : ""}
@@ -130,31 +142,31 @@ function EvalModal({ request, onClose, onPreEnroll }) {
             <>
               <SubjectTable title="Current Semester Subjects" subjects={evalData.current_semester_subjects} columns={currentColumns} />
               <SubjectTable title={`Possible Subjects (Next Semester)`} subjects={evalData.next_semester_subjects || []} columns={nextColumns} />
-              {evalData.gap_fillers?.length > 0 && (
-                <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
-                  {evalData.gap_fillers.length} gap filler subject(s) included in Possible Subjects table above.
-                </div>
-              )}
 
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  {evalData.recommendations?.map((r, i) => (
-                    <p key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
-                      {r.includes("FAILED") || r.includes("disqualified") ? <AlertCircle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
-                       r.includes("conditional") ? <AlertCircle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
-                       <CheckCircle size={12} className="text-emerald-400 mt-0.5 shrink-0" />}
-                      {r}
-                    </p>
-                  ))}
+                  {evalData.recommendations?.map((r, i) => {
+                    const text = formatNote(r);
+                    return (
+                      <p key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
+                        {text.includes("FAILED") || text.includes("retake") || text.includes("not offered") ? <AlertCircle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
+                         text.includes("conditional") || text.includes("Conditional") || text.includes("awaiting") ? <AlertCircle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
+                         <CheckCircle size={12} className="text-emerald-400 mt-0.5 shrink-0" />}
+                        {text}
+                      </p>
+                    );
+                  })}
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={onClose} className="btn btn-ghost btn-sm">Close</button>
+                  {can("enrolled-students.manage") && (
                   <button
                     onClick={async () => { setPreEnrolling(true); await onPreEnroll(request.id); setPreEnrolling(false); onClose(); }}
                     disabled={preEnrolling}
                     className="btn btn-primary btn-sm">
                     {preEnrolling ? "..." : "Recommend to Pre-Enrolled"}
                   </button>
+                  )}
                 </div>
               </div>
             </>

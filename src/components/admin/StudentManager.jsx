@@ -3,6 +3,7 @@ import api from "../../services/api";
 import { sanitizeObject } from "../../utils/sanitize";
 import StudentForm from "./StudentForm";
 import StudentSubjectsModal from "./StudentSubjectsModal";
+import StudentGradeWizard from "./StudentGradeWizard";
 import StudentList from "./StudentList";
 import ConfirmModal from "../common/ConfirmModal";
 
@@ -17,10 +18,12 @@ export default function StudentManager() {
     const [toast, setToast] = useState(null);
     const [search, setSearch] = useState("");
     const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, current_semester: 1, course_id: "" });
+    const [form, setForm] = useState({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", extension_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, current_semester: 1, course_id: "", enrollment_type: "regular", status: "active", is_transfer: false, previous_school: "", previous_school_address: "", previous_year_level: "" });
     const [editingStudent, setEditingStudent] = useState(null);
     const [saving, setSaving] = useState(false);
     const [confirmAction, setConfirmAction] = useState(null);
+    const [wizardStudent, setWizardStudent] = useState(null);
+    const [wizardCurriculum, setWizardCurriculum] = useState([]);
 
     const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -39,32 +42,44 @@ export default function StudentManager() {
     useEffect(() => { load(); }, []);
 
     const openCreateForm = async () => {
-        setForm({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, current_semester: 1, course_id: "" });
+        setForm({ email: "", student_number: "", first_name: "", last_name: "", middle_name: "", extension_name: "", date_of_birth: "", gender: "", address: "", contact_number: "", year_level: 1, current_semester: 1, course_id: "", enrollment_type: "regular", status: "active", is_transfer: false, previous_school: "", previous_school_address: "", previous_year_level: "" });
         setEditingStudent(null);
         setShowForm(true);
         try { const res = await api.get("/api/admin/students/next-number"); if (res?.data?.student_number) setForm((prev) => ({ ...prev, student_number: res.data.student_number })); } catch {}
     };
 
     const openEditForm = (student) => {
-        setForm({ email: student.email || "", student_number: student.student_number, first_name: student.first_name || "", last_name: student.last_name || "", middle_name: student.middle_name || "", date_of_birth: student.date_of_birth ? student.date_of_birth.slice(0, 10) : "", gender: student.gender || "", address: student.address || "", contact_number: student.contact_number || "", year_level: student.year_level || 1, current_semester: student.current_semester || 1, course_id: student.course_id || "" });
+        setForm({ email: student.email || "", student_number: student.student_number, first_name: student.first_name || "", last_name: student.last_name || "", middle_name: student.middle_name || "", extension_name: student.extension_name || "", date_of_birth: student.date_of_birth ? student.date_of_birth.slice(0, 10) : "", gender: student.gender || "", address: student.address || "", contact_number: student.contact_number || "", year_level: student.year_level || 1, current_semester: student.current_semester || 1, course_id: student.course_id || "", enrollment_type: student.enrollment_type || "regular", status: student.status || "active", is_transfer: student.is_transfer || false, previous_school: student.previous_school || "", previous_school_address: student.previous_school_address || "", previous_year_level: student.previous_year_level || "" });
         setEditingStudent(student.id);
         setShowForm(true);
     };
 
     const handleSaveStudent = async (e) => {
         e.preventDefault();
-        if (!editingStudent && (!form.email.trim() || !form.first_name.trim() || !form.last_name.trim())) { showToast("Email, first name, and last name are required", "error"); return; }
-        if (editingStudent && (!form.first_name.trim() || !form.last_name.trim())) { showToast("First name and last name are required", "error"); return; }
+        if (!form.first_name.trim() || !form.last_name.trim()) { showToast("First name and last name are required", "error"); return; }
         setSaving(true);
         try {
             if (editingStudent) {
-                await api.put(`/api/admin/students/${editingStudent}`, sanitizeObject({ email: form.email.trim() || null, first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null }));
+                await api.put(`/api/admin/students/${editingStudent}`, sanitizeObject({ email: form.email.trim() || null, first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, extension_name: form.extension_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null, enrollment_type: form.enrollment_type, status: form.status, is_transfer: form.is_transfer, previous_school: form.previous_school.trim() || null, previous_school_address: form.previous_school_address.trim() || null, previous_year_level: form.previous_year_level || null }));
                 showToast("Student updated");
+                setShowForm(false); await load();
             } else {
-                await api.post("/api/admin/students", sanitizeObject({ email: form.email.trim(), student_number: form.student_number.toUpperCase(), first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null }));
+                const res = await api.post("/api/admin/students", sanitizeObject({ email: form.email.trim() || null, student_number: form.student_number.toUpperCase(), first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, extension_name: form.extension_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null, enrollment_type: form.enrollment_type, is_transfer: form.is_transfer, previous_school: form.previous_school.trim() || null, previous_school_address: form.previous_school_address.trim() || null, previous_year_level: form.previous_year_level || null }));
                 showToast("Student created");
+                setShowForm(false); await load();
+                const newStudent = res.data?.data ?? res.data;
+                if (newStudent?.id) {
+                    try {
+                        const cur = await api.get(`/api/admin/students/${newStudent.id}/curriculum`);
+                        const curriculum = cur.data ?? [];
+                        const hasSubjects = curriculum.some((s) => s.year_level <= newStudent.year_level);
+                        if (hasSubjects) {
+                            setWizardStudent(newStudent);
+                            setWizardCurriculum(curriculum);
+                        }
+                    } catch {}
+                }
             }
-            setShowForm(false); await load();
         } catch (err) { showToast(err.message, "error"); }
         finally { setSaving(false); }
     };
@@ -88,6 +103,24 @@ export default function StudentManager() {
             <StudentForm open={showForm} editingStudent={editingStudent} form={form} setForm={setForm} saving={saving} YEARS={YEARS} courses={courses} onSave={handleSaveStudent} onClose={() => { setShowForm(false); setEditingStudent(null); }} />
 
             {selectedStudent && <StudentSubjectsModal student={selectedStudent} subjects={subjects} config={config} onClose={() => setSelectedStudent(null)} onToast={showToast} />}
+
+            {wizardStudent && wizardCurriculum.length > 0 && (
+              <StudentGradeWizard
+                student={wizardStudent}
+                curriculum={wizardCurriculum}
+                onClose={async () => {
+                  try {
+                    await api.delete(`/api/admin/students/${wizardStudent.id}`);
+                    showToast("Student creation cancelled");
+                    await load();
+                  } catch {}
+                  setWizardStudent(null);
+                  setWizardCurriculum([]);
+                }}
+                onDone={() => { setWizardStudent(null); setWizardCurriculum([]); }}
+                onToast={showToast}
+              />
+            )}
 
             <StudentList students={filteredStudents} allStudents={students} loading={loading} search={search} setSearch={setSearch} onSelect={setSelectedStudent} onEdit={openEditForm} onAdd={openCreateForm} onDelete={(s) => setConfirmAction({ id: s.id, name: `${s.first_name} ${s.last_name}` })} />
 

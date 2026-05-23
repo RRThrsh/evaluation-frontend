@@ -28,12 +28,7 @@ export default function SubjectEditor({ subjectData, selectedSubjectToAdd, setSe
               <span className="font-medium">{s.subject_code}</span>
               <span className="text-zinc-400 ml-1 text-xs">{s.subject_name} Y{s.year_level} S{s.semester}</span>
             </div>
-            <select value={s.status} onChange={(e) => onUpdate(s.id, { status: e.target.value })}
-              className="text-xs border border-zinc-200 rounded px-1 py-0.5">
-              <option value="PENDING">PENDING</option>
-              <option value="APPROVED">APPROVED</option>
-              <option value="REJECTED">REJECTED</option>
-            </select>
+            <span className="text-xs text-zinc-400 font-mono">{s.grade ? s.grade : "INC"}</span>
             <input type="text" defaultValue={s.grade || ""}
               onBlur={(e) => { const v = sanitizeInput(e.target.value); if (v !== (s.grade || "")) onUpdate(s.id, { grade: v || null }); }}
               placeholder="Grade" className="w-16 text-xs border border-zinc-200 rounded px-1 py-0.5 text-center" />

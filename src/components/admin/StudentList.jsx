@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Search, Edit3, Trash2 } from "lucide-react";
+import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
 
 const PAGE_SIZE = 15;
@@ -17,6 +18,7 @@ function fullName(s) {
 }
 
 export default function StudentList({ students, allStudents, loading, search, setSearch, onSelect, onEdit, onAdd, onDelete }) {
+  const { can } = usePermissions();
   return (
     <div className="card overflow-hidden">
       <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
@@ -27,7 +29,7 @@ export default function StudentList({ students, allStudents, loading, search, se
             <input value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-8 py-1.5 text-xs w-44" placeholder="Search students..." />
           </div>
           <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{allStudents?.length || students.length}</span>
-          <button onClick={onAdd} className="btn btn-primary btn-sm flex items-center gap-1"><Plus size={13} /> Add</button>
+          {can("students.manage") && <button onClick={onAdd} className="btn btn-primary btn-sm flex items-center gap-1"><Plus size={13} /> Add</button>}
         </div>
       </div>
       {loading ? (
@@ -43,6 +45,7 @@ export default function StudentList({ students, allStudents, loading, search, se
 
 function StudentTable({ students, onSelect, onEdit, onDelete }) {
   const [page, setPage] = useState(1);
+  const { can } = usePermissions();
   const totalPages = Math.max(1, Math.ceil(students.length / PAGE_SIZE));
   const paginated = students.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -55,9 +58,10 @@ function StudentTable({ students, onSelect, onEdit, onDelete }) {
             <th className="px-5 py-3">Name</th>
             <th className="px-5 py-3">Year</th>
             <th className="px-5 py-3">Program</th>
+            <th className="px-5 py-3">Type</th>
+            <th className="px-5 py-3">Status</th>
             <th className="px-5 py-3">Subjects</th>
-            <th className="px-5 py-3">Contact</th>
-            <th className="px-5 py-3 w-28">Actions</th>
+            {can("students.manage") && <th className="px-5 py-3 w-28">Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -70,9 +74,15 @@ function StudentTable({ students, onSelect, onEdit, onDelete }) {
               </td>
               <td className="table-cell text-slate-500">{s.course_code || "\u2014"}</td>
               <td className="table-cell">
+                <span className={`badge ${s.enrollment_type === "irregular" ? "badge-amber" : "badge-green"}`}>{s.enrollment_type || "regular"}</span>
+              </td>
+              <td className="table-cell">
+                <span className={`badge ${s.status === "active" ? "badge-green" : s.status === "graduated" ? "badge-blue" : s.status === "dropped" || s.status === "transferred" ? "badge-red" : "badge-gray"}`}>{s.status || "active"}</span>
+              </td>
+              <td className="table-cell">
                 <span className="badge badge-blue">{s.enrolled_count ?? 0} subjects</span>
               </td>
-              <td className="table-cell text-slate-400">{s.contact_number || "\u2014"}</td>
+              {can("students.manage") && (
               <td className="table-cell">
                 <div onClick={(e) => e.stopPropagation()} className="flex gap-1">
                   <button onClick={(e) => { e.stopPropagation(); onEdit(s); }} className="btn btn-ghost btn-sm text-amber-500 hover:text-amber-700" title="Edit">
@@ -85,6 +95,7 @@ function StudentTable({ students, onSelect, onEdit, onDelete }) {
                   )}
                 </div>
               </td>
+              )}
             </tr>
           ))}
         </tbody>

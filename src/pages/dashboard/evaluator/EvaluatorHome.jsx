@@ -5,13 +5,8 @@ import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
 
 const YEAR_LEVELS = { 1: "1st Year", 2: "2nd Year", 3: "3rd Year", 4: "4th Year" };
 
-const statusBadge = (status) =>
-  `badge ${
-    status === "APPROVED" || status === "ENROLLED" || status === "PASSED" ? "badge-green" :
-    status === "PENDING" ? "badge-yellow" :
-    status === "FAILED" ? "badge-red" :
-    "badge-gray"
-  }`;
+const gradeBadge = (grade) =>
+  grade ? `badge badge-green` : `badge badge-yellow`;
 
 function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pendingRequestedBy }) {
   return (
@@ -33,6 +28,10 @@ function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pending
           <div>
             <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Year Level</span>
             <p className="font-semibold text-slate-800 mt-0.5">{YEAR_LEVELS[student.year_level] || `${student.year_level}th Year`}</p>
+          </div>
+          <div>
+            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Status</span>
+            <p className="font-semibold mt-0.5">{student.enrollment_type === "irregular" ? <span className="text-amber-600">Irregular</span> : <span className="text-emerald-600">Regular</span>}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -104,6 +103,7 @@ export default function EvaluatorHome() {
   const [subjects, setSubjects] = useState({ taken: [], available: [] });
   const [replacements, setReplacements] = useState([]);
   const [remainingFails, setRemainingFails] = useState([]);
+  const [unresolvedFails, setUnresolvedFails] = useState([]);
   const [blockedCount, setBlockedCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -121,6 +121,7 @@ export default function EvaluatorHome() {
     setSubjects({ taken: [], available: [] });
     setReplacements([]);
     setRemainingFails([]);
+    setUnresolvedFails([]);
     setBlockedCount(0);
     setHasPendingRequest(false);
     setPendingRequestedBy(null);
@@ -135,7 +136,9 @@ export default function EvaluatorHome() {
       let next = [];
       let gaps = [];
       let remainingFailsData = [];
+      let unresolvedFailsData = [];
       let blocked = 0;
+      let enrollmentType = "regular";
       try {
         const evalRes = await api.get(`/api/evaluator/students/${data.id}/evaluate`);
         courseName = evalRes.data?.student?.course || "";
@@ -144,7 +147,9 @@ export default function EvaluatorHome() {
         next = evalRes.data?.next_semester_subjects || [];
         gaps = evalRes.data?.gap_fillers || [];
         remainingFailsData = evalRes.data?.remaining_failed_subjects || [];
+        unresolvedFailsData = evalRes.data?.unresolved_failed_subjects || [];
         blocked = evalRes.data?.summary_extras?.blocked_count || 0;
+        enrollmentType = evalRes.data?.student?.enrollment_type || "regular";
         const pendingReq = evalRes.data?.has_pending_request;
         setHasPendingRequest(pendingReq);
         if (pendingReq) setPendingRequestedBy(evalRes.data?.pending_requested_by || "another evaluator");
@@ -154,10 +159,12 @@ export default function EvaluatorHome() {
         id: data.id, full_name: `${data.first_name} ${data.last_name}`,
         student_number: data.student_number, year_level: data.year_level,
         course: courseName, overall,
+        enrollment_type: enrollmentType,
       });
       setSubjects({ taken: current, available: next });
       setReplacements(gaps);
       setRemainingFails(remainingFailsData);
+      setUnresolvedFails(unresolvedFailsData);
       setBlockedCount(blocked);
     } catch (err) {
       setError(err.message || "Student not found");
@@ -186,21 +193,13 @@ export default function EvaluatorHome() {
   const currentColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
     { key: "subject_name", label: "Subject", width: "45%" },
-    { key: "grade", label: "Grade", align: "right", width: "15%", className: "whitespace-nowrap", render: (s) => s.grade || "\u2014" },
-    { key: "status", label: "Status", width: "25%", render: (s) => <span className={statusBadge(s.status)}>{s.status}</span> },
+    { key: "status", label: "Grade", width: "25%", render: (s) => <span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span> },
   ], []);
 
   const nextColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "45%" },
-    { key: "prerequisite", label: "Prereq", width: "25%", render: (s) => {
-      if (s.prerequisite) {
-        const badge = s.prereq_failed ? "badge badge-red" : s.prereq_met ? "badge badge-green" : "badge badge-yellow";
-        const label = s.prereq_failed ? "FAILED" : s.prereq_met ? "OK" : "PENDING";
-        return <span className={`${badge}`}>{s.prerequisite} ({label})</span>;
-      }
-      return <span className="text-slate-300">—</span>;
-    }},
+    { key: "subject_name", label: "Subject", width: "40%" },
+    { key: "prerequisite", label: "Prereq", width: "30%", render: (s) => s.prerequisite || "\u2014" },
     { key: "is_retake", label: "", width: "15%", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
   ], []);
 
@@ -330,6 +329,17 @@ export default function EvaluatorHome() {
               )}
             </div>
           </div>
+
+          {unresolvedFails.length > 0 && (
+            <div className="border-t border-slate-200 pt-6">
+              <SubjectTable
+                title="Failed Subjects — Not Offered Next Semester"
+                subjects={unresolvedFails}
+                columns={remainingColumns}
+                emptyMsg="No unresolved failed subjects."
+              />
+            </div>
+          )}
 
           {remainingFails.length > 0 && (
             <div className="border-t border-slate-200 pt-6">

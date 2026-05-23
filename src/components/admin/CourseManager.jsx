@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
 import exportToExcel from "../../utils/exportToExcel";
 import { sanitizeObject } from "../../utils/sanitize";
+import { usePermissions } from "../../context/PermissionContext";
 import ConfirmModal from "../common/ConfirmModal";
+import Pagination from "../common/Pagination";
+
+const PAGE_SIZE = 15;
 
 export default function CourseManager() {
     const [courses, setCourses] = useState([]);
@@ -14,6 +18,8 @@ export default function CourseManager() {
     const [search, setSearch] = useState("");
     const [confirmAction, setConfirmAction] = useState(null);
     const [exportConfirm, setExportConfirm] = useState(null);
+    const [page, setPage] = useState(1);
+    const { can } = usePermissions();
 
     const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -53,10 +59,16 @@ export default function CourseManager() {
         return courses.filter((c) => c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q));
     }, [courses, search]);
 
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    useEffect(() => { setPage(1); }, [search]);
+
     return (
         <div className="space-y-6">
             {toast && <div className={`px-4 py-3 rounded-xl text-sm font-medium border ${toast.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"}`}>{toast.message}</div>}
 
+            {can("courses.manage") && (
             <div className="card p-5">
                 <h3 className="text-sm font-bold text-slate-800 mb-4">{editing ? "Edit Course" : "Add Course"}</h3>
                 <form onSubmit={handleSave} className="flex gap-3 items-end">
@@ -74,13 +86,14 @@ export default function CourseManager() {
                     </div>
                 </form>
             </div>
+            )}
 
             <div className="card overflow-hidden">
                 <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
                     <span className="text-sm font-semibold text-slate-800">Courses</span>
                     <div className="flex items-center gap-2">
                         <input value={search} onChange={(e) => setSearch(e.target.value)} className="input-field py-1.5 text-xs w-48" placeholder="Search courses..." />
-                        <button onClick={() => setExportConfirm({ step: 1, count: filtered.length })} className="btn btn-ghost btn-sm">Export</button>
+                        {can("courses.manage") && <button onClick={() => setExportConfirm({ step: 1, count: filtered.length })} className="btn btn-ghost btn-sm">Export</button>}
                         <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{courses.length} courses</span>
                     </div>
                 </div>
@@ -95,26 +108,29 @@ export default function CourseManager() {
                                 <th className="px-5 py-3">Code</th>
                                 <th className="px-5 py-3">Name</th>
                                 <th className="px-5 py-3">Created</th>
-                                <th className="px-5 py-3 w-24">Actions</th>
+                                {can("courses.manage") && <th className="px-5 py-3 w-24">Actions</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {filtered.map((c) => (
+                            {paginated.map((c) => (
                                 <tr key={c.id} className="table-row">
                                     <td className="table-cell font-mono font-medium text-slate-800">{c.code}</td>
                                     <td className="table-cell text-slate-600">{c.name}</td>
                                     <td className="table-cell text-slate-400">{new Date(c.created_at).toLocaleDateString()}</td>
+                                    {can("courses.manage") && (
                                     <td className="table-cell">
                                         <div className="flex gap-1">
                                             <button onClick={() => handleEdit(c)} className="btn btn-ghost btn-sm text-amber-500 hover:text-amber-700"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
                                             <button onClick={() => setConfirmAction({ id: c.id, name: c.name })} className="btn btn-ghost btn-sm text-red-400 hover:text-red-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                                         </div>
                                     </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 )}
+                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
 
             {confirmAction && <ConfirmModal title="Delete Course" message={`Delete course "${confirmAction.name}"?`} extra="This action cannot be undone." confirmLabel="Delete" onConfirm={() => handleDelete(confirmAction.id)} onCancel={() => setConfirmAction(null)} />}

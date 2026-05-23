@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
+import { usePermissions } from "../../context/PermissionContext";
 import ConfirmModal from "../common/ConfirmModal";
+import Pagination from "../common/Pagination";
+
+const PAGE_SIZE = 15;
 
 export default function SessionManager() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirmUser, setConfirmUser] = useState(null);
   const [toast, setToast] = useState(null);
+  const [page, setPage] = useState(1);
+  const { can } = usePermissions();
 
   const showToast = (msg, type = "success") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -42,7 +48,7 @@ export default function SessionManager() {
               <th className="text-left px-5 py-3.5">User</th>
               <th className="text-left px-5 py-3.5">Role</th>
               <th className="text-left px-5 py-3.5">Since</th>
-              <th className="text-right px-5 py-3.5">Action</th>
+              {can("sessions") && <th className="text-right px-5 py-3.5">Action</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -53,21 +59,28 @@ export default function SessionManager() {
                 </tr>
               ))
             ) : sessions.length === 0 ? (
-              <tr><td colSpan={4} className="px-5 py-12 text-center text-sm text-slate-400">No active sessions</td></tr>
-            ) : sessions.map((s) => (
+              <tr><td colSpan={can("sessions") ? 4 : 3} className="px-5 py-12 text-center text-sm text-slate-400">No active sessions</td></tr>
+            ) : (() => {
+              const totalPages = Math.max(1, Math.ceil(sessions.length / PAGE_SIZE));
+              const paginatedSessions = sessions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+              return paginatedSessions.map((s) => (
               <tr key={s.user_id} className="table-row">
                 <td className="px-5 py-3">
                   <div><p className="font-medium text-slate-800">{s.full_name}</p><p className="text-xs text-slate-400">{s.email}</p></div>
                 </td>
                 <td className="px-5 py-3"><span className="badge badge-gray capitalize">{s.role}</span></td>
                 <td className="px-5 py-3 text-xs text-slate-400">{new Date(s.created_at).toLocaleString()}</td>
+                {can("sessions") && (
                 <td className="px-5 py-3 text-right">
                   <button onClick={() => setConfirmUser(s.user_id)} className="btn btn-danger btn-sm">Force Logout</button>
                 </td>
+                )}
               </tr>
-            ))}
+            ));
+          })()}
           </tbody>
         </table>
+        <Pagination currentPage={page} totalPages={Math.max(1, Math.ceil(sessions.length / PAGE_SIZE))} onPageChange={setPage} />
       </div>
 
       {confirmUser && <ConfirmModal title="Force Logout" message="Force this user to log out? Their session will be cleared." confirmLabel="Logout" onConfirm={forceLogout} onCancel={() => setConfirmUser(null)} />}

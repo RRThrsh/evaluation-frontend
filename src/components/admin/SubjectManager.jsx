@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
 import exportToExcel from "../../utils/exportToExcel";
 import { sanitizeObject } from "../../utils/sanitize";
+import { usePermissions } from "../../context/PermissionContext";
 import ConfirmModal from "../common/ConfirmModal";
+import Pagination from "../common/Pagination";
+
+const PAGE_SIZE = 10;
 
 export default function SubjectManager() {
     const [subjects, setSubjects] = useState([]);
@@ -19,6 +23,8 @@ export default function SubjectManager() {
     const [confirmAction, setConfirmAction] = useState(null);
     const [exportConfirm, setExportConfirm] = useState(null);
     const [expandedCourses, setExpandedCourses] = useState({});
+    const [page, setPage] = useState(1);
+    const { can } = usePermissions();
 
     const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -91,6 +97,11 @@ export default function SubjectManager() {
         return result;
     }, [subjectsByCourse, YEARS, SEMESTERS]);
 
+    const totalPages = Math.max(1, Math.ceil(subjectsByCourse.length / PAGE_SIZE));
+    const paginatedGroups = subjectsByCourse.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    useEffect(() => { setPage(1); }, [search]);
+
     const toggleCourse = (courseId) => { setExpandedCourses((prev) => { const next = { ...prev }; if (next[courseId]) delete next[courseId]; else next[courseId] = true; return next; }); };
     const expandAll = () => { const all = {}; subjectsByCourse.forEach((g) => { all[g.course_id] = true; }); setExpandedCourses(all); };
     const collapseAll = () => setExpandedCourses({});
@@ -99,6 +110,7 @@ export default function SubjectManager() {
         <div className="space-y-6">
             {toast && <div className={`px-4 py-3 rounded-xl text-sm font-medium border ${toast.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"}`}>{toast.message}</div>}
 
+            {can("subjects.manage") && (
             <div className="card p-5">
                 <h3 className="text-sm font-bold text-slate-800 mb-4">{editing ? "Edit Subject" : "Add Subject"}</h3>
                 <form onSubmit={handleSave} className="space-y-4">
@@ -155,6 +167,7 @@ export default function SubjectManager() {
                     </div>
                 </form>
             </div>
+            )}
 
             <div className="card overflow-hidden">
                 <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
@@ -163,7 +176,7 @@ export default function SubjectManager() {
                         <input value={search} onChange={(e) => setSearch(e.target.value)} className="input-field py-1.5 text-xs w-48" placeholder="Search subjects..." />
                         <button onClick={expandAll} className="btn btn-ghost btn-sm">Expand All</button>
                         <button onClick={collapseAll} className="btn btn-ghost btn-sm">Collapse All</button>
-                        <button onClick={() => setExportConfirm({ step: 1, count: activeSubjects.length })} className="btn btn-ghost btn-sm">Export</button>
+                        {can("subjects.manage") && <button onClick={() => setExportConfirm({ step: 1, count: activeSubjects.length })} className="btn btn-ghost btn-sm">Export</button>}
                         <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{activeSubjects.length} subjects</span>
                     </div>
                 </div>
@@ -173,7 +186,7 @@ export default function SubjectManager() {
                     <div className="p-10 text-center text-sm text-slate-400">{search ? "No subjects match your search" : "No subjects yet"}</div>
                 ) : (
                     <div className="p-5 space-y-4">
-                        {subjectsByCourse.map((grp) => {
+                        {paginatedGroups.map((grp) => {
                             const expanded = !!expandedCourses[grp.course_id];
                             const byYear = courseYearSemSubjects[grp.course_id] || {};
                             const totalUnits = grp.subjects.reduce((sum, s) => sum + (s.units || 0), 0);
@@ -225,8 +238,8 @@ export default function SubjectManager() {
                                                                                         </div>
                                                                                         <div className="flex items-center gap-1 shrink-0 ml-2">
                                                                                             <span className="text-[10px] text-slate-400">{s.units}u</span>
-                                                                                            <button onClick={() => handleEdit(s)} className="btn btn-ghost btn-sm text-amber-500 hover:text-amber-700 opacity-0 group-hover:opacity-100"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
-                                                                                            <button onClick={() => setConfirmAction({ id: s.id, name: s.subject_code })} className="btn btn-ghost btn-sm text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                                                                                            {can("subjects.manage") && <button onClick={() => handleEdit(s)} className="btn btn-ghost btn-sm text-amber-500 hover:text-amber-700 opacity-0 group-hover:opacity-100"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>}
+                                                                                            {can("subjects.manage") && <button onClick={() => setConfirmAction({ id: s.id, name: s.subject_code })} className="btn btn-ghost btn-sm text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>}
                                                                                         </div>
                                                                                     </div>
                                                                                 ))}
@@ -246,6 +259,7 @@ export default function SubjectManager() {
                         })}
                     </div>
                 )}
+                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
 
             {confirmAction && <ConfirmModal title="Deactivate Subject" message={`Deactivate subject "${confirmAction.name}"?`} extra="This will hide it from the curriculum. Existing enrollments are not affected." confirmLabel="Deactivate" onConfirm={() => handleDelete(confirmAction.id)} onCancel={() => setConfirmAction(null)} />}

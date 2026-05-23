@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
-
+import { usePermissions } from "../../context/PermissionContext";
 import api from "../../services/api";
 
 function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
@@ -41,6 +41,17 @@ function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
       </div>
     </div>
   );
+}
+
+function formatNote(raw) {
+  const txt = raw.replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&#39;/g, "'");
+  // Prereq failed: Prerequisite "X" for "Y" is FAILED — student must retake "X" first
+  const prereqMatch = txt.match(/Prerequisite "(.+?)" for "(.+?)" is FAILED/);
+  if (prereqMatch) return `${prereqMatch[2]} requires ${prereqMatch[1]} — must retake first`;
+  // Awaiting grading
+  const awaitMatch = txt.match(/(\d+) currently enrolled subject/);
+  if (awaitMatch) return `${awaitMatch[1]} subject(s) still awaiting grading`;
+  return txt;
 }
 
 function PreEnrolledModal({ request, onClose }) {
@@ -132,14 +143,17 @@ function PreEnrolledModal({ request, onClose }) {
                 <div className="card p-4">
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Evaluation Notes</h4>
                   <div className="space-y-1">
-                    {evalData.recommendations.map((r, i) => (
-                      <p key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
-                        {r.includes("FAILED") || r.includes("disqualified") ? <AlertTriangle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
-                         r.includes("conditional") ? <AlertTriangle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
-                         <CheckCircle size={12} className="text-emerald-400 mt-0.5 shrink-0" />}
-                        {r}
-                      </p>
-                    ))}
+                    {evalData.recommendations.map((r, i) => {
+                      const text = formatNote(r);
+                      return (
+                        <p key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
+                          {text.includes("FAILED") || text.includes("disqualified") || text.includes("Disqualified") || text.includes("retake") ? <AlertTriangle size={12} className="text-red-400 mt-0.5 shrink-0" /> :
+                           text.includes("conditional") || text.includes("Conditional") || text.includes("awaiting") ? <AlertTriangle size={12} className="text-amber-400 mt-0.5 shrink-0" /> :
+                           <CheckCircle size={12} className="text-emerald-400 mt-0.5 shrink-0" />}
+                          {text}
+                        </p>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -160,9 +174,10 @@ export default function AdminPreEnrolled() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [modal, setModal] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [modal, setModal] = useState(null);
+  const { can } = usePermissions();
 
   const fetchRequests = useCallback(async (pg) => {
     setLoading(true);
@@ -221,7 +236,7 @@ export default function AdminPreEnrolled() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Student No.</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Course</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide">Actions</th>
+                {can("enrolled-students.manage") && <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -232,11 +247,13 @@ export default function AdminPreEnrolled() {
                   <td className="px-6 py-4 text-slate-700 font-mono">{row.student_number}</td>
                   <td className="px-6 py-4 text-slate-800 font-medium">{row.first_name} {row.last_name}</td>
                   <td className="px-6 py-4 text-slate-700">{row.course_name || "N/A"}</td>
+                  {can("enrolled-students.manage") && (
                   <td className="px-6 py-4 text-right">
                     <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(row); }} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600" title="Delete">
                       <Trash2 size={16} />
                     </button>
                   </td>
+                  )}
                 </tr>
               ))}
               {requests.length === 0 && !loading && (

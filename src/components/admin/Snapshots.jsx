@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { AlertTriangle, Clock, User, FileText, Search, Send, CheckCircle } from "lucide-react";
+import { AlertTriangle, Clock, User, FileText, Search, Send, CheckCircle, X } from "lucide-react";
 import api from "../../services/api";
 import Pagination from "../common/Pagination";
 
@@ -20,13 +20,167 @@ function SnapshotTypeBadge({ type }) {
   );
 }
 
+function parseEvalResult(evalResult) {
+  if (!evalResult) return null;
+  const data = typeof evalResult === "string" ? JSON.parse(evalResult) : evalResult;
+  const { snapshot_type, ...rest } = data;
+  return rest;
+}
+
+function SnapshotDetailModal({ snapshot, onClose }) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  if (!snapshot) return null;
+
+  const evalResult = snapshot.evaluation_result
+    ? (typeof snapshot.evaluation_result === "string" ? JSON.parse(snapshot.evaluation_result) : snapshot.evaluation_result)
+    : null;
+  const snapType = evalResult?.snapshot_type || "unknown";
+  const snapData = parseEvalResult(evalResult);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content max-w-3xl p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">{snapshot.student_name}</h3>
+            <p className="text-xs text-slate-400 font-mono mt-0.5">#{snapshot.student_number}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Snapshot Type</p>
+            <SnapshotTypeBadge type={snapType} />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Overall</p>
+            <p className="text-slate-700 font-semibold">{snapData?.overall || "N/A"}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Course</p>
+            <p className="text-slate-700">{snapshot.course_name || "\u2014"} {snapshot.course_code ? `(${snapshot.course_code})` : ""}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Requested By</p>
+            <p className="text-slate-700">{snapshot.requested_by_name || "Unknown"}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Reviewed By</p>
+            <p className="text-slate-700">{snapshot.reviewed_by_name || "\u2014"}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Snapshot Date</p>
+            <p className="text-slate-700">{new Date(snapshot.updated_at).toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Next Sem Subjects</p>
+            <p className="text-slate-700">{snapData?.next_semester_subjects?.length || 0}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Gap Fillers</p>
+            <p className="text-slate-700">{snapData?.gap_fillers?.length || 0}</p>
+          </div>
+          {snapData?.raw_student_subjects && (
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Raw Subjects (Snapshot)</p>
+              <p className="text-slate-700">{snapData.raw_student_subjects.length} records</p>
+            </div>
+          )}
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Status</p>
+            <p className="text-slate-700">{snapshot.status}</p>
+          </div>
+        </div>
+
+        {snapData?.recommendations?.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Recommendations</p>
+            <ul className="space-y-1">
+              {snapData.recommendations.map((r, i) => (
+                <li key={i} className="text-sm text-slate-700 bg-slate-50 rounded-lg px-3 py-1.5 border border-slate-200">{r}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Possible Subjects ({snapData?.next_semester_subjects?.length || 0})</p>
+          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-3 py-2 text-left font-medium text-slate-500">Code</th>
+                  <th className="px-3 py-2 text-left font-medium text-slate-500">Subject</th>
+                  <th className="px-3 py-2 text-left font-medium text-slate-500">Prereq</th>
+                  <th className="px-3 py-2 text-left font-medium text-slate-500">Retake</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(snapData?.next_semester_subjects || []).map((subj, i) => (
+                  <tr key={i}>
+                    <td className="px-3 py-1.5 font-mono text-slate-700">{subj.subject_code}</td>
+                    <td className="px-3 py-1.5 text-slate-700 truncate max-w-[220px]">{subj.subject_name}</td>
+                    <td className="px-3 py-1.5 text-slate-500">{subj.prerequisite || "\u2014"}</td>
+                    <td className="px-3 py-1.5">{subj.is_retake ? <span className="text-amber-600 font-medium">Yes</span> : "No"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {snapData?.gap_fillers?.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Gap Fillers ({snapData.gap_fillers.length})</p>
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="px-3 py-2 text-left font-medium text-slate-500">Code</th>
+                    <th className="px-3 py-2 text-left font-medium text-slate-500">Subject</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {snapData.gap_fillers.map((gf, i) => (
+                    <tr key={i}>
+                      <td className="px-3 py-1.5 font-mono text-slate-700">{gf.subject_code}</td>
+                      <td className="px-3 py-1.5 text-slate-700">{gf.subject_name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {snapData?.raw_student_subjects && (
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Raw Student Grades (at snapshot time)</p>
+            <pre className="text-xs text-slate-600 bg-slate-50 rounded-lg p-3 border border-slate-200 overflow-x-auto max-h-52">
+              {JSON.stringify(snapData.raw_student_subjects, null, 2)}
+            </pre>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Snapshots() {
   const [snapshots, setSnapshots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filterType, setFilterType] = useState("");
   const [search, setSearch] = useState("");
-  const [expanded, setExpanded] = useState(null);
+  const [selectedSnapshot, setSelectedSnapshot] = useState(null);
   const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
@@ -59,13 +213,6 @@ export default function Snapshots() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const formatSnapshotData = (evalResult) => {
-    if (!evalResult) return null;
-    const data = typeof evalResult === "string" ? JSON.parse(evalResult) : evalResult;
-    const { snapshot_type, ...rest } = data;
-    return rest;
-  };
 
   if (loading) {
     return (
@@ -116,16 +263,16 @@ export default function Snapshots() {
 
       <div className="space-y-3">
         {paginated.map((s) => {
-          const evalResult = s.evaluation_result ? (typeof s.evaluation_result === "string" ? JSON.parse(s.evaluation_result) : s.evaluation_result) : null;
+          const evalResult = s.evaluation_result
+            ? (typeof s.evaluation_result === "string" ? JSON.parse(s.evaluation_result) : s.evaluation_result)
+            : null;
           const snapType = evalResult?.snapshot_type || "unknown";
-          const snapData = formatSnapshotData(evalResult);
-          const isExpanded = expanded === s.id;
 
           return (
             <div
               key={s.id}
-              className={`card overflow-hidden transition-all cursor-pointer hover:shadow-md ${isExpanded ? "ring-2 ring-primary-200" : ""}`}
-              onClick={() => setExpanded(isExpanded ? null : s.id)}
+              className="card overflow-hidden transition-all cursor-pointer hover:shadow-md"
+              onClick={() => setSelectedSnapshot(s)}
             >
               <div className="p-5">
                 <div className="flex items-start gap-4">
@@ -146,114 +293,6 @@ export default function Snapshots() {
                   </div>
                 </div>
               </div>
-
-              {isExpanded && snapData && (
-                <div className="border-t border-slate-100 px-5 py-4 bg-slate-50/50 space-y-3 text-sm" onClick={(e) => e.stopPropagation()}>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Snapshot Type</p>
-                      <p className="text-slate-700 font-medium">{snapType}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Overall</p>
-                      <p className="text-slate-700">{snapData.overall || "N/A"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Next Sem Subjects</p>
-                      <p className="text-slate-700">{snapData.next_semester_subjects?.length || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Gap Fillers</p>
-                      <p className="text-slate-700">{snapData.gap_fillers?.length || 0}</p>
-                    </div>
-                    {snapData.raw_student_subjects && (
-                      <div>
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Raw Subjects (Snapshot)</p>
-                        <p className="text-slate-700">{snapData.raw_student_subjects.length} records</p>
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Status</p>
-                      <p className="text-slate-700">{s.status}</p>
-                    </div>
-                  </div>
-
-                  {snapData.recommendations?.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Recommendations</p>
-                      <ul className="space-y-1">
-                        {snapData.recommendations.map((r, i) => (
-                          <li key={i} className="text-slate-700 bg-white rounded-lg px-3 py-1.5 border border-slate-200">{r}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  <div>
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Possible Subjects</p>
-                    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-slate-200">
-                            <th className="px-3 py-2 text-left font-medium text-slate-500">Code</th>
-                            <th className="px-3 py-2 text-left font-medium text-slate-500">Subject</th>
-                            <th className="px-3 py-2 text-left font-medium text-slate-500">Prereq</th>
-                            <th className="px-3 py-2 text-left font-medium text-slate-500">Retake</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {(snapData.next_semester_subjects || []).slice(0, 15).map((subj, i) => (
-                            <tr key={i}>
-                              <td className="px-3 py-1.5 font-mono text-slate-700">{subj.subject_code}</td>
-                              <td className="px-3 py-1.5 text-slate-700 truncate max-w-[200px]">{subj.subject_name}</td>
-                              <td className="px-3 py-1.5 text-slate-500">{subj.prerequisite || "\u2014"}</td>
-                              <td className="px-3 py-1.5">{subj.is_retake ? <span className="text-amber-600 font-medium">Yes</span> : "No"}</td>
-                            </tr>
-                          ))}
-                          {(snapData.next_semester_subjects || []).length > 15 && (
-                            <tr>
-                              <td colSpan={4} className="px-3 py-2 text-center text-slate-400">... and {(snapData.next_semester_subjects || []).length - 15} more</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {snapData.gap_fillers?.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Gap Fillers</p>
-                      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200">
-                              <th className="px-3 py-2 text-left font-medium text-slate-500">Code</th>
-                              <th className="px-3 py-2 text-left font-medium text-slate-500">Subject</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {snapData.gap_fillers.map((gf, i) => (
-                              <tr key={i}>
-                                <td className="px-3 py-1.5 font-mono text-slate-700">{gf.subject_code}</td>
-                                <td className="px-3 py-1.5 text-slate-700">{gf.subject_name}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  {snapData.raw_student_subjects && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Raw Student Grades (at snapshot time)</p>
-                      <pre className="text-xs text-slate-600 bg-white rounded-lg p-2.5 border border-slate-200 overflow-x-auto max-h-48">
-                        {JSON.stringify(snapData.raw_student_subjects, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           );
         })}
@@ -267,6 +306,10 @@ export default function Snapshots() {
       </div>
 
       <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+
+      {selectedSnapshot && (
+        <SnapshotDetailModal snapshot={selectedSnapshot} onClose={() => setSelectedSnapshot(null)} />
+      )}
     </div>
   );
 }

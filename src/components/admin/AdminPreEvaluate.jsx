@@ -84,7 +84,7 @@ function EvalModal({ request, onClose, onPreEnroll }) {
   const nextColumns = [
     { key: "subject_code", label: "Code" },
     { key: "subject_name", label: "Subject" },
-    { key: "prerequisite", label: "Prereq", render: (s) => s.prerequisite || "\u2014" },
+    { key: "prerequisite", label: "Prereq", render: (s) => s.prerequisite ? <span className="flex flex-col gap-0.5"><span className="font-mono">{s.prerequisite}</span>{s.prereq_name && <span className="text-[10px] text-slate-400 leading-tight">{s.prereq_name}</span>}</span> : "\u2014" },
   ];
 
   const overallBadge = (overall) => {

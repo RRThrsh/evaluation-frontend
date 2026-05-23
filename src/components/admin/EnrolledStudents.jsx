@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Search, Upload, Download } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Search, Upload, Download, BookOpen } from "lucide-react";
 import * as XLSX from "xlsx";
 import api from "../../services/api";
 import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
+import AcademicRecord from "./AcademicRecord";
 
 function EnrolledModal({ request, onClose }) {
   const overlayRef = useRef(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAcademicRecord, setShowAcademicRecord] = useState(false);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
@@ -114,6 +116,18 @@ function EnrolledModal({ request, onClose }) {
             </div>
           ) : (
             <div className="card p-8 text-center text-slate-400 text-sm">No subject data available.</div>
+          )}
+
+          <div className="flex justify-center">
+            <button onClick={() => setShowAcademicRecord(!showAcademicRecord)}
+              className="btn btn-ghost btn-sm text-slate-500 hover:text-blue-600 gap-1.5">
+              <BookOpen size={14} />
+              {showAcademicRecord ? "Hide Academic Record" : "View Academic Record"}
+            </button>
+          </div>
+
+          {showAcademicRecord && (
+            <AcademicRecord studentId={request.student_id} student={request} />
           )}
         </div>
       </div>

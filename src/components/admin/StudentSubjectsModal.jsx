@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import { usePermissions } from "../../context/PermissionContext";
 import api from "../../services/api";
-
-function statusBadge(status, grade) {
-  if (grade) return { label: grade, cls: "badge badge-green" };
-  return { label: "INC", cls: "badge badge-yellow" };
-}
+import AcademicRecord from "./AcademicRecord";
 
 function Field({ label, value }) {
   return (
@@ -27,64 +23,6 @@ function ordinal(n) {
   if (n === 2) return "2nd";
   if (n === 3) return "3rd";
   return `${n}th`;
-}
-
-function CurriculumView({ curriculum, loading, onBack }) {
-  return (
-    <div className="card overflow-hidden">
-      <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-        <span className="text-sm font-semibold text-slate-800">Academic Record</span>
-        <button onClick={onBack} className="btn btn-ghost btn-sm">Show Enrolled</button>
-      </div>
-      {loading ? (
-        <div className="p-10 text-center text-sm text-slate-400">Loading...</div>
-      ) : curriculum.length === 0 ? (
-        <div className="p-10 text-center text-sm text-slate-400">No curriculum found for this course</div>
-      ) : (
-        <div>
-          {[1, 2, 3, 4].map((yr) => {
-            const yrSubjects = curriculum.filter((s) => s.year_level === yr);
-            if (yrSubjects.length === 0) return null;
-            return (
-              <div key={yr}>
-                <div className="px-5 py-2 bg-slate-50 border-b border-slate-100">
-                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">{ordinal(yr)} Year</span>
-                </div>
-                <table className="w-full text-left text-xs">
-                  <thead className="table-header text-slate-400">
-                    <tr>
-                      <th className="px-5 py-2">Code</th>
-                      <th className="px-5 py-2">Subject</th>
-                      <th className="px-5 py-2">Sem</th>
-                      <th className="px-5 py-2">Type</th>
-                      <th className="px-5 py-2">Units</th>
-                      <th className="px-5 py-2">Grade</th>
-                      <th className="px-5 py-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {yrSubjects.map((sub) => (
-                      <tr key={sub.id} className="table-row">
-                        <td className="table-cell font-mono text-slate-700">{sub.subject_code}</td>
-                        <td className="table-cell text-slate-700">{sub.subject_name}{sub.prerequisite_name && <span className="text-[10px] text-slate-400 ml-1">(req: {sub.prerequisite_name})</span>}</td>
-                        <td className="table-cell text-slate-500">{sub.semester}</td>
-                        <td className="table-cell"><span className={`badge ${sub.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{sub.subject_type}</span></td>
-                        <td className="table-cell text-slate-600">{sub.units}</td>
-                        <td className="table-cell text-slate-700 font-medium">{sub.grade ? <span className={statusBadge(sub.enrollment_status, sub.grade).cls}>{sub.grade}</span> : "\u2014"}</td>
-                        <td className="table-cell">
-                          {sub.enrollment_status ? <span className="badge badge-yellow">INC</span> : <span className="text-[10px] text-slate-300 italic">Not taken</span>}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
 }
 
 export default function StudentSubjectsModal({ student, subjects, config, onClose, onToast }) {
@@ -364,7 +302,7 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
 
         {/* ── Curriculum Tab ── */}
         {tab === "curriculum" && (
-          <CurriculumView curriculum={curriculum} loading={loadingCurriculum} onBack={() => setTab("subjects")} />
+          <AcademicRecord student={student} curriculum={curriculum} loading={loadingCurriculum} onBack={() => setTab("subjects")} />
         )}
       </div>
     </div>

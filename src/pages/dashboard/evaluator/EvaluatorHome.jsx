@@ -29,6 +29,10 @@ function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pending
             <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Year Level</span>
             <p className="font-semibold text-slate-800 mt-0.5">{YEAR_LEVELS[student.year_level] || `${student.year_level}th Year`}</p>
           </div>
+          <div>
+            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Status</span>
+            <p className="font-semibold mt-0.5">{student.enrollment_type === "irregular" ? <span className="text-amber-600">Irregular</span> : <span className="text-emerald-600">Regular</span>}</p>
+          </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {hasPendingRequest ? (
@@ -131,6 +135,7 @@ export default function EvaluatorHome() {
       let gaps = [];
       let remainingFailsData = [];
       let blocked = 0;
+      let enrollmentType = "regular";
       try {
         const evalRes = await api.get(`/api/evaluator/students/${data.id}/evaluate`);
         courseName = evalRes.data?.student?.course || "";
@@ -140,6 +145,7 @@ export default function EvaluatorHome() {
         gaps = evalRes.data?.gap_fillers || [];
         remainingFailsData = evalRes.data?.remaining_failed_subjects || [];
         blocked = evalRes.data?.summary_extras?.blocked_count || 0;
+        enrollmentType = evalRes.data?.student?.enrollment_type || "regular";
         const pendingReq = evalRes.data?.has_pending_request;
         setHasPendingRequest(pendingReq);
         if (pendingReq) setPendingRequestedBy(evalRes.data?.pending_requested_by || "another evaluator");
@@ -149,6 +155,7 @@ export default function EvaluatorHome() {
         id: data.id, full_name: `${data.first_name} ${data.last_name}`,
         student_number: data.student_number, year_level: data.year_level,
         course: courseName, overall,
+        enrollment_type: enrollmentType,
       });
       setSubjects({ taken: current, available: next });
       setReplacements(gaps);

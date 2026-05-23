@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { X, User, BookOpen, GraduationCap } from "lucide-react";
-import { usePermissions } from "../../context/PermissionContext";
 import api from "../../services/api";
 import AcademicRecord from "./AcademicRecord";
 
@@ -33,15 +32,10 @@ const TABS = [
 ];
 
 export default function StudentSubjectsModal({ student, subjects, config, onClose, onToast }) {
-  const { can } = usePermissions();
   const [tab, setTab] = useState("subjects");
   const [studentSubjects, setStudentSubjects] = useState([]);
   const [profileData, setProfileData] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
-  const [managingSubjects, setManagingSubjects] = useState(false);
-  const [enrollYear, setEnrollYear] = useState(1);
-  const [enrollSem, setEnrollSem] = useState(1);
-  const [saving, setSaving] = useState(false);
   const [curriculum, setCurriculum] = useState([]);
   const [loadingCurriculum, setLoadingCurriculum] = useState(false);
 
@@ -64,13 +58,6 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
     catch (err) { onToast(err.message, "error"); }
   };
 
-  const handleEnrollSemester = async () => {
-    setSaving(true);
-    try { const res = await api.post("/api/admin/students/enroll-semester", { student_id: student.id, year_level: enrollYear, semester: enrollSem }); onToast(res.message || "Enrolled"); await loadSubjects(); }
-    catch (err) { onToast(err.message, "error"); }
-    finally { setSaving(false); }
-  };
-
   const loadCurriculum = async () => {
     setLoadingCurriculum(true);
     try { const d = await api.get(`/api/admin/students/${student.id}/curriculum`); setCurriculum(d.data ?? []); }
@@ -78,10 +65,6 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
     finally { setLoadingCurriculum(false); }
   };
 
-  const activeSubjects = subjects.filter((s) => s.is_active !== false);
-  const enrolledSubjectIds = new Set(studentSubjects.map((ss) => ss.subject_id));
-  const previewSubjects = activeSubjects.filter((s) => s.course_id === student.course_id && s.year_level === enrollYear && s.semester === enrollSem);
-  const toEnroll = previewSubjects.filter((s) => !enrolledSubjectIds.has(s.id));
   const fullName = (s) => [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(" ") || s.full_name || "—";
 
   const tabIndex = TABS.findIndex((t) => t.key === tab);
@@ -116,7 +99,7 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
               return (
                 <div key={t.key} className="flex items-center">
                   <button
-                    onClick={() => { setTab(t.key); setManagingSubjects(false); }}
+                    onClick={() => setTab(t.key)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all ${
                       isActive ? "bg-white text-primary-600 shadow-sm border border-slate-200" :
                       isDone   ? "text-emerald-600 hover:bg-white/60" :
@@ -182,81 +165,12 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
             </div>
           )}
 
-          {/* Subjects — manage mode */}
-          {tab === "subjects" && managingSubjects && (
-            <div className="bg-emerald-50/50 rounded-xl border border-emerald-100 p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800">Enroll by Semester</h3>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Select year and semester to see available subjects</p>
-                </div>
-                <button onClick={() => setManagingSubjects(false)} className="btn btn-primary btn-sm">Done</button>
-              </div>
-              <div className="flex gap-3 items-end">
-                <div className="flex-1">
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Year Level</label>
-                  <select value={enrollYear} onChange={(e) => setEnrollYear(Number(e.target.value))} className="input-field">
-                    {[1, 2, 3, 4].map((y) => <option key={y} value={y}>{ordinal(y)} Year</option>)}
-                  </select>
-                </div>
-                <div className="flex-1">
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Semester</label>
-                  <select value={enrollSem} onChange={(e) => setEnrollSem(Number(e.target.value))} className="input-field">
-                    {[1, 2].map((s) => <option key={s} value={s}>Semester {s}</option>)}
-                  </select>
-                </div>
-              </div>
-              {previewSubjects.length === 0 ? (
-                <div className="text-xs text-slate-400 text-center py-4 bg-white rounded-lg border border-dashed border-slate-200">
-                  No subjects found for {ordinal(enrollYear)} Year, Semester {enrollSem}
-                </div>
-              ) : (
-                <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                  <table className="w-full text-left text-xs">
-                    <thead className="table-header">
-                      <tr>
-                        <th className="px-4 py-2">Code</th>
-                        <th className="px-4 py-2">Subject</th>
-                        <th className="px-4 py-2">Type</th>
-                        <th className="px-4 py-2">Units</th>
-                        <th className="px-4 py-2">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {previewSubjects.map((s) => {
-                        const alreadyIn = enrolledSubjectIds.has(s.id);
-                        return (
-                          <tr key={s.id} className={`${alreadyIn ? "bg-slate-50" : "hover:bg-emerald-50"} transition-colors`}>
-                            <td className="px-4 py-2 font-mono text-slate-700">{s.subject_code}</td>
-                            <td className="px-4 py-2 text-slate-700">{s.subject_name}</td>
-                            <td className="px-4 py-2"><span className={`badge ${s.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{s.subject_type}</span></td>
-                            <td className="px-4 py-2 text-slate-600">{s.units}</td>
-                            <td className="px-4 py-2">{alreadyIn ? <span className="badge badge-gray">Already enrolled</span> : <span className="badge badge-green">Ready to enroll</span>}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              {toEnroll.length > 0 && (
-                <div className="flex items-center justify-between bg-emerald-100/50 rounded-lg px-4 py-2.5">
-                  <span className="text-xs text-emerald-700"><strong>{toEnroll.length}</strong> subject{toEnroll.length !== 1 ? "s" : ""} ready to enroll</span>
-                  {can("students.manage") && <button onClick={handleEnrollSemester} disabled={saving} className="btn btn-primary btn-sm">{saving ? "..." : `Enroll All (${toEnroll.length})`}</button>}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Subjects — view mode */}
-          {tab === "subjects" && !managingSubjects && (
+          {/* Subjects */}
+          {tab === "subjects" && (
             <div className="card overflow-hidden">
               <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
                 <span className="text-sm font-semibold text-slate-800">Enrolled Subjects</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{studentSubjects.length} subjects</span>
-                  {can("students.manage") && <button onClick={async () => { setManagingSubjects(true); await loadSubjects(); }} className="btn btn-primary btn-sm">Manage</button>}
-                </div>
+                <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{studentSubjects.length} subjects</span>
               </div>
               {studentSubjects.length === 0 ? (
                 <div className="p-10 text-center text-sm text-slate-400">No subjects enrolled</div>
@@ -277,9 +191,7 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                           <span className="font-mono font-medium text-slate-800">{ss.subject_code}</span>
                           <p className="text-[11px] text-slate-500">{ss.subject_name}</p>
                         </td>
-                        <td className="table-cell">
-                          <span className={`badge ${ss.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{ss.subject_type}</span>
-                        </td>
+                        <td className="table-cell"><span className={`badge ${ss.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{ss.subject_type}</span></td>
                         <td className="table-cell text-slate-600">{ss.units}</td>
                         <td className="table-cell">{ss.grade ? <span className="badge badge-green">{ss.grade}</span> : <span className="badge badge-yellow">INC</span>}</td>
                       </tr>

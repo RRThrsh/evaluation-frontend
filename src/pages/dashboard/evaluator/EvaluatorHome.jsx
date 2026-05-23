@@ -5,13 +5,8 @@ import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
 
 const YEAR_LEVELS = { 1: "1st Year", 2: "2nd Year", 3: "3rd Year", 4: "4th Year" };
 
-const statusBadge = (status) =>
-  `badge ${
-    status === "APPROVED" || status === "ENROLLED" || status === "PASSED" ? "badge-green" :
-    status === "PENDING" ? "badge-yellow" :
-    status === "FAILED" ? "badge-red" :
-    "badge-gray"
-  }`;
+const gradeBadge = (grade) =>
+  grade ? `badge badge-green` : `badge badge-yellow`;
 
 function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pendingRequestedBy }) {
   return (
@@ -187,7 +182,7 @@ export default function EvaluatorHome() {
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
     { key: "subject_name", label: "Subject", width: "45%" },
     { key: "grade", label: "Grade", align: "right", width: "15%", className: "whitespace-nowrap", render: (s) => s.grade || "\u2014" },
-    { key: "status", label: "Status", width: "25%", render: (s) => <span className={statusBadge(s.status)}>{s.status}</span> },
+    { key: "status", label: "Grade", width: "25%", render: (s) => <span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span> },
   ], []);
 
   const nextColumns = useMemo(() => [

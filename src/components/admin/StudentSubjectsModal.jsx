@@ -2,13 +2,9 @@ import { useEffect, useState } from "react";
 import { usePermissions } from "../../context/PermissionContext";
 import api from "../../services/api";
 
-function statusBadge(status) {
-  const map = {
-    PENDING: { label: "Pending", cls: "badge badge-yellow" },
-    APPROVED: { label: "Pass", cls: "badge badge-green" },
-    REJECTED: { label: "Fail", cls: "badge badge-red" },
-  };
-  return map[status] || { label: status || "\u2014", cls: "badge badge-gray" };
+function statusBadge(status, grade) {
+  if (grade) return { label: grade, cls: "badge badge-green" };
+  return { label: "INC", cls: "badge badge-yellow" };
 }
 
 function Field({ label, value }) {
@@ -74,9 +70,9 @@ function CurriculumView({ curriculum, loading, onBack }) {
                         <td className="table-cell text-slate-500">{sub.semester}</td>
                         <td className="table-cell"><span className={`badge ${sub.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{sub.subject_type}</span></td>
                         <td className="table-cell text-slate-600">{sub.units}</td>
-                        <td className="table-cell text-slate-700 font-medium">{sub.grade ?? "\u2014"}</td>
+                        <td className="table-cell text-slate-700 font-medium">{sub.grade ? <span className={statusBadge(sub.enrollment_status, sub.grade).cls}>{sub.grade}</span> : "\u2014"}</td>
                         <td className="table-cell">
-                          {sub.enrollment_status ? <span className={statusBadge(sub.enrollment_status).cls}>{statusBadge(sub.enrollment_status).label}</span> : <span className="text-[10px] text-slate-300 italic">Not taken</span>}
+                          {sub.enrollment_status ? <span className="badge badge-yellow">INC</span> : <span className="text-[10px] text-slate-300 italic">Not taken</span>}
                         </td>
                       </tr>
                     ))}
@@ -133,9 +129,9 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
     } catch (err) { onToast(err.message, "error"); }
   };
 
-  const handleGrade = async (ssId, grade, status) => {
+  const handleGrade = async (ssId, grade) => {
     try {
-      await api.put(`/api/admin/students/grade/${ssId}`, { grade, status });
+      await api.put(`/api/admin/students/grade/${ssId}`, { grade });
       onToast("Grade saved");
       await loadSubjects();
     } catch (err) { onToast(err.message, "error"); }
@@ -341,7 +337,7 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                             <input type="number" min={0} max={100}
                               value={gradeInputs[ss.id] ?? ss.grade ?? ""}
                               onChange={(e) => setGradeInputs({ ...gradeInputs, [ss.id]: e.target.value })}
-                              onBlur={(e) => { const val = e.target.value; if (val) handleGrade(ss.id, Number(val), Number(val) >= Number(config.passing_grade) ? "APPROVED" : "REJECTED"); setEditingGradeId(null); }}
+                              onBlur={(e) => { const val = e.target.value; if (val) handleGrade(ss.id, Number(val)); setEditingGradeId(null); }}
                               onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); if (e.key === "Escape") setEditingGradeId(null); }}
                               className="input-field w-16 py-1 text-xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               autoFocus />
@@ -349,7 +345,7 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                             <span className="text-sm text-slate-700 font-medium">{ss.grade ?? "\u2014"}</span>
                           )}
                         </td>
-                        <td className="table-cell"><span className={statusBadge(ss.status).cls}>{statusBadge(ss.status).label}</span></td>
+                        <td className="table-cell">{ss.grade ? <span className="badge badge-green">{ss.grade}</span> : <span className="badge badge-yellow">INC</span>}</td>
                         {can("students.manage") && (
                         <td className="table-cell">
                           <button onClick={() => { setEditingGradeId(ss.id); setGradeInputs({ ...gradeInputs, [ss.id]: ss.grade ?? "" }); }} className="btn btn-ghost btn-sm text-amber-500">

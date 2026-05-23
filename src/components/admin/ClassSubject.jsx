@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, X, BookOpen, Users, GraduationCap, Plus } from "lucide-react";
+import { Search, X, BookOpen, Users, GraduationCap, Plus, Link } from "lucide-react";
 import api from "../../services/api";
 import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
@@ -23,6 +23,11 @@ export default function ClassSubject() {
   const [newSchoolYear, setNewSchoolYear] = useState("");
 
   const [schoolYearList, setSchoolYearList] = useState([]);
+  const [sections, setSections] = useState([]);
+  const [allStudents, setAllStudents] = useState([]);
+  const [addStudentSearch, setAddStudentSearch] = useState("");
+  const [addStudentResults, setAddStudentResults] = useState([]);
+  const [addStudentSectionId, setAddStudentSectionId] = useState("");
   const { can } = usePermissions();
   const schoolYearOptions = useMemo(() => [
     { value: "", label: "All School Years" },
@@ -30,7 +35,7 @@ export default function ClassSubject() {
   ], [schoolYearList]);
 
   useEffect(() => {
-    api.get("/api/admin/school-years").then(r => setSchoolYearList(r.data.data)).catch(() => {});
+    api.get("/api/admin/school-years").then(r => setSchoolYearList(r.data ?? [])).catch(() => {});
   }, []);
 
   const yearOptions = [
@@ -72,10 +77,67 @@ export default function ClassSubject() {
     setSelectedSubject(subject);
     setStudentsLoading(true);
     setStudents([]);
+    setAddStudentSearch("");
+    setAddStudentResults([]);
+    setAddStudentSectionId("");
     try {
-      const res = await api.get(`/api/admin/class-subjects/${subject.id}/students`);
-      setStudents(res.data ?? []);
+      const [sRes, stRes] = await Promise.all([
+        api.get("/api/admin/sections"),
+        api.get(`/api/admin/class-subjects/${subject.id}/students`),
+      ]);
+      setSections(sRes.data ?? []);
+      setStudents(stRes.data ?? []);
     } catch {} finally { setStudentsLoading(false); }
+  };
+
+  const loadStudentSearch = async (q) => {
+    if (!q.trim()) { setAddStudentResults([]); return; }
+    try {
+      const res = await api.get("/api/admin/students");
+      const all = res.data ?? [];
+      const term = q.toLowerCase();
+      setAddStudentResults(
+        all.filter(
+          (s) =>
+            !students.find((en) => en.id === s.id) &&
+            (`${s.last_name} ${s.first_name} ${s.student_number}`.toLowerCase().includes(term))
+        ).slice(0, 10)
+      );
+    } catch {}
+  };
+
+  const handleAddStudent = async (studentId) => {
+    if (!selectedSubject) return;
+    try {
+      await api.post(`/api/admin/class-subjects/${selectedSubject.id}/students`, {
+        student_id: studentId,
+        section_id: addStudentSectionId || null,
+      });
+      setAddStudentSearch("");
+      setAddStudentResults([]);
+      setAddStudentSectionId("");
+      const res = await api.get(`/api/admin/class-subjects/${selectedSubject.id}/students`);
+      setStudents(res.data ?? []);
+    } catch (e) {
+      alert(e.message || "Failed to add student");
+    }
+  };
+
+  const handleAssignSection = async (ssId, sectionId) => {
+    try {
+      await api.patch(`/api/admin/student-subjects/${ssId}/section`, { section_id: sectionId || null });
+      setStudents((prev) =>
+        prev.map((st) => {
+          if (st.ss_id === ssId) {
+            const sec = sections.find((s) => s.id === sectionId);
+            return { ...st, section_id: sectionId, section_name: sec?.name || null };
+          }
+          return st;
+        })
+      );
+    } catch (e) {
+      alert(e.message || "Failed to assign section");
+    }
   };
 
   const filtered = useMemo(() =>
@@ -215,7 +277,7 @@ export default function ClassSubject() {
       {selectedSubject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div onClick={() => setSelectedSubject(null)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-primary-50 text-primary-600">
@@ -229,6 +291,44 @@ export default function ClassSubject() {
               <button onClick={() => setSelectedSubject(null)} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
                 <X size={18} />
               </button>
+            </div>
+
+            <div className="px-6 py-3 border-b border-slate-100 bg-slate-50">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative flex-1 min-w-[200px]">
+                  <input
+                    value={addStudentSearch}
+                    onChange={(e) => { setAddStudentSearch(e.target.value); loadStudentSearch(e.target.value); }}
+                    placeholder="Search student to add..."
+                    className="input-field w-full text-xs pl-8"
+                  />
+                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  {addStudentResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto">
+                      {addStudentResults.map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => handleAddStudent(s.id)}
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 last:border-0"
+                        >
+                          <span className="font-medium">{s.last_name}, {s.first_name}</span>
+                          <span className="text-slate-400">{s.student_number}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <select
+                  value={addStudentSectionId}
+                  onChange={(e) => setAddStudentSectionId(e.target.value)}
+                  className="input-field text-xs w-auto"
+                >
+                  <option value="">No section</option>
+                  {sections.map((sec) => (
+                    <option key={sec.id} value={sec.id}>{sec.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
@@ -250,9 +350,9 @@ export default function ClassSubject() {
                 <div className="space-y-2">
                   <p className="text-xs text-slate-500 font-medium mb-3">{students.length} student(s) enrolled</p>
                   {students.map((st) => (
-                    <div key={st.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition">
-                      <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-xs font-bold">
-                        {st.student_name.charAt(0)}
+                    <div key={st.ss_id || st.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition">
+                      <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-xs font-bold shrink-0">
+                        {st.student_name?.charAt(0) || "?"}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-800">{st.student_name}</p>
@@ -260,9 +360,22 @@ export default function ClassSubject() {
                           {st.student_number} &middot; {st.course_name || "N/A"} &middot; Year {st.year_level}
                         </p>
                       </div>
-                      <div className="text-right">
-                        {st.grade && <span className="text-xs font-semibold text-slate-700">{st.grade}</span>}
-                        <p className="text-[10px] text-slate-400">{st.enrollment_status}</p>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={st.section_id || ""}
+                          onChange={(e) => handleAssignSection(st.ss_id, e.target.value)}
+                          className="input-field text-xs w-auto py-1"
+                        >
+                          <option value="">No section</option>
+                          {sections.map((sec) => (
+                            <option key={sec.id} value={sec.id}>{sec.name}</option>
+                          ))}
+                        </select>
+                        {st.grade && (
+                          <span className="text-xs font-semibold text-slate-700 bg-white px-2 py-1 rounded-lg border border-slate-200">
+                            {st.grade}
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Bell } from "lucide-react";
 import api from "../../services/api";
-import SvgIcon from "./SvgIcon";
 
 function playNotificationSound() {
   try {
@@ -17,9 +17,7 @@ function playNotificationSound() {
     g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
     o.start(ctx.currentTime);
     o.stop(ctx.currentTime + 0.5);
-  } catch (e) {
-    // audio not supported
-  }
+  } catch (e) {}
 }
 
 export default function NotificationBell() {
@@ -53,18 +51,13 @@ export default function NotificationBell() {
     fetchNotifications();
     const countInterval = setInterval(fetchUnreadCount, 15000);
     const listInterval = setInterval(fetchNotifications, 30000);
-    return () => {
-      clearInterval(countInterval);
-      clearInterval(listInterval);
-    };
+    return () => { clearInterval(countInterval); clearInterval(listInterval); };
   }, [fetchUnreadCount, fetchNotifications]);
 
   useEffect(() => {
     if (!open) return;
     const handleClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setOpen(false);
-      }
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setOpen(false);
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -75,9 +68,7 @@ export default function NotificationBell() {
       await api.patch(`/api/notifications/${id}/read`);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
       setUnreadCount((c) => Math.max(0, c - 1));
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) {}
   };
 
   const markAllAsRead = async () => {
@@ -85,17 +76,15 @@ export default function NotificationBell() {
       await api.post("/api/notifications/mark-all-read");
       setNotifications([]);
       setUnreadCount(0);
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) {}
   };
 
   const typeStyles = {
-    info: "bg-blue-100 text-blue-600",
-    success: "bg-emerald-100 text-emerald-600",
-    warning: "bg-amber-100 text-amber-600",
-    error: "bg-red-100 text-red-600",
-    broadcast: "bg-purple-100 text-purple-600",
+    info: "bg-primary-100 text-primary-700",
+    success: "bg-emerald-100 text-emerald-700",
+    warning: "bg-amber-100 text-amber-700",
+    error: "bg-red-100 text-red-700",
+    broadcast: "bg-purple-100 text-purple-700",
   };
 
   const typeIcons = {
@@ -120,22 +109,23 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="relative rounded-xl border border-slate-200 bg-white p-2 text-slate-500 hover:text-slate-700 hover:border-slate-300 transition"
+        className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
+        aria-label="Notifications"
       >
-        <SvgIcon path="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" className="w-5 h-5" />
+        <Bell size={18} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg">
+          <span className="absolute -top-0.5 -right-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-xs">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 md:w-96 rounded-2xl border border-slate-200 bg-white shadow-2xl z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-80 md:w-96 card shadow-xl z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
             <h3 className="text-sm font-semibold text-slate-800">Notifications</h3>
             {notifications.length > 0 && (
-              <button onClick={markAllAsRead} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+              <button onClick={markAllAsRead} className="text-xs text-primary-600 hover:text-primary-700 font-medium">
                 Mark all read
               </button>
             )}
@@ -143,7 +133,7 @@ export default function NotificationBell() {
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center">
-                <SvgIcon path="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                <Bell size={32} className="mx-auto text-slate-300 mb-2" />
                 <p className="text-sm text-slate-400">No new notifications</p>
               </div>
             ) : (
@@ -153,8 +143,10 @@ export default function NotificationBell() {
                   onClick={() => markAsRead(n.id)}
                   className="flex items-start gap-3 px-4 py-3 border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition last:border-0"
                 >
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${typeStyles[n.type] || typeStyles.info}`}>
-                    <SvgIcon path={typeIcons[n.type] || typeIcons.info} className="w-4 h-4" />
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${typeStyles[n.type] || typeStyles.info}`}>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={typeIcons[n.type] || typeIcons.info} />
+                    </svg>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-800">{n.title}</p>

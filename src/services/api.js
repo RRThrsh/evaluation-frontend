@@ -75,7 +75,8 @@ async function request(endpoint, options = {}) {
   }
 
   if (!res.ok) {
-    throw new ApiError(res.status, data.message || data.error || `Request failed (${res.status})`);
+    const msg = data?.error?.message || data?.message || data?.error || `Request failed (${res.status})`;
+    throw new ApiError(res.status, msg);
   }
 
   if (isGet) setCache(cacheKey, data);
@@ -85,7 +86,16 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-  get: (endpoint) => request(endpoint),
+  get: (endpoint, opts = {}) => {
+    let url = endpoint;
+    if (opts.params) {
+      const qs = new URLSearchParams();
+      Object.entries(opts.params).forEach(([k, v]) => { if (v !== undefined && v !== "") qs.set(k, v); });
+      const str = qs.toString();
+      if (str) url += `?${str}`;
+    }
+    return request(url);
+  },
   post: (endpoint, body) => request(endpoint, { method: "POST", body: JSON.stringify(body) }),
   put: (endpoint, body) => request(endpoint, { method: "PUT", body: JSON.stringify(body) }),
   patch: (endpoint, body) => request(endpoint, { method: "PATCH", body: JSON.stringify(body) }),

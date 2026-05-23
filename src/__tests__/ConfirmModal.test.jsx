@@ -20,33 +20,33 @@ describe("ConfirmModal", () => {
     expect(screen.getByText("Proceed")).toBeInTheDocument();
   });
 
-  it("has default confirm label 'Yes'", () => {
+  it("has default confirm label 'Confirm'", () => {
     render(<ConfirmModal title="Test" message="Msg" onConfirm={vi.fn()} onCancel={vi.fn()} />);
-    expect(screen.getByText("Yes")).toBeInTheDocument();
+    expect(screen.getByText("Confirm")).toBeInTheDocument();
   });
 
-  it("has default cancel label 'No'", () => {
+  it("has default cancel label 'Cancel'", () => {
     render(<ConfirmModal title="Test" message="Msg" onConfirm={vi.fn()} onCancel={vi.fn()} />);
-    expect(screen.getByText("No")).toBeInTheDocument();
+    expect(screen.getByText("Cancel")).toBeInTheDocument();
   });
 
   it("calls onConfirm when confirm clicked", async () => {
     const onConfirm = vi.fn();
     render(<ConfirmModal title="Test" message="Msg" onConfirm={onConfirm} onCancel={vi.fn()} />);
-    await userEvent.click(screen.getByText("Yes"));
+    await userEvent.click(screen.getByText("Confirm"));
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
   it("calls onCancel when cancel clicked", async () => {
     const onCancel = vi.fn();
     render(<ConfirmModal title="Test" message="Msg" onConfirm={vi.fn()} onCancel={onCancel} />);
-    await userEvent.click(screen.getByText("No"));
+    await userEvent.click(screen.getByText("Cancel"));
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it("applies custom confirm color", () => {
-    render(<ConfirmModal title="Test" message="Msg" confirmColor="bg-red-600 hover:bg-red-700" onConfirm={vi.fn()} onCancel={vi.fn()} />);
-    const confirmBtn = screen.getByText("Yes");
-    expect(confirmBtn.className).toContain("bg-red-600");
+  it("applies custom confirm color via confirmVariant", () => {
+    render(<ConfirmModal title="Test" message="Msg" confirmVariant="danger" onConfirm={vi.fn()} onCancel={vi.fn()} />);
+    const confirmBtn = screen.getByText("Confirm");
+    expect(confirmBtn.className).toContain("btn-danger");
   });
 });

@@ -53,9 +53,9 @@ describe("ProtectedRoute", () => {
 
     it("renders children when authenticated with matching role", async () => {
         localStorage.setItem("token", "token");
-        api.get.mockResolvedValue({ data: { id: 1, role: "user" } });
+        api.get.mockResolvedValue({ data: { id: 1, role: "evaluator" } });
 
-        renderProtected(["user", "admin"]);
+        renderProtected(["evaluator", "admin"]);
         const content = await screen.findByTestId("protected-content");
         expect(content).toBeInTheDocument();
         expect(content).toHaveTextContent("Protected Content");
@@ -63,7 +63,7 @@ describe("ProtectedRoute", () => {
 
     it("renders children when no roles required", async () => {
         localStorage.setItem("token", "token");
-        api.get.mockResolvedValue({ data: { id: 1, role: "user" } });
+        api.get.mockResolvedValue({ data: { id: 1, role: "evaluator" } });
 
         renderProtected([]);
         const content = await screen.findByTestId("protected-content");
@@ -72,7 +72,7 @@ describe("ProtectedRoute", () => {
 
     it("redirects to /401 when role not authorized", async () => {
         localStorage.setItem("token", "token");
-        api.get.mockResolvedValue({ data: { id: 1, role: "user" } });
+        api.get.mockResolvedValue({ data: { id: 1, role: "evaluator" } });
 
         renderProtected(["admin"], "/protected");
         const content = screen.queryByTestId("protected-content");

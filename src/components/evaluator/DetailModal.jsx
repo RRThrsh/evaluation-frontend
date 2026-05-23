@@ -18,12 +18,12 @@ export default function DetailModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => { if (!confirmAction) onClose(); }}>
-      <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-label={request.status === "PENDING" ? "Student Grades Overview" : "Evaluation Report"} className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-zinc-800">
             {request.status === "PENDING" ? "Student Grades Overview" : "Evaluation Report"}
           </h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-red-500">✕</button>
+          <button onClick={onClose} aria-label="Close modal" className="text-zinc-500 hover:text-red-500">✕</button>
         </div>
 
         {evaluation && <EvaluationReport evaluation={evaluation} />}

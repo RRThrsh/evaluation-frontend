@@ -42,10 +42,10 @@ describe("InputField", () => {
         const input = document.querySelector('input[name="pwd"]');
         expect(input).toHaveAttribute("type", "password");
 
-        await userEvent.click(screen.getByText("Show"));
+        await userEvent.click(screen.getByLabelText("Show password"));
         expect(input).toHaveAttribute("type", "text");
 
-        await userEvent.click(screen.getByText("Hide"));
+        await userEvent.click(screen.getByLabelText("Hide password"));
         expect(input).toHaveAttribute("type", "password");
     });
 });

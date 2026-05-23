@@ -9,12 +9,12 @@ const decisionColor = (decision) =>
   decision === "APPROVED" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700";
 
 const statusColor = (status) =>
-  ({ enrolled: "bg-blue-50", passed: "bg-emerald-50", failed: "bg-red-50", pending: "bg-zinc-50" }[status] || "bg-zinc-50");
+  ({ inc: "bg-yellow-50", passed: "bg-emerald-50", failed: "bg-red-50", pending: "bg-zinc-50" }[status] || "bg-zinc-50");
 
-const statusBadge = (status) =>
-  `text-xs font-bold px-2 py-0.5 rounded uppercase ${
-    ({ enrolled: "bg-blue-200 text-blue-800", passed: "bg-emerald-200 text-emerald-800", failed: "bg-red-200 text-red-800", pending: "bg-zinc-200 text-zinc-600" }[status] || "bg-zinc-200 text-zinc-600")
-  }`;
+const gradeBadge = (grade) =>
+  grade
+    ? "text-xs font-bold px-2 py-0.5 rounded uppercase bg-emerald-200 text-emerald-800"
+    : "text-xs font-bold px-2 py-0.5 rounded uppercase bg-yellow-200 text-yellow-800";
 
 function PrereqBadge({ prereq_failed, prereq_met }) {
   return (
@@ -26,7 +26,9 @@ function PrereqBadge({ prereq_failed, prereq_met }) {
   );
 }
 
-export default function EvaluationReport({ evaluation }) {
+import { memo } from "react";
+
+export default memo(function EvaluationReport({ evaluation }) {
   if (!evaluation) return null;
   const { student, summary, current_semester_subjects, next_semester_subjects, failed_subjects, unresolved_failed_subjects, retake_subjects, prerequisite_checks, recommendations, overall, decision, is_regular, is_irregular_candidate } = evaluation;
 
@@ -63,14 +65,13 @@ export default function EvaluationReport({ evaluation }) {
       {current_semester_subjects?.length > 0 ? (
         <div className="divide-y border rounded-lg text-sm">
           {current_semester_subjects.map((cs, i) => (
-            <div key={i} className={`p-3 flex justify-between items-center ${statusColor(cs.status)}`}>
+            <div key={i} className={`p-3 flex justify-between items-center transition hover:brightness-90 ${cs.grade ? "bg-emerald-50" : "bg-yellow-50"}`}>
               <div>
                 <span className="font-medium">{cs.subject_code}</span>
                 <span className="text-zinc-400 ml-1">{cs.subject_name} ({cs.subject_type})</span>
               </div>
               <div className="flex items-center gap-2">
-                {cs.grade && <span className="font-bold">{cs.grade}</span>}
-                <span className={statusBadge(cs.status)}>{cs.status}</span>
+                <span className={gradeBadge(cs.grade)}>{cs.grade || "INC"}</span>
               </div>
             </div>
           ))}
@@ -84,7 +85,7 @@ export default function EvaluationReport({ evaluation }) {
       {next_semester_subjects?.length > 0 ? (
         <div className="divide-y border rounded-lg text-sm">
           {next_semester_subjects.map((ns, i) => (
-            <div key={i} className={`p-3 flex items-center justify-between ${ns.is_retake ? "bg-amber-50" : ""}`}>
+            <div key={i} className={`p-3 flex items-center justify-between transition hover:brightness-90 ${ns.is_retake ? "bg-amber-50" : ""}`}>
               <div>
                 <span className="font-medium">{ns.subject_code}</span>
                 <span className="text-zinc-400 text-xs ml-2">({ns.subject_type})</span>
@@ -105,13 +106,13 @@ export default function EvaluationReport({ evaluation }) {
           </div>
           <div className="divide-y border border-red-200 rounded-lg text-sm">
             {retake_subjects?.map((rs, i) => (
-              <div key={`retake-${i}`} className="p-3 flex justify-between bg-amber-50">
+              <div key={`retake-${i}`} className="p-3 flex justify-between bg-amber-50 transition hover:brightness-90">
                 <div><span className="font-medium">{rs.subject_code} — {rs.subject_name}</span><span className="text-amber-600 text-xs ml-2 font-bold">[OFFERED NEXT SEM]</span></div>
                 <span className="text-amber-600 font-bold">{rs.grade}</span>
               </div>
             ))}
             {unresolved_failed_subjects?.map((fs, i) => (
-              <div key={`unresolved-${i}`} className="p-3 flex justify-between bg-red-50">
+              <div key={`unresolved-${i}`} className="p-3 flex justify-between bg-red-50 transition hover:brightness-90">
                 <div><span className="font-medium">{fs.subject_code} — {fs.subject_name}</span><span className="text-red-600 text-xs ml-2 font-bold">[NOT OFFERED NEXT SEM]</span></div>
                 <span className="text-red-600 font-bold">{fs.grade}</span>
               </div>
@@ -127,7 +128,7 @@ export default function EvaluationReport({ evaluation }) {
           </div>
           <div className="divide-y border border-orange-200 rounded-lg text-sm">
             {failed_subjects.map((fs, i) => (
-              <div key={i} className="p-3 flex justify-between bg-orange-50">
+              <div key={i} className="p-3 flex justify-between bg-orange-50 transition hover:brightness-90">
                 <span className="font-medium">{fs.subject_code} — {fs.subject_name}</span>
                 <span className="text-orange-600 font-bold">{fs.grade}</span>
               </div>
@@ -143,7 +144,7 @@ export default function EvaluationReport({ evaluation }) {
           </div>
           <div className="divide-y border rounded-lg text-sm">
             {prerequisite_checks.map((pc, i) => (
-              <div key={i} className="p-3 flex items-center justify-between">
+              <div key={i} className="p-3 flex items-center justify-between transition hover:brightness-90">
                 <div><span className="font-medium">{pc.subject_code}</span><span className="text-zinc-400 mx-1">→</span><span>prerequisite: {pc.prereq_code}</span></div>
                 <PrereqBadge prereq_failed={pc.prereq_failed} prereq_met={pc.prereq_met} />
               </div>
@@ -153,4 +154,4 @@ export default function EvaluationReport({ evaluation }) {
       )}
     </div>
   );
-}
+});

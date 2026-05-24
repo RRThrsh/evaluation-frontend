@@ -103,79 +103,39 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const isThesis = (code) => /^THESIS/i.test(code || "");
 
   const allSections = useMemo(() => {
-    const removedCount = sections.reduce((sum, s) => sum + s.subjects.length, 0)
-      - filteredSections.reduce((sum, s) => sum + s.subjects.length, 0);
+    // Build gap fillers:
+    //   1. Retakeable fails (same semester, previous year)
+    //   2. Prerequisites of fails that are in the current semester
+    const gapFillers = [];
+    const addedCodes = new Set();
 
-    // Count failed subjects in the current year (semester ≤ current semester)
-    const gapFillerCount = (() => {
-      let count = 0;
-      for (const sub of sections.flatMap((s) => s.subjects)) {
-        if (failedIds.has(sub.id)
-          && Number(sub.year_level) === Number(student.year_level)
-          && Number(sub.semester) <= Number(student.current_semester)) count++;
+    for (const sub of sections.flatMap((s) => s.subjects)) {
+      if (!failedIds.has(sub.id)) continue;
+
+      const sameSem = Number(sub.semester) === Number(student.current_semester);
+      const prevYear = Number(sub.year_level) < Number(student.year_level);
+
+      // 1. Retakeable: same semester, previous year
+      if (sameSem && prevYear) {
+        gapFillers.push({ ...sub, isGapFiller: true });
+        addedCodes.add(sub.subject_code);
       }
-      return count;
-    })();
 
-    let result;
-    if (gapFillerCount <= 0) {
-      result = [...filteredSections];
-    } else {
-      const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
-
-      // Collect failed subjects from current year (same year, semester ≤ current sem)
-      const gapFillers = [];
-      const addedCodes = new Set();
-      const usedIds = new Set();
-      for (const section of sections) {
-        for (const sub of section.subjects) {
-          if (!failedIds.has(sub.id)) continue;
-          if (Number(sub.year_level) !== Number(student.year_level)) continue;
-          if (Number(sub.semester) > Number(student.current_semester)) continue;
-          gapFillers.push({ ...sub, isGapFiller: true });
-          addedCodes.add(sub.subject_code);
-          usedIds.add(sub.id);
+      // 2. Prerequisite of this fail that is in the current semester
+      const prereqId = prereqById[sub.id];
+      if (prereqId && !failedIds.has(prereqId)) {
+        const prereqSub = curriculum.find((s) => s.id === prereqId);
+        if (prereqSub && Number(prereqSub.semester) === Number(student.current_semester)
+            && !addedCodes.has(prereqSub.subject_code)) {
+          gapFillers.push({ ...prereqSub, isGapFiller: true });
+          addedCodes.add(prereqSub.subject_code);
         }
       }
-
-      // For Y2+, include prerequisites of failed subjects (same semester) as gap fillers
-      if (Number(student.year_level) >= 2) {
-        for (const section of sections) {
-          for (const sub of section.subjects) {
-            if (!failedIds.has(sub.id)) continue;
-            const prereqId = prereqById[sub.id];
-            if (!prereqId || failedIds.has(prereqId) || usedIds.has(prereqId)) continue;
-            const prereqSub = curriculum.find((s) => s.id === prereqId);
-            if (!prereqSub || prereqSub.semester !== Number(student.current_semester)) continue;
-            if (addedCodes.has(prereqSub.subject_code)) continue;
-            gapFillers.push({ ...prereqSub, isGapFiller: true });
-            addedCodes.add(prereqSub.subject_code);
-            usedIds.add(prereqSub.id);
-          }
-        }
-      }
-
-      // Remaining: fill with untaken minors → majors from (student_year, same sem)
-      const remaining = gapFillerCount - gapFillers.length;
-      if (remaining > 0) {
-        const candidates = curriculum.filter(
-          (sub) => sub.year_level === Number(student.year_level)
-            && sub.semester === Number(student.current_semester)
-            && !usedIds.has(sub.id)
-            && !addedCodes.has(sub.subject_code)
-        );
-        const minors = candidates.filter((s) => s.subject_type === "minor");
-        const majors = candidates.filter((s) => s.subject_type === "major");
-        for (const s of [...minors.slice(0, remaining), ...majors.slice(0, remaining)]) {
-          gapFillers.push({ ...s, isGapFiller: true });
-          if (gapFillers.length >= gapFillerCount) break;
-        }
-      }
-
-      result = gapFillers.length === 0
-        ? [...filteredSections]
-        : [...filteredSections, { year: student.year_level, sem: student.current_semester, subjects: gapFillers, isGapFiller: true }];
     }
+
+    const result = gapFillers.length === 0
+      ? [...filteredSections]
+      : [...filteredSections, { year: student.year_level, sem: student.current_semester, subjects: gapFillers, isGapFiller: true }];
 
     const thesisItems = sections.flatMap((s) => s.subjects).filter((sub) => isThesis(sub.subject_code));
     if (thesisItems.length >= 2) {

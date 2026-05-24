@@ -104,13 +104,14 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     if (removedCount <= 0) return filteredSections;
 
     const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
-    const eligible = curriculum.filter((sub) => {
-      return !existingIds.has(sub.id)
-        && sub.subject_type === "minor"
-        && (sub.year_level > student.year_level
-            || (sub.year_level === student.year_level && sub.semester > student.current_semester));
-    });
-    const gapFillers = eligible.slice(0, removedCount);
+    const isFuture = (sub) => sub.year_level > student.year_level
+      || (sub.year_level === student.year_level && sub.semester > student.current_semester);
+    const minors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "minor" && isFuture(sub));
+    let gapFillers = minors.slice(0, removedCount);
+    if (gapFillers.length < removedCount) {
+      const majors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "major" && isFuture(sub));
+      gapFillers = [...gapFillers, ...majors.slice(0, removedCount - gapFillers.length)];
+    }
     if (gapFillers.length === 0) return filteredSections;
 
     return [...filteredSections, {

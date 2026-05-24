@@ -106,18 +106,40 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
       - filteredSections.reduce((sum, s) => sum + s.subjects.length, 0);
     const gapFillerCount = failedIds.size;
     let result;
-    if (removedCount <= 0 && gapFillerCount <= 0) {
+    if (gapFillerCount <= 0) {
       result = [...filteredSections];
     } else {
       const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
-      const isSameSemNextYear = (sub) => sub.year_level === Number(student.year_level) + 1 && sub.semester === Number(student.current_semester);
-      const minors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "minor" && isSameSemNextYear(sub));
-      const count = Math.max(removedCount, gapFillerCount);
-      let gapFillers = minors.slice(0, count);
-      if (gapFillers.length < count) {
-        const majors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "major" && isSameSemNextYear(sub));
-        gapFillers = [...gapFillers, ...majors.slice(0, count - gapFillers.length)];
+
+      // Find which semesters have failed subjects
+      const failsPerSem = {};
+      for (const section of sections) {
+        for (const sub of section.subjects) {
+          if (failedIds.has(sub.id)) {
+            const sem = sub.semester;
+            failsPerSem[sem] = (failsPerSem[sem] || 0) + 1;
+          }
+        }
       }
+
+      // For each semester with fails, get gap fillers from SAME SEMESTER +1 YEAR
+      const gapYear = Number(student.year_level) + 1;
+      const gapFillers = [];
+      for (const [sem, count] of Object.entries(failsPerSem)) {
+        const candidates = curriculum.filter(
+          (sub) => !existingIds.has(sub.id)
+            && sub.year_level === gapYear
+            && sub.semester === Number(sem)
+        );
+        const minors = candidates.filter((s) => s.subject_type === "minor");
+        const majors = candidates.filter((s) => s.subject_type === "major");
+        let picks = minors.slice(0, count);
+        if (picks.length < count) {
+          picks = [...picks, ...majors.slice(0, count - picks.length)];
+        }
+        gapFillers.push(...picks);
+      }
+
       result = gapFillers.length === 0
         ? [...filteredSections]
         : [...filteredSections, { year: student.year_level, sem: student.current_semester, subjects: gapFillers, isGapFiller: true }];

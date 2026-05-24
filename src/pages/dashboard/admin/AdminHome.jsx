@@ -107,12 +107,6 @@ const EnrolledStudents = lazy(
       "../../../components/admin/EnrolledStudents"
     )
 );
-const ClassSubject = lazy(
-  () =>
-    import(
-      "../../../components/admin/ClassSubject"
-    )
-);
 const PermissionManager = lazy(
   () =>
     import(
@@ -456,11 +450,6 @@ export default function AdminHome() {
               {activeTab ===
                 "enrolled" && (
                 <EnrolledStudents />
-              )}
-
-              {activeTab ===
-                "class-subjects" && (
-                <ClassSubject />
               )}
 
               {activeTab ===

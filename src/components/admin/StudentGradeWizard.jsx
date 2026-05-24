@@ -112,25 +112,26 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     } else {
       const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
 
-      // Only consider failed subjects from the student's CURRENT semester
-      const failsPerSem = {};
+      // Group fails by (year_level, semester) — gap source = fail_year + 1, same sem
+      const failsByYearSem = {};
       for (const section of sections) {
         for (const sub of section.subjects) {
-          if (failedIds.has(sub.id) && sub.semester === Number(student.current_semester)) {
-            const sem = sub.semester;
-            failsPerSem[sem] = (failsPerSem[sem] || 0) + 1;
-          }
+          if (!failedIds.has(sub.id)) continue;
+          if (sub.semester !== Number(student.current_semester)) continue;
+          const key = `${sub.year_level}-${sub.semester}`;
+          if (!failsByYearSem[key]) failsByYearSem[key] = { year: sub.year_level, sem: sub.semester, count: 0 };
+          failsByYearSem[key].count++;
         }
       }
 
-      // For each semester with fails, get gap fillers from SAME SEMESTER +1 YEAR
-      const gapYear = Number(student.year_level) + 1;
+      // For each group, get gap fillers from (fail_year + 1, same sem)
       const gapFillers = [];
-      for (const [sem, count] of Object.entries(failsPerSem)) {
+      for (const { year, sem, count } of Object.values(failsByYearSem)) {
+        const gapYear = Number(year) + 1;
         const candidates = curriculum.filter(
           (sub) => !existingIds.has(sub.id)
             && sub.year_level === gapYear
-            && sub.semester === Number(sem)
+            && sub.semester === sem
         );
         const minors = candidates.filter((s) => s.subject_type === "minor");
         const majors = candidates.filter((s) => s.subject_type === "major");

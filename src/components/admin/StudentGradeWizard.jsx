@@ -110,13 +110,12 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
       result = [...filteredSections];
     } else {
       const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
-      const isFuture = (sub) => sub.year_level > student.year_level
-        || (sub.year_level === student.year_level && sub.semester > student.current_semester);
-      const minors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "minor" && isFuture(sub));
+      const isSameSemNextYear = (sub) => sub.year_level === Number(student.year_level) + 1 && sub.semester === Number(student.current_semester);
+      const minors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "minor" && isSameSemNextYear(sub));
       const count = Math.max(removedCount, gapFillerCount);
       let gapFillers = minors.slice(0, count);
       if (gapFillers.length < count) {
-        const majors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "major" && isFuture(sub));
+        const majors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "major" && isSameSemNextYear(sub));
         gapFillers = [...gapFillers, ...majors.slice(0, count - gapFillers.length)];
       }
       result = gapFillers.length === 0

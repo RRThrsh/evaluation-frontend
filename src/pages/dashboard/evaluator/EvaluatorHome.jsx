@@ -58,21 +58,29 @@ function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pending
   );
 }
 
-function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
+const THEMES = {
+  green: { card: "border-emerald-200", head: "bg-emerald-50 border-emerald-100", text: "text-emerald-700", count: "text-emerald-500", thText: "text-emerald-600", thRow: "bg-emerald-50/50 border-emerald-100" },
+  blue:  { card: "border-blue-200",    head: "bg-blue-50 border-blue-100",       text: "text-blue-700",    count: "text-blue-500",    thText: "text-blue-600",    thRow: "bg-blue-50/50 border-blue-100" },
+  amber: { card: "border-amber-200",   head: "bg-amber-50 border-amber-100",     text: "text-amber-700",   count: "text-amber-500",   thText: "text-amber-600",   thRow: "bg-amber-50/50 border-amber-100" },
+  red:   { card: "border-red-200",     head: "bg-red-50 border-red-100",         text: "text-red-700",     count: "text-red-500",     thText: "text-red-600",     thRow: "bg-red-50/50 border-red-100" },
+};
+
+function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName, color = "green" }) {
+  const t = THEMES[color] || THEMES.green;
   return (
-    <div className="card overflow-hidden">
-      <div className="px-5 py-3 border-b border-slate-100">
-        <h3 className="font-semibold text-sm text-slate-700">
-          {title} <span className="text-slate-400 font-normal">({subjects.length})</span>
+    <div className={`card overflow-hidden border ${t.card}`}>
+      <div className={`px-5 py-3 border-b ${t.head}`}>
+        <h3 className={`font-semibold text-sm ${t.text}`}>
+          {title} <span className={`font-normal ${t.count}`}>({subjects.length})</span>
         </h3>
       </div>
       {subjects.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/50">
+              <tr className={`border-b ${t.thRow}`}>
                 {columns.map((col) => (
-                  <th key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide ${col.align === "right" ? "text-right" : ""} ${col.className || ""}`}>
+                  <th key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wide ${t.thText} ${col.align === "right" ? "text-right" : ""} ${col.className || ""}`}>
                     {col.label}
                   </th>
                 ))}
@@ -273,6 +281,7 @@ export default function EvaluatorHome() {
               subjects={currentSubjects}
               columns={currentColumns}
               emptyMsg="No current semester subjects."
+              color="green"
             />
             <div className="space-y-6">
               <SubjectTable
@@ -281,41 +290,45 @@ export default function EvaluatorHome() {
                 columns={nextColumns}
                 emptyMsg="No possible subjects."
                 rowClassName={(s) => s.prereq_failed ? "opacity-50 bg-slate-50" : ""}
+                color="blue"
               />
 
-              {gapFillers.length > 0 && (
-                <div className="card border border-amber-200 overflow-hidden">
-                  <div className="px-5 py-3 border-b border-amber-100 bg-amber-50">
-                    <h3 className="font-semibold text-sm text-amber-700 flex items-center gap-2">
-                      <AlertTriangle size={14} />
-                      Fill Subject
-                      <span className="text-xs font-normal text-amber-500">({gapFillers.length})</span>
-                    </h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-amber-100 bg-amber-50/50">
-                          <th className="px-6 py-3 text-left text-xs font-medium text-amber-600 uppercase tracking-wide w-[18%]">Code</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-amber-600 uppercase tracking-wide">Subject</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-amber-600 uppercase tracking-wide w-[14%]">Type</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-amber-600 uppercase tracking-wide w-[12%]">Units</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-amber-50">
-                        {gapFillers.map((g, i) => (
-                          <tr key={i} className="transition hover:bg-amber-50/40">
-                            <td className="px-6 py-3 font-mono text-sm font-semibold text-amber-700 truncate">{g.subject_code}</td>
-                            <td className="px-6 py-3 text-slate-700 truncate">{g.subject_name}</td>
-                            <td className="px-6 py-3">{g.subject_type === "major" ? <span className="badge badge-purple">major</span> : <span className="badge badge-amber">minor</span>}</td>
-                            <td className="px-6 py-3 text-slate-700 text-right">{g.units}</td>
+              {gapFillers.length > 0 && (() => {
+                const t = THEMES.amber;
+                return (
+                  <div className={`card overflow-hidden border ${t.card}`}>
+                    <div className={`px-5 py-3 border-b ${t.head}`}>
+                      <h3 className={`font-semibold text-sm ${t.text} flex items-center gap-2`}>
+                        <AlertTriangle size={14} />
+                        Fill Subject
+                        <span className={`text-xs font-normal ${t.count}`}>({gapFillers.length})</span>
+                      </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className={`border-b ${t.thRow}`}>
+                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wide w-[18%] ${t.thText}`}>Code</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wide ${t.thText}`}>Subject</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wide w-[14%] ${t.thText}`}>Type</th>
+                            <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wide w-[12%] ${t.thText}`}>Units</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-amber-50">
+                          {gapFillers.map((g, i) => (
+                            <tr key={i} className="transition hover:bg-amber-50/40">
+                              <td className="px-6 py-3 font-mono text-sm font-semibold text-amber-700 truncate">{g.subject_code}</td>
+                              <td className="px-6 py-3 text-slate-700 truncate">{g.subject_name}</td>
+                              <td className="px-6 py-3">{g.subject_type === "major" ? <span className="badge badge-purple">major</span> : <span className="badge badge-amber">minor</span>}</td>
+                              <td className="px-6 py-3 text-slate-700 text-right">{g.units}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
         )}
@@ -326,6 +339,7 @@ export default function EvaluatorHome() {
             subjects={allFails}
             columns={failColumns}
             emptyMsg="No failed subjects."
+            color="red"
           />
         )}
       </div>

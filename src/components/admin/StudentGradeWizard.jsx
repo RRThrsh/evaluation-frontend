@@ -45,7 +45,7 @@ function StepBar({ sections, step }) {
   );
 }
 
-export default function StudentGradeWizard({ student, curriculum, onClose, onDone, onToast }) {
+export default function StudentGradeWizard({ student, curriculum, onClose, onDone, onToast, ojtMinYearLevel = 4, ojtMaxFailedSubjects = 4 }) {
   const [step, setStep] = useState(0);
   const [grades, setGrades] = useState({});
   const [saving, setSaving] = useState(false);
@@ -98,29 +98,97 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     }, []);
   }, [sections, failedIds, prereqById]);
 
+  const isOJT = (code) => /^OJT/i.test(code || "");
+  const isThesis = (code) => /^THESIS/i.test(code || "");
+
+  const thesisChainWarnings = useMemo(() => {
+    const thesisItems = sections.flatMap((s) => s.subjects).filter((sub) => isThesis(sub.subject_code));
+    if (thesisItems.length < 2) return [];
+    const sorted = [...thesisItems].sort((a, b) => a.year_level - b.year_level || a.semester - b.semester);
+    const highest = sorted[sorted.length - 1];
+    if (!failedIds.has(highest.id)) return [];
+    const warnings = [];
+    for (let i = 0; i < sorted.length - 1; i++) {
+      if (!failedIds.has(sorted[i].id)) {
+        warnings.push(`"${sorted[i].subject_code}" must also be retaken because "${highest.subject_code}" failed`);
+      }
+    }
+    return warnings;
+  }, [sections, failedIds]);
+
+  const repeatYearWarnings = useMemo(() => {
+    const warnings = [];
+    const yearGroups = {};
+    for (const section of allSections) {
+      if (section.isGapFiller) continue;
+      for (const sub of section.subjects) {
+        if (!yearGroups[sub.year_level]) yearGroups[sub.year_level] = { total: 0, failed: 0 };
+        yearGroups[sub.year_level].total++;
+        if (failedIds.has(sub.id)) yearGroups[sub.year_level].failed++;
+      }
+    }
+    for (const [year, stats] of Object.entries(yearGroups)) {
+      if (stats.failed > stats.total / 2) {
+        warnings.push(`Failed ${stats.failed}/${stats.total} subjects in Year ${year} — entire year should be repeated`);
+      }
+    }
+    return warnings;
+  }, [allSections, failedIds]);
+
+  const ojtBlocked = useMemo(() => {
+    if (!student || Number(student.year_level) < ojtMinYearLevel) return null;
+    const ojt = sections.flatMap((s) => s.subjects).find((sub) => isOJT(sub.subject_code));
+    if (!ojt) return null;
+    const failedMajorMinorCount = sections
+      .flatMap((s) => s.subjects)
+      .filter((sub) => (sub.subject_type === "major" || sub.subject_type === "minor") && failedIds.has(sub.id))
+      .length;
+    if (failedMajorMinorCount >= ojtMaxFailedSubjects) {
+      return `OJT not available — student has ${failedMajorMinorCount} failed major/minor subject(s) (max ${ojtMaxFailedSubjects})`;
+    }
+    return null;
+  }, [sections, failedIds, student, ojtMinYearLevel, ojtMaxFailedSubjects]);
+
   const allSections = useMemo(() => {
     const removedCount = sections.reduce((sum, s) => sum + s.subjects.length, 0)
       - filteredSections.reduce((sum, s) => sum + s.subjects.length, 0);
-    if (removedCount <= 0) return filteredSections;
-
-    const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
-    const isFuture = (sub) => sub.year_level > student.year_level
-      || (sub.year_level === student.year_level && sub.semester > student.current_semester);
-    const minors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "minor" && isFuture(sub));
-    let gapFillers = minors.slice(0, removedCount);
-    if (gapFillers.length < removedCount) {
-      const majors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "major" && isFuture(sub));
-      gapFillers = [...gapFillers, ...majors.slice(0, removedCount - gapFillers.length)];
+    let result;
+    if (removedCount <= 0) {
+      result = [...filteredSections];
+    } else {
+      const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
+      const isFuture = (sub) => sub.year_level > student.year_level
+        || (sub.year_level === student.year_level && sub.semester > student.current_semester);
+      const minors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "minor" && isFuture(sub));
+      let gapFillers = minors.slice(0, removedCount);
+      if (gapFillers.length < removedCount) {
+        const majors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "major" && isFuture(sub));
+        gapFillers = [...gapFillers, ...majors.slice(0, removedCount - gapFillers.length)];
+      }
+      result = gapFillers.length === 0
+        ? [...filteredSections]
+        : [...filteredSections, { year: student.year_level, sem: student.current_semester, subjects: gapFillers, isGapFiller: true }];
     }
-    if (gapFillers.length === 0) return filteredSections;
 
-    return [...filteredSections, {
-      year: student.year_level,
-      sem: student.current_semester,
-      subjects: gapFillers,
-      isGapFiller: true,
-    }];
-  }, [filteredSections, sections, curriculum, student]);
+    const thesisItems = sections.flatMap((s) => s.subjects).filter((sub) => isThesis(sub.subject_code));
+    if (thesisItems.length >= 2) {
+      const sorted = [...thesisItems].sort((a, b) => a.year_level - b.year_level || a.semester - b.semester);
+      const highest = sorted[sorted.length - 1];
+      if (failedIds.has(highest.id)) {
+        for (let i = 0; i < sorted.length - 1; i++) {
+          const lower = sorted[i];
+          if (!failedIds.has(lower.id)) {
+            const targetIdx = result.findIndex((sec) => sec.subjects.some((s) => s.id === highest.id));
+            if (targetIdx >= 0) {
+              result[targetIdx] = { ...result[targetIdx], subjects: [...result[targetIdx].subjects, { ...lower }] };
+            }
+          }
+        }
+      }
+    }
+
+    return result;
+  }, [filteredSections, sections, curriculum, student, failedIds]);
 
   useEffect(() => {
     if (step >= allSections.length) {
@@ -209,6 +277,24 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
 
         {/* ── Content ── */}
         <div className="p-6 space-y-4">
+          {thesisChainWarnings.length > 0 && thesisChainWarnings.map((w, i) => (
+            <div key={i} className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
+              <span className="text-red-600 font-bold text-sm shrink-0 mt-0.5">!</span>
+              <p className="text-xs text-red-700">{w}</p>
+            </div>
+          ))}
+          {repeatYearWarnings.length > 0 && repeatYearWarnings.map((w, i) => (
+            <div key={i} className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
+              <span className="text-amber-600 font-bold text-sm shrink-0 mt-0.5">!</span>
+              <p className="text-xs text-amber-700">{w}</p>
+            </div>
+          ))}
+          {ojtBlocked && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
+              <span className="text-red-600 font-bold text-sm shrink-0 mt-0.5">!</span>
+              <p className="text-xs text-red-700">{ojtBlocked}</p>
+            </div>
+          )}
           {confirm && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
               <span className="text-amber-600 font-bold text-sm shrink-0 mt-0.5">!</span>

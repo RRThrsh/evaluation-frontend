@@ -77,13 +77,17 @@ export default function AcademicRecord({ studentId, curriculum: propCurriculum, 
     return ["F", "W", "D"].includes(g.toUpperCase());
   };
 
+  const countedUnits = new Set();
   let totalUnits = 0;
   let totalPassed = 0;
   let totalFailed = 0;
   let totalInc = 0;
 
   for (const sub of takenData) {
-    totalUnits += Number(sub.units || 0);
+    if (!countedUnits.has(sub.id)) {
+      countedUnits.add(sub.id);
+      totalUnits += Number(sub.units || 0);
+    }
     if (isPassed(sub.grade)) totalPassed++;
     else if (isFailed(sub.grade)) totalFailed++;
     else totalInc++;
@@ -132,10 +136,11 @@ export default function AcademicRecord({ studentId, curriculum: propCurriculum, 
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {sec.subjects.map((sub) => (
-                  <tr key={sub.id || sub.subject_code} className="table-row">
+                  <tr key={sub.ss_id || sub.id} className="table-row">
                     <td className="table-cell font-mono text-slate-700">{sub.subject_code}</td>
                     <td className="table-cell text-slate-700">
                       {sub.subject_name}
+                      {sub.is_retaken && <span className="badge badge-blue ml-1">Retaken</span>}
                       {sub.prerequisite_name && <span className="text-[10px] text-slate-400 ml-1">(prereq: {sub.prerequisite_name})</span>}
                     </td>
                     <td className="table-cell">

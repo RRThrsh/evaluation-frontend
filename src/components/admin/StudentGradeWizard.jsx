@@ -377,6 +377,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
                     <div className="flex-1 min-w-0">
                       <span className="font-mono font-medium text-slate-700 text-xs">{sub.subject_code}</span>
                       <span className="text-slate-400 ml-1.5 text-xs">{sub.subject_name}</span>
+                      {(sub.is_retaken || (sub.isGapFiller && failedIds.has(sub.id))) && <span className="badge badge-blue ml-1">Retaken</span>}
                       <span className={`badge ml-2 ${sub.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{sub.subject_type}</span>
                       {current?.isGapFiller && <span className="badge badge-gray ml-1">Gap</span>}
                     </div>

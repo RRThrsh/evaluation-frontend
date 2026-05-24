@@ -199,6 +199,7 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                         <td className="table-cell">
                           <span className="font-mono font-medium text-slate-800">{ss.subject_code}</span>
                           <p className="text-[11px] text-slate-500">{ss.subject_name}</p>
+                          {ss.is_retake && <span className="badge badge-blue ml-1 text-[10px]">Retake</span>}
                         </td>
                         <td className="table-cell"><span className={`badge ${ss.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{ss.subject_type}</span></td>
                         <td className="table-cell text-slate-600">{ss.units}</td>

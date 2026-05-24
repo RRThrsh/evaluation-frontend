@@ -220,7 +220,6 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
               </button>
             ) : (
               <div className="flex gap-2">
-                <button onClick={() => setConfirm(false)} className="btn btn-secondary btn-sm">Cancel</button>
                 <button onClick={handleSubmit} disabled={saving} className="btn btn-primary btn-sm">
                   {saving ? "Saving..." : `Confirm — Save ${subjectCount} Subjects`}
                 </button>

@@ -106,6 +106,7 @@ export default function EvaluatorHome() {
   const [student, setStudent] = useState(null);
   const [currentSubjects, setCurrentSubjects] = useState([]);
   const [nextSubjects, setNextSubjects] = useState([]);
+  const [gapFillers, setGapFillers] = useState([]);
   const [allFails, setAllFails] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -122,6 +123,7 @@ export default function EvaluatorHome() {
     setStudent(null);
     setCurrentSubjects([]);
     setNextSubjects([]);
+    setGapFillers([]);
     setAllFails([]);
     setHasPendingRequest(false);
     setPendingRequestedBy(null);
@@ -134,6 +136,7 @@ export default function EvaluatorHome() {
       let overall = null;
       let current = [];
       let next = [];
+      let gaps = [];
       let allFails = [];
       let enrollmentType = "regular";
       try {
@@ -142,6 +145,7 @@ export default function EvaluatorHome() {
         overall = evalRes.data?.overall || null;
         current = evalRes.data?.current_enrolled_subjects || [];
         next = evalRes.data?.next_semester_subjects || [];
+        gaps = evalRes.data?.gap_fillers || [];
         allFails = evalRes.data?.remaining_failed_subjects || [];
         enrollmentType = evalRes.data?.student?.enrollment_type || "regular";
         const pendingReq = evalRes.data?.has_pending_request;
@@ -157,6 +161,7 @@ export default function EvaluatorHome() {
       });
       setCurrentSubjects(current);
       setNextSubjects(next);
+      setGapFillers(gaps);
       setAllFails(allFails);
     } catch (err) {
       setError(err.message || "Student not found");
@@ -269,13 +274,49 @@ export default function EvaluatorHome() {
               columns={currentColumns}
               emptyMsg="No current semester subjects."
             />
-            <SubjectTable
-              title="Possible Subjects"
-              subjects={nextSubjects}
-              columns={nextColumns}
-              emptyMsg="No possible subjects."
-              rowClassName={(s) => s.prereq_failed ? "opacity-50 bg-slate-50" : ""}
-            />
+            <div className="space-y-6">
+              <SubjectTable
+                title="Possible Subjects"
+                subjects={nextSubjects}
+                columns={nextColumns}
+                emptyMsg="No possible subjects."
+                rowClassName={(s) => s.prereq_failed ? "opacity-50 bg-slate-50" : ""}
+              />
+
+              {gapFillers.length > 0 && (
+                <div className="card border border-amber-200 overflow-hidden">
+                  <div className="px-5 py-3 border-b border-amber-100 bg-amber-50">
+                    <h3 className="font-semibold text-sm text-amber-700 flex items-center gap-2">
+                      <AlertTriangle size={14} />
+                      Filled Subject
+                      <span className="text-xs font-normal text-amber-500">({gapFillers.length})</span>
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-amber-100 bg-amber-50/50">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-amber-600 uppercase tracking-wide w-[18%]">Code</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-amber-600 uppercase tracking-wide">Subject</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-amber-600 uppercase tracking-wide w-[14%]">Type</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-amber-600 uppercase tracking-wide w-[12%]">Units</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-amber-50">
+                        {gapFillers.map((g, i) => (
+                          <tr key={i} className="transition hover:bg-amber-50/40">
+                            <td className="px-6 py-3 font-mono text-sm font-semibold text-amber-700 truncate">{g.subject_code}</td>
+                            <td className="px-6 py-3 text-slate-700 truncate">{g.subject_name}</td>
+                            <td className="px-6 py-3">{g.subject_type === "major" ? <span className="badge badge-purple">major</span> : <span className="badge badge-amber">minor</span>}</td>
+                            <td className="px-6 py-3 text-slate-700 text-right">{g.units}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

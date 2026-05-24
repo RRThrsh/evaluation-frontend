@@ -296,7 +296,6 @@ export default function EvaluatorHome() {
                 subjects={nextSubjects}
                 columns={nextColumns}
                 emptyMsg="No possible subjects."
-                rowClassName={(s) => s.prereq_failed ? "opacity-50 bg-slate-50" : ""}
                 color="blue"
               />
 

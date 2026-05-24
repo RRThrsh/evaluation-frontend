@@ -111,40 +111,35 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     } else {
       const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
 
-      // Group fails by (year_level, semester) — gap source = fail_year + 1, same sem
-      const failsByYearSem = {};
+      // Collect actual failed subjects from current semester as retakes
+      const gapFillers = [];
+      const addedCodes = new Set();
+      const usedIds = new Set();
       for (const section of sections) {
         for (const sub of section.subjects) {
           if (!failedIds.has(sub.id)) continue;
           if (sub.semester !== Number(student.current_semester)) continue;
-          const key = `${sub.year_level}-${sub.semester}`;
-          if (!failsByYearSem[key]) failsByYearSem[key] = { year: sub.year_level, sem: sub.semester, count: 0, codes: new Set() };
-          failsByYearSem[key].count++;
-          failsByYearSem[key].codes.add(sub.subject_code);
+          gapFillers.push({ ...sub, isGapFiller: true });
+          addedCodes.add(sub.subject_code);
+          usedIds.add(sub.id);
         }
       }
 
-      // For each group, get gap fillers from (fail_year + 1, same sem)
-      const gapFillers = [];
-      for (const { year, sem, count, codes } of Object.values(failsByYearSem)) {
-        const gapYear = Number(student.year_level);
+      // Remaining: fill with untaken minors → majors from (student_year, same sem)
+      const remaining = gapFillerCount - gapFillers.length;
+      if (remaining > 0) {
         const candidates = curriculum.filter(
-          (sub) => sub.year_level === gapYear && sub.semester === sem
+          (sub) => sub.year_level === Number(student.year_level)
+            && sub.semester === Number(student.current_semester)
+            && !usedIds.has(sub.id)
+            && !addedCodes.has(sub.subject_code)
         );
-        // Priority 1: match failed subjects by subject_code in gap year
-        const matched = candidates.filter((s) => codes.has(s.subject_code));
-        let picks = [...matched];
-        // Remaining: fill with minors → majors
-        const remaining = count - picks.length;
-        if (remaining > 0) {
-          const minors = candidates.filter((s) => s.subject_type === "minor" && !codes.has(s.subject_code));
-          const majors = candidates.filter((s) => s.subject_type === "major" && !codes.has(s.subject_code));
-          picks = [...picks, ...minors.slice(0, remaining)];
-          if (picks.length < count) {
-            picks = [...picks, ...majors.slice(0, count - picks.length)];
-          }
+        const minors = candidates.filter((s) => s.subject_type === "minor");
+        const majors = candidates.filter((s) => s.subject_type === "major");
+        for (const s of [...minors.slice(0, remaining), ...majors.slice(0, remaining)]) {
+          gapFillers.push({ ...s, isGapFiller: true });
+          if (gapFillers.length >= gapFillerCount) break;
         }
-        gapFillers.push(...picks);
       }
 
       result = gapFillers.length === 0

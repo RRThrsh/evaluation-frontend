@@ -105,8 +105,9 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     const removedCount = sections.reduce((sum, s) => sum + s.subjects.length, 0)
       - filteredSections.reduce((sum, s) => sum + s.subjects.length, 0);
     const gapFillerCount = failedIds.size;
+    const isFirstSem = Number(student.current_semester) === 1;
     let result;
-    if (gapFillerCount <= 0) {
+    if (gapFillerCount <= 0 || !isFirstSem) {
       result = [...filteredSections];
     } else {
       const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));

@@ -105,9 +105,8 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     const removedCount = sections.reduce((sum, s) => sum + s.subjects.length, 0)
       - filteredSections.reduce((sum, s) => sum + s.subjects.length, 0);
     const gapFillerCount = failedIds.size;
-    const isFirstSem = Number(student.current_semester) === 1;
     let result;
-    if (gapFillerCount <= 0 || !isFirstSem) {
+    if (gapFillerCount <= 0) {
       result = [...filteredSections];
     } else {
       const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
@@ -128,7 +127,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
       // For each group, get gap fillers from (fail_year + 1, same sem)
       const gapFillers = [];
       for (const { year, sem, count, codes } of Object.values(failsByYearSem)) {
-        const gapYear = Math.max(Number(year) + 1, Number(student.year_level) + 1);
+        const gapYear = Number(student.year_level);
         const candidates = curriculum.filter(
           (sub) => sub.year_level === gapYear && sub.semester === sem
         );

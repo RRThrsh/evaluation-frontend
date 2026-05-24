@@ -212,7 +212,11 @@ export default function EvaluatorHome() {
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
     { key: "subject_name", label: "Subject", width: "40%" },
     { key: "prerequisite", label: "Prereq", width: "30%", render: (s) => s.prerequisite || "\u2014" },
-    { key: "is_retake", label: "", width: "15%", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
+    { key: "is_retake", label: "", width: "15%", render: (s) => {
+      if (s.is_gap_filler) return <span className="badge badge-amber">Gap</span>;
+      if (s.is_retake) return <span className="badge badge-blue">Retake</span>;
+      return null;
+    }},
   ], []);
 
   const failColumns = useMemo(() => [

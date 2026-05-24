@@ -299,42 +299,7 @@ export default function EvaluatorHome() {
                 color="blue"
               />
 
-              {gapFillers.length > 0 && (() => {
-                const t = THEMES.amber;
-                return (
-                  <div className={`card overflow-hidden border ${t.card}`}>
-                    <div className={`px-5 py-3 border-b ${t.head}`}>
-                      <h3 className={`font-semibold text-sm ${t.text} flex items-center gap-2`}>
-                        <AlertTriangle size={14} />
-                        Fill Subject
-                        <span className={`text-xs font-normal ${t.count}`}>({gapFillers.length})</span>
-                      </h3>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className={`border-b ${t.thRow}`}>
-                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wide w-[18%] ${t.thText}`}>Code</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wide ${t.thText}`}>Subject</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wide w-[14%] ${t.thText}`}>Type</th>
-                            <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wide w-[12%] ${t.thText}`}>Units</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-amber-50">
-                          {gapFillers.map((g, i) => (
-                            <tr key={i} className="transition hover:bg-amber-50/40">
-                              <td className="px-6 py-3 font-mono text-sm font-semibold text-amber-700 truncate">{g.subject_code}</td>
-                              <td className="px-6 py-3 text-slate-700 truncate">{g.subject_name}</td>
-                              <td className="px-6 py-3">{g.subject_type === "major" ? <span className="badge badge-purple">major</span> : <span className="badge badge-amber">minor</span>}</td>
-                              <td className="px-6 py-3 text-slate-700 text-right">{g.units}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })()}
+
             </div>
           </div>
         )}

@@ -48,6 +48,7 @@ function StepBar({ sections, step }) {
 export default function StudentGradeWizard({ student, curriculum, onClose, onDone, onToast, ojtMinYearLevel = 4, ojtMaxFailedSubjects = 4 }) {
   const [step, setStep] = useState(0);
   const [grades, setGrades] = useState({});
+  const [gapGrades, setGapGrades] = useState({});
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -224,7 +225,10 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const current = allSections[step];
   const isLast  = step === allSections.length - 1;
   const subjectCount = allSections.reduce((sum, s) => sum + s.subjects.length, 0);
-  const gradedCount  = allSections.flatMap((s) => s.subjects).filter((sub) => grades[sub.id] !== undefined && grades[sub.id] !== "").length;
+  const gradedCount  = allSections.flatMap((s) => s.subjects).filter((sub) => {
+    const g = sub.isGapFiller ? gapGrades[sub.id] : grades[sub.id];
+    return g !== undefined && g !== "";
+  }).length;
 
   const handleGrade = (subjectId, value) => {
     if (value === "" || /^\d+$/.test(value)) {
@@ -235,11 +239,31 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     }
   };
 
+  const handleGapGrade = (subjectId, value) => {
+    if (value === "" || /^\d+$/.test(value)) {
+      const num = Number(value);
+      if (value === "" || (num >= 0 && num <= 100)) {
+        setGapGrades((prev) => ({ ...prev, [subjectId]: value }));
+      }
+    }
+  };
+
   const handleSubmit = async () => {
     setSaving(true);
     try {
       const allSubjects = allSections.flatMap((s) => s.subjects);
-      const subjects = allSubjects.map((sub) => ({ subject_id: sub.id, grade: grades[sub.id] || null }));
+      const seen = new Set();
+      const subjects = [];
+      for (const sub of allSubjects) {
+        if (seen.has(sub.id) && !sub.isGapFiller) continue;
+        if (sub.isGapFiller && seen.has(sub.id)) seen.delete(sub.id);
+        seen.add(sub.id);
+        subjects.push({
+          subject_id: sub.id,
+          grade: sub.isGapFiller ? (gapGrades[sub.id] || null) : (grades[sub.id] || null),
+          is_gap_filler: !!sub.isGapFiller,
+        });
+      }
       const res = await api.post(`/api/admin/students/${student.id}/bulk-enroll`, { subjects });
       setEnrollmentType(res.data?.enrollment_type || (res.data?.data?.enrollment_type) || null);
       onToast("Grades saved");
@@ -360,8 +384,8 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
                       <span className="text-[11px] text-slate-400 font-medium">{sub.units} units</span>
                       <input
                         type="number" min={0} max={100}
-                        value={grades[sub.id] ?? ""}
-                        onChange={(e) => handleGrade(sub.id, e.target.value)}
+                        value={sub.isGapFiller ? (gapGrades[sub.id] ?? "") : (grades[sub.id] ?? "")}
+                        onChange={(e) => sub.isGapFiller ? handleGapGrade(sub.id, e.target.value) : handleGrade(sub.id, e.target.value)}
                         placeholder="Grade"
                         className="input-field w-24 sm:w-28 py-2 text-sm text-center font-mono [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />

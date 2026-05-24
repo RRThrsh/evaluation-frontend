@@ -288,7 +288,7 @@ export default function EvaluatorHome() {
                   <div className="px-5 py-3 border-b border-amber-100 bg-amber-50">
                     <h3 className="font-semibold text-sm text-amber-700 flex items-center gap-2">
                       <AlertTriangle size={14} />
-                      Filled Subject
+                      Fill Subject
                       <span className="text-xs font-normal text-amber-500">({gapFillers.length})</span>
                     </h3>
                   </div>

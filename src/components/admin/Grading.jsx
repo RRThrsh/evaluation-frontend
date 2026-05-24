@@ -3,6 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import api from "../../services/api";
 import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
+import { sanitizeInput, sanitizeObject } from "../../utils/sanitize";
 
 const PAGE_SIZE = 20;
 
@@ -126,7 +127,7 @@ export default function Grading({ defaultPeriod }) {
 
   const handleUpdateGrade = async (gradeId, field, value) => {
     try {
-      await api.put(`/api/admin/grades/${gradeId}`, { [field]: value });
+      await api.put(`/api/admin/grades/${gradeId}`, sanitizeObject({ [field]: sanitizeInput(value) }));
       fetchGrades();
     } catch (err) {
       setError(err.message || "Failed to update");

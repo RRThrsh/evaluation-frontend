@@ -10,11 +10,24 @@ class ApiError extends Error {
 
 const cache = new Map();
 
+const SENSITIVE_PATTERNS = [
+  "/api/admin/users", "/api/admin/students", "/api/auth/me",
+  "/api/admin/evaluations", "/api/admin/sessions",
+  "/api/admin/pending-users", "/api/admin/permissions",
+  "/api/audit-logs", "/api/admin/evaluator-logs",
+  "/api/admin/import-logs", "/api/admin/snapshots",
+];
+
+function isSensitive(endpoint) {
+  return SENSITIVE_PATTERNS.some(p => endpoint.startsWith(p));
+}
+
 function getCacheKey(endpoint) {
   return endpoint;
 }
 
 function getCached(key) {
+  if (isSensitive(key)) return null;
   const entry = cache.get(key);
   if (!entry) return null;
   if (Date.now() - entry.timestamp > CACHE_TTL) {
@@ -25,6 +38,7 @@ function getCached(key) {
 }
 
 function setCache(key, data) {
+  if (isSensitive(key)) return;
   cache.set(key, { data, timestamp: Date.now() });
 }
 

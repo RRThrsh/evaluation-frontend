@@ -31,8 +31,13 @@ export default function ChangePasswordModal({ onClose }) {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setError("New password must be at least 6 characters");
+    if (newPassword.length < 8) {
+      setError("New password must be at least 8 characters");
+      return;
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/.test(newPassword)) {
+      setError("Password must contain uppercase, lowercase, number, and special character");
       return;
     }
 

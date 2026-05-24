@@ -43,10 +43,6 @@ const Register = () => {
     }
 
     if (!agreed) {
-      setError("You must agree to the Terms and Privacy Policy.");
-      return;
-    }
-    if (!agreed) {
       setError("You must agree to the Terms of Service and Privacy Policy.");
       return;
     }

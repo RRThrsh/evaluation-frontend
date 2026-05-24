@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, X, BookOpen, Users, GraduationCap, Plus, Link } from "lucide-react";
+import { Search, X, BookOpen, Users, GraduationCap, Plus } from "lucide-react";
 import api from "../../services/api";
 import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
+import { sanitizeInput, sanitizeObject } from "../../utils/sanitize";
 
 const PAGE_SIZE = 15;
 
@@ -259,7 +260,7 @@ export default function ClassSubject() {
                 onClick={async () => {
                   if (!newSchoolYear.trim()) return;
                   try {
-                    await api.patch("/api/config", { school_year_label: newSchoolYear.trim() });
+                    await api.patch("/api/config", sanitizeObject({ school_year_label: sanitizeInput(newSchoolYear) }));
                     setSchoolYear(newSchoolYear.trim());
                     setSchoolYearModal(false);
                   } catch {}

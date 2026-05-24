@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 import { usePermissions } from "../../context/PermissionContext";
+import { sanitizeInput, sanitizeObject } from "../../utils/sanitize";
 
 const SECTIONS = [
   {
@@ -52,7 +53,7 @@ export default function AcademicConfigManager() {
 
   const handleSave = async () => {
     setSaving(true);
-    try { await api.patch("/api/config", config); setOriginal({ ...config }); showToast("Configuration saved successfully"); }
+    try { await api.patch("/api/config", sanitizeObject(config)); setOriginal({ ...config }); showToast("Configuration saved successfully"); }
     catch (err) { showToast(err.message || "Failed to save", "error"); }
     finally { setSaving(false); }
   };

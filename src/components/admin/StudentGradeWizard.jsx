@@ -119,23 +119,31 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
           if (!failedIds.has(sub.id)) continue;
           if (sub.semester !== Number(student.current_semester)) continue;
           const key = `${sub.year_level}-${sub.semester}`;
-          if (!failsByYearSem[key]) failsByYearSem[key] = { year: sub.year_level, sem: sub.semester, count: 0 };
+          if (!failsByYearSem[key]) failsByYearSem[key] = { year: sub.year_level, sem: sub.semester, count: 0, codes: new Set() };
           failsByYearSem[key].count++;
+          failsByYearSem[key].codes.add(sub.subject_code);
         }
       }
 
       // For each group, get gap fillers from (fail_year + 1, same sem)
       const gapFillers = [];
-      for (const { year, sem, count } of Object.values(failsByYearSem)) {
+      for (const { year, sem, count, codes } of Object.values(failsByYearSem)) {
         const gapYear = Number(year) + 1;
         const candidates = curriculum.filter(
           (sub) => sub.year_level === gapYear && sub.semester === sem
         );
-        const minors = candidates.filter((s) => s.subject_type === "minor");
-        const majors = candidates.filter((s) => s.subject_type === "major");
-        let picks = minors.slice(0, count);
-        if (picks.length < count) {
-          picks = [...picks, ...majors.slice(0, count - picks.length)];
+        // Priority 1: match failed subjects by subject_code in gap year
+        const matched = candidates.filter((s) => codes.has(s.subject_code));
+        let picks = [...matched];
+        // Remaining: fill with minors → majors
+        const remaining = count - picks.length;
+        if (remaining > 0) {
+          const minors = candidates.filter((s) => s.subject_type === "minor" && !codes.has(s.subject_code));
+          const majors = candidates.filter((s) => s.subject_type === "major" && !codes.has(s.subject_code));
+          picks = [...picks, ...minors.slice(0, remaining)];
+          if (picks.length < count) {
+            picks = [...picks, ...majors.slice(0, count - picks.length)];
+          }
         }
         gapFillers.push(...picks);
       }

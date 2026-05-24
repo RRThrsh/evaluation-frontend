@@ -106,11 +106,13 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     const removedCount = sections.reduce((sum, s) => sum + s.subjects.length, 0)
       - filteredSections.reduce((sum, s) => sum + s.subjects.length, 0);
 
-    // Only count failed subjects in the current semester
+    // Count failed subjects in the current year (semester ≤ current semester)
     const gapFillerCount = (() => {
       let count = 0;
       for (const sub of sections.flatMap((s) => s.subjects)) {
-        if (failedIds.has(sub.id) && sub.semester === Number(student.current_semester)) count++;
+        if (failedIds.has(sub.id)
+          && Number(sub.year_level) === Number(student.year_level)
+          && Number(sub.semester) <= Number(student.current_semester)) count++;
       }
       return count;
     })();
@@ -121,14 +123,15 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     } else {
       const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
 
-      // Collect actual failed subjects from current semester as retakes
+      // Collect failed subjects from current year (same year, semester ≤ current sem)
       const gapFillers = [];
       const addedCodes = new Set();
       const usedIds = new Set();
       for (const section of sections) {
         for (const sub of section.subjects) {
           if (!failedIds.has(sub.id)) continue;
-          if (sub.semester !== Number(student.current_semester)) continue;
+          if (Number(sub.year_level) !== Number(student.year_level)) continue;
+          if (Number(sub.semester) > Number(student.current_semester)) continue;
           gapFillers.push({ ...sub, isGapFiller: true });
           addedCodes.add(sub.subject_code);
           usedIds.add(sub.id);

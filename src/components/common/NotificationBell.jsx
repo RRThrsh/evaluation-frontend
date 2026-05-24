@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell } from "lucide-react";
 import api from "../../services/api";
+import useSocket from "../../hooks/useSocket";
 
 function playNotificationSound() {
   try {
@@ -26,6 +27,14 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const prevCount = useRef(0);
   const dropdownRef = useRef(null);
+
+  const onNotification = useCallback((data) => {
+    playNotificationSound();
+    setNotifications((prev) => [data, ...prev]);
+    setUnreadCount((c) => c + 1);
+  }, []);
+
+  useSocket(onNotification);
 
   const fetchUnreadCount = useCallback(() => {
     api.get("/api/notifications/unread-count")

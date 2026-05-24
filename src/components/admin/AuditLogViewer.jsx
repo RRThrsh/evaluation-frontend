@@ -172,7 +172,7 @@ export default function AuditLogViewer() {
   const mono = "'Fira Code','Cascadia Code','JetBrains Mono',monospace";
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-6 space-y-3">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-6 space-y-3">
 
       {/* Header */}
       <div className="flex items-center justify-between">

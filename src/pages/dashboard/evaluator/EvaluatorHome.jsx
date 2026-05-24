@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, ChevronRight, AlertTriangle, CheckCircle } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle } from "lucide-react";
 import api from "../../../services/api";
 import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
 
@@ -100,11 +100,9 @@ function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
 export default function EvaluatorHome() {
   const [searchValue, setSearchValue] = useState("");
   const [student, setStudent] = useState(null);
-  const [subjects, setSubjects] = useState({ taken: [], available: [] });
-  const [replacements, setReplacements] = useState([]);
-  const [remainingFails, setRemainingFails] = useState([]);
-  const [unresolvedFails, setUnresolvedFails] = useState([]);
-  const [blockedCount, setBlockedCount] = useState(0);
+  const [currentSubjects, setCurrentSubjects] = useState([]);
+  const [nextSubjects, setNextSubjects] = useState([]);
+  const [previousFails, setPreviousFails] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -118,11 +116,9 @@ export default function EvaluatorHome() {
     setLoading(true);
     setError("");
     setStudent(null);
-    setSubjects({ taken: [], available: [] });
-    setReplacements([]);
-    setRemainingFails([]);
-    setUnresolvedFails([]);
-    setBlockedCount(0);
+    setCurrentSubjects([]);
+    setNextSubjects([]);
+    setPreviousFails([]);
     setHasPendingRequest(false);
     setPendingRequestedBy(null);
 
@@ -134,10 +130,7 @@ export default function EvaluatorHome() {
       let overall = null;
       let current = [];
       let next = [];
-      let gaps = [];
-      let remainingFailsData = [];
-      let unresolvedFailsData = [];
-      let blocked = 0;
+      let prevFails = [];
       let enrollmentType = "regular";
       try {
         const evalRes = await api.get(`/api/evaluator/students/${data.id}/evaluate`);
@@ -145,10 +138,7 @@ export default function EvaluatorHome() {
         overall = evalRes.data?.overall || null;
         current = evalRes.data?.current_semester_subjects || [];
         next = evalRes.data?.next_semester_subjects || [];
-        gaps = evalRes.data?.gap_fillers || [];
-        remainingFailsData = evalRes.data?.remaining_failed_subjects || [];
-        unresolvedFailsData = evalRes.data?.unresolved_failed_subjects || [];
-        blocked = evalRes.data?.summary_extras?.blocked_count || 0;
+        prevFails = evalRes.data?.previous_failed_subjects || [];
         enrollmentType = evalRes.data?.student?.enrollment_type || "regular";
         const pendingReq = evalRes.data?.has_pending_request;
         setHasPendingRequest(pendingReq);
@@ -161,11 +151,9 @@ export default function EvaluatorHome() {
         course: courseName, overall,
         enrollment_type: enrollmentType,
       });
-      setSubjects({ taken: current, available: next });
-      setReplacements(gaps);
-      setRemainingFails(remainingFailsData);
-      setUnresolvedFails(unresolvedFailsData);
-      setBlockedCount(blocked);
+      setCurrentSubjects(current);
+      setNextSubjects(next);
+      setPreviousFails(prevFails);
     } catch (err) {
       setError(err.message || "Student not found");
     } finally {
@@ -192,8 +180,8 @@ export default function EvaluatorHome() {
 
   const currentColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "45%" },
-    { key: "status", label: "Grade", width: "25%", render: (s) => <span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span> },
+    { key: "subject_name", label: "Subject", width: "40%" },
+    { key: "status", label: "Grade", width: "20%", render: (s) => <span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span> },
   ], []);
 
   const nextColumns = useMemo(() => [
@@ -203,16 +191,16 @@ export default function EvaluatorHome() {
     { key: "is_retake", label: "", width: "15%", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
   ], []);
 
-  const remainingColumns = useMemo(() => [
-    { key: "subject_code", label: "Code", width: "20%", className: "whitespace-nowrap" },
+  const failColumns = useMemo(() => [
+    { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
     { key: "subject_name", label: "Subject", width: "55%" },
-    { key: "grade", label: "Grade", align: "right", width: "25%", className: "whitespace-nowrap", render: (s) => <span className="text-red-600 font-semibold">{s.grade || "\u2014"}</span> },
+    { key: "grade", label: "Grade", width: "20%", align: "right", render: (s) => <span className="text-red-600 font-semibold">{s.grade || "\u2014"}</span> },
   ], []);
 
   return (
     <div className="min-h-screen bg-slate-50">
       <EvaluatorHeader />
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="max-w-[1600px] mx-auto p-4 sm:p-6 space-y-6">
         <div className="card p-4 sm:p-5">
           <label htmlFor="student-search" className="text-sm font-semibold text-slate-700 mb-2 block">
             Search Student Record
@@ -268,91 +256,34 @@ export default function EvaluatorHome() {
             <p className="text-slate-400 text-sm">Enter a student number to view their records</p>
           </div>
         )}
-      </div>
 
-      {student && (
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-6 pb-6">
+        {student && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <SubjectTable
-              title="Current Semester Subjects"
-              subjects={subjects.taken}
+              title="Current Subjects"
+              subjects={currentSubjects}
               columns={currentColumns}
               emptyMsg="No current semester subjects."
             />
-            <div className="space-y-6">
-              <SubjectTable
-                title="Possible Subjects (Next Semester)"
-                subjects={subjects.available}
-                columns={nextColumns}
-                emptyMsg="No next semester subjects."
-                rowClassName={(s) => s.prereq_failed ? "opacity-50 bg-slate-50" : ""}
-              />
-              {blockedCount > 0 && (
-                <div className="card overflow-hidden border border-amber-200">
-                  <div className="px-5 py-3 border-b border-amber-100 bg-amber-50/50">
-                    <h3 className="font-semibold text-sm text-amber-700 flex items-center gap-2">
-                      <AlertTriangle size={16} />
-                      Fill the Gap
-                      {replacements[0]?.gap_year && (
-                        <span className="text-xs font-normal text-amber-500">(Y{replacements[0].gap_year}S{replacements[0].gap_semester})</span>
-                      )}
-                    </h3>
-                  </div>
-                  <div className="p-4 text-sm text-slate-600 border-b border-amber-100 bg-amber-50/20">
-                    {blockedCount} subject{blockedCount > 1 ? "s" : ""} blocked by failed prerequisites &mdash; filling with {replacements.length} minor subject{replacements.length > 1 ? "s" : ""} from next year
-                  </div>
-                  {replacements.length > 0 && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-amber-100 bg-amber-50/30">
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide w-[18%]">Code</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide w-[48%]">Subject</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide w-[18%]">Type</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide w-[16%]">Units</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-amber-50">
-                          {replacements.map((r, i) => (
-                            <tr key={i} className="transition hover:bg-amber-50/40">
-                              <td className="px-6 py-3 text-emerald-700 font-mono text-sm font-semibold truncate">{r.subject_code}</td>
-                              <td className="px-6 py-3 text-slate-700 truncate">{r.subject_name}</td>
-                              <td className="px-6 py-3"><span className="badge badge-blue">{r.subject_type}</span></td>
-                              <td className="px-6 py-3 text-slate-700 text-right">{r.units}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            <SubjectTable
+              title="Possible Subjects"
+              subjects={nextSubjects}
+              columns={nextColumns}
+              emptyMsg="No possible subjects."
+              rowClassName={(s) => s.prereq_failed ? "opacity-50 bg-slate-50" : ""}
+            />
           </div>
+        )}
 
-          {unresolvedFails.length > 0 && (
-            <div className="border-t border-slate-200 pt-6">
-              <SubjectTable
-                title="Failed Subjects — Not Offered Next Semester"
-                subjects={unresolvedFails}
-                columns={remainingColumns}
-                emptyMsg="No unresolved failed subjects."
-              />
-            </div>
-          )}
-
-          {remainingFails.length > 0 && (
-            <div className="border-t border-slate-200 pt-6">
-              <SubjectTable
-                title="Remaining Failed Subjects"
-                subjects={remainingFails}
-                columns={remainingColumns}
-                emptyMsg="No remaining failed subjects."
-              />
-            </div>
-          )}
-        </div>
-      )}
+        {previousFails.length > 0 && student && (
+          <SubjectTable
+            title="Previously Failed Subjects"
+            subjects={previousFails}
+            columns={failColumns}
+            emptyMsg="No failed subjects from previous semesters."
+          />
+        )}
+      </div>
     </div>
   );
 }

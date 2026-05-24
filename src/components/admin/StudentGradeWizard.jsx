@@ -112,11 +112,11 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     } else {
       const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
 
-      // Find which semesters have failed subjects
+      // Only consider failed subjects from the student's CURRENT semester
       const failsPerSem = {};
       for (const section of sections) {
         for (const sub of section.subjects) {
-          if (failedIds.has(sub.id)) {
+          if (failedIds.has(sub.id) && sub.semester === Number(student.current_semester)) {
             const sem = sub.semester;
             failsPerSem[sem] = (failsPerSem[sem] || 0) + 1;
           }

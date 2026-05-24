@@ -105,7 +105,16 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const allSections = useMemo(() => {
     const removedCount = sections.reduce((sum, s) => sum + s.subjects.length, 0)
       - filteredSections.reduce((sum, s) => sum + s.subjects.length, 0);
-    const gapFillerCount = failedIds.size;
+
+    // Only count failed subjects in the current semester
+    const gapFillerCount = (() => {
+      let count = 0;
+      for (const sub of sections.flatMap((s) => s.subjects)) {
+        if (failedIds.has(sub.id) && sub.semester === Number(student.current_semester)) count++;
+      }
+      return count;
+    })();
+
     let result;
     if (gapFillerCount <= 0) {
       result = [...filteredSections];
@@ -123,6 +132,23 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
           gapFillers.push({ ...sub, isGapFiller: true });
           addedCodes.add(sub.subject_code);
           usedIds.add(sub.id);
+        }
+      }
+
+      // For Y2+, include prerequisites of failed subjects (same semester) as gap fillers
+      if (Number(student.year_level) >= 2) {
+        for (const section of sections) {
+          for (const sub of section.subjects) {
+            if (!failedIds.has(sub.id)) continue;
+            const prereqId = prereqById[sub.id];
+            if (!prereqId || failedIds.has(prereqId) || usedIds.has(prereqId)) continue;
+            const prereqSub = curriculum.find((s) => s.id === prereqId);
+            if (!prereqSub || prereqSub.semester !== Number(student.current_semester)) continue;
+            if (addedCodes.has(prereqSub.subject_code)) continue;
+            gapFillers.push({ ...prereqSub, isGapFiller: true });
+            addedCodes.add(prereqSub.subject_code);
+            usedIds.add(prereqSub.id);
+          }
         }
       }
 

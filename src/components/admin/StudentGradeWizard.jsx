@@ -115,18 +115,22 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
       const sameSem = Number(sub.semester) === Number(student.current_semester);
       const prevYear = Number(sub.year_level) < Number(student.year_level);
 
-      // 1. Retakeable: same semester, previous year
-      if (sameSem && prevYear) {
+      // 1. Retakeable: same semester, previous year (only if not blocked by its own prereq)
+      const subPrereqId = prereqById[sub.id];
+      const subBlocked = subPrereqId && failedIds.has(subPrereqId);
+      if (sameSem && prevYear && !subBlocked) {
         gapFillers.push({ ...sub, isGapFiller: true });
         addedCodes.add(sub.subject_code);
       }
 
       // 2. Prerequisite of this fail that is in the current semester
-      const prereqId = prereqById[sub.id];
-      if (prereqId && !failedIds.has(prereqId)) {
-        const prereqSub = curriculum.find((s) => s.id === prereqId);
+      //    (only if that prereq itself isn't blocked by its own prereq)
+      if (subPrereqId && !failedIds.has(subPrereqId)) {
+        const prereqSub = curriculum.find((s) => s.id === subPrereqId);
+        const prereqOfPrereq = prereqById[subPrereqId];
+        const prereqBlocked = prereqOfPrereq && failedIds.has(prereqOfPrereq);
         if (prereqSub && Number(prereqSub.semester) === Number(student.current_semester)
-            && !addedCodes.has(prereqSub.subject_code)) {
+            && !addedCodes.has(prereqSub.subject_code) && !prereqBlocked) {
           gapFillers.push({ ...prereqSub, isGapFiller: true });
           addedCodes.add(prereqSub.subject_code);
         }
@@ -145,9 +149,13 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
         for (let i = 0; i < sorted.length - 1; i++) {
           const lower = sorted[i];
           if (!failedIds.has(lower.id)) {
-            const targetIdx = result.findIndex((sec) => sec.subjects.some((s) => s.id === highest.id));
-            if (targetIdx >= 0) {
-              result[targetIdx] = { ...result[targetIdx], subjects: [...result[targetIdx].subjects, { ...lower }] };
+            const lowerPrereqId = prereqById[lower.id];
+            const lowerBlocked = lowerPrereqId && failedIds.has(lowerPrereqId);
+            if (!lowerBlocked) {
+              const targetIdx = result.findIndex((sec) => sec.subjects.some((s) => s.id === highest.id));
+              if (targetIdx >= 0) {
+                result[targetIdx] = { ...result[targetIdx], subjects: [...result[targetIdx].subjects, { ...lower }] };
+              }
             }
           }
         }

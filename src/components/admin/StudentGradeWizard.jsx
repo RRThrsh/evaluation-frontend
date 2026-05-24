@@ -104,18 +104,20 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const allSections = useMemo(() => {
     const removedCount = sections.reduce((sum, s) => sum + s.subjects.length, 0)
       - filteredSections.reduce((sum, s) => sum + s.subjects.length, 0);
+    const gapFillerCount = failedIds.size;
     let result;
-    if (removedCount <= 0) {
+    if (removedCount <= 0 && gapFillerCount <= 0) {
       result = [...filteredSections];
     } else {
       const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
       const isFuture = (sub) => sub.year_level > student.year_level
         || (sub.year_level === student.year_level && sub.semester > student.current_semester);
       const minors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "minor" && isFuture(sub));
-      let gapFillers = minors.slice(0, removedCount);
-      if (gapFillers.length < removedCount) {
+      const count = Math.max(removedCount, gapFillerCount);
+      let gapFillers = minors.slice(0, count);
+      if (gapFillers.length < count) {
         const majors = curriculum.filter((sub) => !existingIds.has(sub.id) && sub.subject_type === "major" && isFuture(sub));
-        gapFillers = [...gapFillers, ...majors.slice(0, removedCount - gapFillers.length)];
+        gapFillers = [...gapFillers, ...majors.slice(0, count - gapFillers.length)];
       }
       result = gapFillers.length === 0
         ? [...filteredSections]

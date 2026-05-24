@@ -128,7 +128,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
       // For each group, get gap fillers from (fail_year + 1, same sem)
       const gapFillers = [];
       for (const { year, sem, count, codes } of Object.values(failsByYearSem)) {
-        const gapYear = Number(year) + 1;
+        const gapYear = Math.max(Number(year) + 1, Number(student.year_level) + 1);
         const candidates = curriculum.filter(
           (sub) => sub.year_level === gapYear && sub.semester === sem
         );

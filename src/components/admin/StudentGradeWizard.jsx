@@ -129,9 +129,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
       for (const { year, sem, count } of Object.values(failsByYearSem)) {
         const gapYear = Number(year) + 1;
         const candidates = curriculum.filter(
-          (sub) => !existingIds.has(sub.id)
-            && sub.year_level === gapYear
-            && sub.semester === sem
+          (sub) => sub.year_level === gapYear && sub.semester === sem
         );
         const minors = candidates.filter((s) => s.subject_type === "minor");
         const majors = candidates.filter((s) => s.subject_type === "major");

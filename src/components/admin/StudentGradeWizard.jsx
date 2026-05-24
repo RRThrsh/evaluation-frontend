@@ -98,16 +98,39 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     }, []);
   }, [sections, failedIds, prereqById]);
 
-  useEffect(() => {
-    if (step >= filteredSections.length) {
-      setStep(Math.max(0, filteredSections.length - 1));
-    }
-  }, [filteredSections.length]);
+  const allSections = useMemo(() => {
+    const removedCount = sections.reduce((sum, s) => sum + s.subjects.length, 0)
+      - filteredSections.reduce((sum, s) => sum + s.subjects.length, 0);
+    if (removedCount <= 0) return filteredSections;
 
-  const current = filteredSections[step];
-  const isLast  = step === filteredSections.length - 1;
-  const subjectCount = filteredSections.reduce((sum, s) => sum + s.subjects.length, 0);
-  const gradedCount  = filteredSections.flatMap((s) => s.subjects).filter((sub) => grades[sub.id] !== undefined && grades[sub.id] !== "").length;
+    const existingIds = new Set(sections.flatMap((s) => s.subjects).map((s) => s.id));
+    const eligible = curriculum.filter((sub) => {
+      return !existingIds.has(sub.id)
+        && sub.subject_type === "minor"
+        && (sub.year_level > student.year_level
+            || (sub.year_level === student.year_level && sub.semester > student.current_semester));
+    });
+    const gapFillers = eligible.slice(0, removedCount);
+    if (gapFillers.length === 0) return filteredSections;
+
+    return [...filteredSections, {
+      year: student.year_level,
+      sem: student.current_semester,
+      subjects: gapFillers,
+      isGapFiller: true,
+    }];
+  }, [filteredSections, sections, curriculum, student]);
+
+  useEffect(() => {
+    if (step >= allSections.length) {
+      setStep(Math.max(0, allSections.length - 1));
+    }
+  }, [allSections.length]);
+
+  const current = allSections[step];
+  const isLast  = step === allSections.length - 1;
+  const subjectCount = allSections.reduce((sum, s) => sum + s.subjects.length, 0);
+  const gradedCount  = allSections.flatMap((s) => s.subjects).filter((sub) => grades[sub.id] !== undefined && grades[sub.id] !== "").length;
 
   const handleGrade = (subjectId, value) => {
     if (value === "" || /^\d+$/.test(value)) {
@@ -121,7 +144,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      const allSubjects = filteredSections.flatMap((s) => s.subjects);
+      const allSubjects = allSections.flatMap((s) => s.subjects);
       const subjects = allSubjects.map((sub) => ({ subject_id: sub.id, grade: grades[sub.id] || null }));
       const res = await api.post(`/api/admin/students/${student.id}/bulk-enroll`, { subjects });
       setEnrollmentType(res.data?.enrollment_type || (res.data?.data?.enrollment_type) || null);
@@ -181,7 +204,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
         </div>
 
         {/* ── Step bar ── */}
-        {filteredSections.length > 0 && <StepBar sections={filteredSections} step={step} />}
+        {allSections.length > 0 && <StepBar sections={allSections} step={step} />}
 
         {/* ── Content ── */}
         <div className="p-6 space-y-4">
@@ -203,12 +226,12 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-bold text-slate-800">
-                    {ordinal(current.year)} Year — {SEM_LABELS[current.sem] ?? `Sem ${current.sem}`}
+                    {current.isGapFiller ? "Gap Fillers" : `${ordinal(current.year)} Year — ${SEM_LABELS[current.sem] ?? `Sem ${current.sem}`}`}
                   </h4>
                   <p className="text-xs text-slate-400 mt-0.5">{current.subjects.length} subjects · enter grades below</p>
                 </div>
                 <span className="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                  Step {step + 1} of {filteredSections.length}
+                  Step {step + 1} of {allSections.length}
                 </span>
               </div>
 
@@ -219,6 +242,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
                       <span className="font-mono font-medium text-slate-700 text-xs">{sub.subject_code}</span>
                       <span className="text-slate-400 ml-1.5 text-xs">{sub.subject_name}</span>
                       <span className={`badge ml-2 ${sub.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{sub.subject_type}</span>
+                      {current?.isGapFiller && <span className="badge badge-gray ml-1">Gap</span>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-[11px] text-slate-400 font-medium">{sub.units} units</span>
@@ -250,7 +274,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
           <div className="flex gap-2">
             <button onClick={onClose} className="btn btn-secondary btn-sm">Cancel</button>
             {!isLast ? (
-              <button onClick={() => { setConfirm(false); setStep((s) => Math.min(filteredSections.length - 1, s + 1)); }} className="btn btn-primary btn-sm gap-1">
+              <button onClick={() => { setConfirm(false); setStep((s) => Math.min(allSections.length - 1, s + 1)); }} className="btn btn-primary btn-sm gap-1">
                 Next <ChevronRight size={14} />
               </button>
             ) : !confirm ? (

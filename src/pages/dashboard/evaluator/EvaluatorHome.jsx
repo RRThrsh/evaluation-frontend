@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Search, AlertTriangle, CheckCircle } from "lucide-react";
 import api from "../../../services/api";
 import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
@@ -122,6 +122,7 @@ export default function EvaluatorHome() {
   const [hasPendingRequest, setHasPendingRequest] = useState(false);
   const [pendingRequestedBy, setPendingRequestedBy] = useState(null);
   const [toast, setToast] = useState(null);
+  const snapshotRef = useRef(null);
 
   const handleSearch = async () => {
     const q = searchValue.trim();
@@ -147,19 +148,22 @@ export default function EvaluatorHome() {
       let gaps = [];
       let allFails = [];
       let enrollmentType = "regular";
+      let evalData = null;
       try {
         const evalRes = await api.get(`/api/evaluator/students/${data.id}/evaluate`);
-        courseName = evalRes.data?.student?.course || "";
-        overall = evalRes.data?.overall || null;
-        current = evalRes.data?.current_enrolled_subjects || [];
-        next = evalRes.data?.next_semester_subjects || [];
-        gaps = evalRes.data?.gap_fillers || [];
-        allFails = evalRes.data?.remaining_failed_subjects || [];
-        enrollmentType = evalRes.data?.student?.enrollment_type || "regular";
-        const pendingReq = evalRes.data?.has_pending_request;
+        evalData = evalRes.data;
+        courseName = evalData?.student?.course || "";
+        overall = evalData?.overall || null;
+        current = evalData?.current_enrolled_subjects || [];
+        next = evalData?.next_semester_subjects || [];
+        gaps = evalData?.gap_fillers || [];
+        allFails = evalData?.remaining_failed_subjects || [];
+        enrollmentType = evalData?.student?.enrollment_type || "regular";
+        const pendingReq = evalData?.has_pending_request;
         setHasPendingRequest(pendingReq);
-        if (pendingReq) setPendingRequestedBy(evalRes.data?.pending_requested_by || "another evaluator");
+        if (pendingReq) setPendingRequestedBy(evalData?.pending_requested_by || "another evaluator");
       } catch {}
+      snapshotRef.current = evalData;
 
       setStudent({
         id: data.id, full_name: `${data.first_name} ${data.last_name}`,
@@ -184,7 +188,10 @@ export default function EvaluatorHome() {
     if (!student || submitting) return;
     setSubmitting(true);
     try {
-      await api.post("/api/evaluator/evaluate", { student_number: student.student_number });
+      await api.post("/api/evaluator/evaluate", {
+        student_number: student.student_number,
+        snapshot: snapshotRef.current,
+      });
       setToast({ type: "success", message: "Evaluation request submitted" });
       setTimeout(() => setToast(null), 3000);
     } catch (err) {

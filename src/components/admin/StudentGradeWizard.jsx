@@ -103,34 +103,31 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const isThesis = (code) => /^THESIS/i.test(code || "");
 
   const allSections = useMemo(() => {
-    // Build gap fillers:
-    //   1. Retakeable fails (same semester, previous year)
-    //   2. Prerequisites of fails that are in the current semester
+    // Gap filler only triggers for failed subjects in the SAME semester as current
     const gapFillers = [];
     const addedCodes = new Set();
 
     for (const sub of sections.flatMap((s) => s.subjects)) {
       if (!failedIds.has(sub.id)) continue;
+      if (Number(sub.semester) !== Number(student.current_semester)) continue;
 
-      const sameSem = Number(sub.semester) === Number(student.current_semester);
       const prevYear = Number(sub.year_level) < Number(student.year_level);
 
       // 1. Retakeable: same semester, previous year (only if not blocked by its own prereq)
       const subPrereqId = prereqById[sub.id];
       const subBlocked = subPrereqId && failedIds.has(subPrereqId);
-      if (sameSem && prevYear && !subBlocked) {
+      if (prevYear && !subBlocked) {
         gapFillers.push({ ...sub, isGapFiller: true });
         addedCodes.add(sub.subject_code);
       }
 
-      // 2. Prerequisite of this fail that is in the current semester
-      //    (only if that prereq itself isn't blocked by its own prereq)
+      // 2. Prerequisite of this fail (only if in the same semester and not blocked)
       if (subPrereqId && !failedIds.has(subPrereqId)) {
         const prereqSub = curriculum.find((s) => s.id === subPrereqId);
+        if (!prereqSub || Number(prereqSub.semester) !== Number(student.current_semester)) continue;
         const prereqOfPrereq = prereqById[subPrereqId];
         const prereqBlocked = prereqOfPrereq && failedIds.has(prereqOfPrereq);
-        if (prereqSub && Number(prereqSub.semester) === Number(student.current_semester)
-            && !addedCodes.has(prereqSub.subject_code) && !prereqBlocked) {
+        if (!addedCodes.has(prereqSub.subject_code) && !prereqBlocked) {
           gapFillers.push({ ...prereqSub, isGapFiller: true });
           addedCodes.add(prereqSub.subject_code);
         }

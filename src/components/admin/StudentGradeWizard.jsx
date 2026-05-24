@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import api from "../../services/api";
 
@@ -65,10 +65,49 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     return Object.values(byYearSem).sort((a, b) => a.year - b.year || a.sem - b.sem);
   }, [curriculum, student]);
 
-  const current = sections[step];
-  const isLast  = step === sections.length - 1;
-  const subjectCount = sections.reduce((sum, s) => sum + s.subjects.length, 0);
-  const gradedCount  = Object.keys(grades).length;
+  const isFailingGrade = (grade) => {
+    if (grade == null || grade === "") return false;
+    if (/^\d+$/.test(grade)) return Number(grade) < 75;
+    return ["F", "INC", "W", "D"].includes(String(grade).toUpperCase());
+  };
+
+  const prereqById = useMemo(() => {
+    const map = {};
+    for (const sub of curriculum) {
+      if (sub.prerequisite_id) map[sub.id] = sub.prerequisite_id;
+    }
+    return map;
+  }, [curriculum]);
+
+  const failedIds = useMemo(() => {
+    const ids = new Set();
+    for (const [subId, grade] of Object.entries(grades)) {
+      if (isFailingGrade(grade)) ids.add(subId);
+    }
+    return ids;
+  }, [grades]);
+
+  const filteredSections = useMemo(() => {
+    return sections.reduce((acc, section) => {
+      const filtered = section.subjects.filter((sub) => {
+        const prereqId = prereqById[sub.id];
+        return !(prereqId && failedIds.has(prereqId));
+      });
+      if (filtered.length > 0) acc.push({ ...section, subjects: filtered });
+      return acc;
+    }, []);
+  }, [sections, failedIds, prereqById]);
+
+  useEffect(() => {
+    if (step >= filteredSections.length) {
+      setStep(Math.max(0, filteredSections.length - 1));
+    }
+  }, [filteredSections.length]);
+
+  const current = filteredSections[step];
+  const isLast  = step === filteredSections.length - 1;
+  const subjectCount = filteredSections.reduce((sum, s) => sum + s.subjects.length, 0);
+  const gradedCount  = filteredSections.flatMap((s) => s.subjects).filter((sub) => grades[sub.id] !== undefined && grades[sub.id] !== "").length;
 
   const handleGrade = (subjectId, value) => {
     if (value === "" || /^\d+$/.test(value)) {
@@ -82,7 +121,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      const allSubjects = sections.flatMap((s) => s.subjects);
+      const allSubjects = filteredSections.flatMap((s) => s.subjects);
       const subjects = allSubjects.map((sub) => ({ subject_id: sub.id, grade: grades[sub.id] || null }));
       const res = await api.post(`/api/admin/students/${student.id}/bulk-enroll`, { subjects });
       setEnrollmentType(res.data?.enrollment_type || (res.data?.data?.enrollment_type) || null);
@@ -142,7 +181,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
         </div>
 
         {/* ── Step bar ── */}
-        {sections.length > 0 && <StepBar sections={sections} step={step} />}
+        {filteredSections.length > 0 && <StepBar sections={filteredSections} step={step} />}
 
         {/* ── Content ── */}
         <div className="p-6 space-y-4">
@@ -169,7 +208,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
                   <p className="text-xs text-slate-400 mt-0.5">{current.subjects.length} subjects · enter grades below</p>
                 </div>
                 <span className="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                  Step {step + 1} of {sections.length}
+                  Step {step + 1} of {filteredSections.length}
                 </span>
               </div>
 
@@ -211,7 +250,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
           <div className="flex gap-2">
             <button onClick={onClose} className="btn btn-secondary btn-sm">Cancel</button>
             {!isLast ? (
-              <button onClick={() => { setConfirm(false); setStep((s) => Math.min(sections.length - 1, s + 1)); }} className="btn btn-primary btn-sm gap-1">
+              <button onClick={() => { setConfirm(false); setStep((s) => Math.min(filteredSections.length - 1, s + 1)); }} className="btn btn-primary btn-sm gap-1">
                 Next <ChevronRight size={14} />
               </button>
             ) : !confirm ? (

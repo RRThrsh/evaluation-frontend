@@ -251,19 +251,14 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      const allSubjects = allSections.flatMap((s) => s.subjects);
-      const seen = new Set();
-      const subjects = [];
-      for (const sub of allSubjects) {
-        if (seen.has(sub.id) && !sub.isGapFiller) continue;
-        if (sub.isGapFiller && seen.has(sub.id)) seen.delete(sub.id);
-        seen.add(sub.id);
-        subjects.push({
+      const map = new Map();
+      for (const sub of allSections.flatMap((s) => s.subjects)) {
+        map.set(sub.id, {
           subject_id: sub.id,
           grade: sub.isGapFiller ? (gapGrades[sub.id] || null) : (grades[sub.id] || null),
-          is_gap_filler: !!sub.isGapFiller,
         });
       }
+      const subjects = Array.from(map.values());
       const res = await api.post(`/api/admin/students/${student.id}/bulk-enroll`, { subjects });
       setEnrollmentType(res.data?.enrollment_type || (res.data?.data?.enrollment_type) || null);
       onToast("Grades saved");

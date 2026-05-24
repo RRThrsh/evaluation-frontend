@@ -5,8 +5,12 @@ import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
 
 const YEAR_LEVELS = { 1: "1st Year", 2: "2nd Year", 3: "3rd Year", 4: "4th Year" };
 
-const gradeBadge = (grade) =>
-  grade ? `badge badge-green` : `badge badge-yellow`;
+const gradeBadge = (grade) => {
+  if (!grade || grade === "INC") return "badge badge-yellow";
+  const num = Number(grade);
+  if (!isNaN(num) && num < 75) return "badge badge-red";
+  return "badge badge-green";
+};
 
 function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pendingRequestedBy }) {
   return (
@@ -102,7 +106,7 @@ export default function EvaluatorHome() {
   const [student, setStudent] = useState(null);
   const [currentSubjects, setCurrentSubjects] = useState([]);
   const [nextSubjects, setNextSubjects] = useState([]);
-  const [previousFails, setPreviousFails] = useState([]);
+  const [allFails, setAllFails] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -118,7 +122,7 @@ export default function EvaluatorHome() {
     setStudent(null);
     setCurrentSubjects([]);
     setNextSubjects([]);
-    setPreviousFails([]);
+    setAllFails([]);
     setHasPendingRequest(false);
     setPendingRequestedBy(null);
 
@@ -130,15 +134,15 @@ export default function EvaluatorHome() {
       let overall = null;
       let current = [];
       let next = [];
-      let prevFails = [];
+      let allFails = [];
       let enrollmentType = "regular";
       try {
         const evalRes = await api.get(`/api/evaluator/students/${data.id}/evaluate`);
         courseName = evalRes.data?.student?.course || "";
         overall = evalRes.data?.overall || null;
-        current = evalRes.data?.current_semester_subjects || [];
+        current = evalRes.data?.current_enrolled_subjects || [];
         next = evalRes.data?.next_semester_subjects || [];
-        prevFails = evalRes.data?.previous_failed_subjects || [];
+        allFails = evalRes.data?.remaining_failed_subjects || [];
         enrollmentType = evalRes.data?.student?.enrollment_type || "regular";
         const pendingReq = evalRes.data?.has_pending_request;
         setHasPendingRequest(pendingReq);
@@ -153,7 +157,7 @@ export default function EvaluatorHome() {
       });
       setCurrentSubjects(current);
       setNextSubjects(next);
-      setPreviousFails(prevFails);
+      setAllFails(allFails);
     } catch (err) {
       setError(err.message || "Student not found");
     } finally {
@@ -181,7 +185,7 @@ export default function EvaluatorHome() {
   const currentColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
     { key: "subject_name", label: "Subject", width: "40%" },
-    { key: "status", label: "Grade", width: "20%", render: (s) => <span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span> },
+    { key: "grade", label: "Grade", width: "20%", render: (s) => <span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span> },
   ], []);
 
   const nextColumns = useMemo(() => [
@@ -275,12 +279,12 @@ export default function EvaluatorHome() {
           </div>
         )}
 
-        {previousFails.length > 0 && student && (
+        {allFails.length > 0 && student && (
           <SubjectTable
-            title="Previously Failed Subjects"
-            subjects={previousFails}
+            title="Failed Subjects"
+            subjects={allFails}
             columns={failColumns}
-            emptyMsg="No failed subjects from previous semesters."
+            emptyMsg="No failed subjects."
           />
         )}
       </div>

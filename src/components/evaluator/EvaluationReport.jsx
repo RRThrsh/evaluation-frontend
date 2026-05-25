@@ -103,9 +103,7 @@ export default memo(function EvaluationReport({ evaluation }) {
                 <span className="font-medium">{ns.subject_code}</span>
                 <span className="text-zinc-400 text-xs ml-2">({ns.subject_type})</span>
                 {ns.prerequisite && <span className="text-zinc-400 text-xs ml-2">prereq: {ns.prerequisite}</span>}
-                {ns.is_gap_filler && !ns.repeat_semester && <span className="text-purple-600 text-xs ml-1 font-bold">[GAP]</span>}
-                {ns.repeat_semester && <span className="text-red-600 text-xs ml-1 font-bold">[RETAKEN Y4S{ns.repeat_semester}]</span>}
-                {ns.is_retake && !ns.repeat_semester && !ns.is_gap_filler && <span className="text-amber-600 text-xs ml-2 font-bold">[RETAKE]</span>}
+                {ns.is_retake && <span className="text-amber-600 text-xs ml-2 font-bold">[RETAKE]</span>}
               </div>
               {ns.prerequisite && <PrereqBadge prereq_failed={ns.prereq_failed} prereq_met={ns.prereq_met} />}
             </div>

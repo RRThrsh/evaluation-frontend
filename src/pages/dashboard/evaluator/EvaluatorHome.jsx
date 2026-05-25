@@ -298,6 +298,20 @@ export default function EvaluatorHome() {
                 emptyMsg="No possible subjects."
                 color="blue"
               />
+
+              {gapFillers.length > 0 && (
+                <SubjectTable
+                  title="Gap Fillers"
+                  subjects={gapFillers}
+                  columns={[
+                    { key: "subject_code", label: "Code", width: "20%", className: "whitespace-nowrap" },
+                    { key: "subject_name", label: "Subject", width: "55%" },
+                    { key: "units", label: "Units", width: "15%", align: "right", render: (s) => s.units ?? "\u2014" },
+                    { key: "badge", label: "", width: "10%", render: () => <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> },
+                  ]}
+                  color="amber"
+                />
+              )}
             </div>
           </div>
         )}

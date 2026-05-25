@@ -53,6 +53,16 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const [done, setDone] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [enrollmentType, setEnrollmentType] = useState(null);
+  const [ojtCodes, setOjtCodes] = useState(new Set());
+
+  useEffect(() => {
+    if (!student?.course_id) return;
+    api.get("/api/config/ojt-subjects").then((d) => {
+      const groups = d.data ?? [];
+      const group = groups.find((g) => g.course_id === student.course_id);
+      if (group) setOjtCodes(new Set(group.subjects.map((s) => s.subject_code.toUpperCase())));
+    }).catch(() => {});
+  }, [student?.course_id]);
 
   const sections = useMemo(() => {
     const byYearSem = {};
@@ -99,7 +109,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     }, []);
   }, [sections, failedIds, prereqById]);
 
-  const isOJT = (code) => /^OJT/i.test(code || "");
+  const isOJT = (code) => ojtCodes.has((code || "").toUpperCase());
   const isThesis = (code) => /^THESIS/i.test(code || "");
 
   const allSections = useMemo(() => {
@@ -200,15 +210,15 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     if (!student || Number(student.year_level) < ojtMinYearLevel) return null;
     const ojt = sections.flatMap((s) => s.subjects).find((sub) => isOJT(sub.subject_code));
     if (!ojt) return null;
-    const failedMajorMinorCount = sections
+    const failedMajorCount = sections
       .flatMap((s) => s.subjects)
-      .filter((sub) => (sub.subject_type === "major" || sub.subject_type === "minor") && failedIds.has(sub.id))
+      .filter((sub) => sub.subject_type === "major" && failedIds.has(sub.id))
       .length;
-    if (failedMajorMinorCount >= ojtMaxFailedSubjects) {
-      return `OJT not available — student has ${failedMajorMinorCount} failed major/minor subject(s) (max ${ojtMaxFailedSubjects})`;
+    if (failedMajorCount >= ojtMaxFailedSubjects) {
+      return `OJT not available — student has ${failedMajorCount} failed major subject(s) (max ${ojtMaxFailedSubjects})`;
     }
     return null;
-  }, [sections, failedIds, student, ojtMinYearLevel, ojtMaxFailedSubjects]);
+  }, [sections, failedIds, student, ojtMinYearLevel, ojtMaxFailedSubjects, ojtCodes]);
 
   useEffect(() => {
     if (step >= allSections.length) {

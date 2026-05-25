@@ -210,6 +210,19 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     const maxYear = 4;
     if (!student || Number(student.year_level) < maxYear) return null;
 
+    if (Number(student.current_semester) >= 2) {
+      // Y4S2: last sem — ANY remaining fail blocks graduation
+      const blocking = sections
+        .flatMap((s) => s.subjects)
+        .filter((sub) => failedIds.has(sub.id));
+      if (blocking.length === 0) return null;
+      return {
+        blocking,
+        message: `Cannot graduate — student has ${blocking.length} failed subject(s). Must repeat 4th year to retake: ${blocking.map((s) => s.subject_code).join(", ")}`,
+      };
+    }
+
+    // Y4S1: still have next sem — only block fails with no retake path
     const coveredIds = new Set();
 
     const gapFillerSection = allSections.find((s) => s.isGapFiller);

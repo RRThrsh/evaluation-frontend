@@ -206,6 +206,36 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     return warnings;
   }, [allSections, failedIds]);
 
+  const graduationBlocked = useMemo(() => {
+    const maxYear = 4;
+    if (!student || Number(student.year_level) < maxYear) return null;
+
+    const coveredIds = new Set();
+
+    const gapFillerSection = allSections.find((s) => s.isGapFiller);
+    if (gapFillerSection) {
+      for (const sub of gapFillerSection.subjects) coveredIds.add(sub.id);
+    }
+
+    const currentSection = sections.find(
+      (s) => s.year === Number(student.year_level) && s.sem === Number(student.current_semester)
+    );
+    if (currentSection) {
+      for (const sub of currentSection.subjects) coveredIds.add(sub.id);
+    }
+
+    const blocking = sections
+      .flatMap((s) => s.subjects)
+      .filter((sub) => failedIds.has(sub.id) && !coveredIds.has(sub.id));
+
+    if (blocking.length === 0) return null;
+
+    return {
+      blocking,
+      message: `Cannot graduate — ${blocking.length} failed subject(s) have no retake path: ${blocking.map((s) => s.subject_code).join(", ")}`,
+    };
+  }, [student, failedIds, allSections, sections]);
+
   const ojtBlocked = useMemo(() => {
     if (!student || Number(student.year_level) < ojtMinYearLevel) return null;
     const ojt = sections.flatMap((s) => s.subjects).find((sub) => isOJT(sub.subject_code));
@@ -337,6 +367,12 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
               <p className="text-xs text-amber-700">{w}</p>
             </div>
           ))}
+          {graduationBlocked && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
+              <span className="text-red-600 font-bold text-sm shrink-0 mt-0.5">!</span>
+              <p className="text-xs text-red-700">{graduationBlocked.message}</p>
+            </div>
+          )}
           {ojtBlocked && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
               <span className="text-red-600 font-bold text-sm shrink-0 mt-0.5">!</span>

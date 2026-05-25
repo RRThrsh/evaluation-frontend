@@ -210,42 +210,42 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     const maxYear = 4;
     if (!student || Number(student.year_level) < maxYear) return null;
 
+    let blocking = [];
     if (Number(student.current_semester) >= 2) {
       // Y4S2: last sem — ANY remaining fail blocks graduation
-      const blocking = sections
+      blocking = sections
         .flatMap((s) => s.subjects)
         .filter((sub) => failedIds.has(sub.id));
-      if (blocking.length === 0) return null;
-      return {
-        blocking,
-        message: `Cannot graduate — student has ${blocking.length} failed subject(s). Must repeat 4th year to retake: ${blocking.map((s) => s.subject_code).join(", ")}`,
-      };
+    } else {
+      // Y4S1: still have next sem — only block fails with no retake path
+      const coveredIds = new Set();
+      const gapFillerSection = allSections.find((s) => s.isGapFiller);
+      if (gapFillerSection) {
+        for (const sub of gapFillerSection.subjects) coveredIds.add(sub.id);
+      }
+      const currentSection = sections.find(
+        (s) => s.year === Number(student.year_level) && s.sem === Number(student.current_semester)
+      );
+      if (currentSection) {
+        for (const sub of currentSection.subjects) coveredIds.add(sub.id);
+      }
+      blocking = sections
+        .flatMap((s) => s.subjects)
+        .filter((sub) => failedIds.has(sub.id) && !coveredIds.has(sub.id));
     }
-
-    // Y4S1: still have next sem — only block fails with no retake path
-    const coveredIds = new Set();
-
-    const gapFillerSection = allSections.find((s) => s.isGapFiller);
-    if (gapFillerSection) {
-      for (const sub of gapFillerSection.subjects) coveredIds.add(sub.id);
-    }
-
-    const currentSection = sections.find(
-      (s) => s.year === Number(student.year_level) && s.sem === Number(student.current_semester)
-    );
-    if (currentSection) {
-      for (const sub of currentSection.subjects) coveredIds.add(sub.id);
-    }
-
-    const blocking = sections
-      .flatMap((s) => s.subjects)
-      .filter((sub) => failedIds.has(sub.id) && !coveredIds.has(sub.id));
 
     if (blocking.length === 0) return null;
 
+    // Determine repeat semester(s)
+    const sem1Fails = blocking.filter((s) => Number(s.semester) === 1);
+    const sem2Fails = blocking.filter((s) => Number(s.semester) === 2);
+    const sem1Only = sem1Fails.length > 0 && sem2Fails.length === 0;
+    const sem2Only = sem2Fails.length > 0 && sem1Fails.length === 0;
+    const repeatLabel = sem2Only ? "Y4S2" : sem1Only ? "Y4S1" : "full 4th year";
+
     return {
       blocking,
-      message: `Cannot graduate — ${blocking.length} failed subject(s) have no retake path: ${blocking.map((s) => s.subject_code).join(", ")}`,
+      message: `Cannot graduate — student has ${blocking.length} failed subject(s). Must repeat ${repeatLabel} to retake: ${blocking.map((s) => s.subject_code).join(", ")}`,
     };
   }, [student, failedIds, allSections, sections]);
 

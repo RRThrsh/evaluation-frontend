@@ -65,7 +65,7 @@ export default memo(function EvaluationReport({ evaluation }) {
             <p className="text-xs font-semibold text-red-700">Cannot Graduate</p>
             <p className="text-xs text-red-600 mt-0.5">
               Student has {graduation.blocking_subjects.length} failed subject(s) with no retake path.
-              Must repeat 4th year to retake: {graduation.blocking_subjects.map((s) => s.subject_code).join(", ")}
+              Must repeat {graduation.repeat_semesters?.length === 2 ? "full 4th year" : `Y4S${graduation.repeat_semesters?.[0]}`} to retake: {graduation.blocking_subjects.map((s) => s.subject_code).join(", ")}
             </p>
           </div>
         </div>

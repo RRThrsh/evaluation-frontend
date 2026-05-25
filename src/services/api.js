@@ -1,6 +1,8 @@
 const API_BASE = import.meta.env.VITE_API_URL || "";
 const CACHE_TTL = 60_000;
 
+import { sanitizeObject } from "../utils/sanitize";
+
 class ApiError extends Error {
   constructor(status, message) {
     super(message);
@@ -110,10 +112,10 @@ export const api = {
     }
     return request(url);
   },
-  post: (endpoint, body) => request(endpoint, { method: "POST", body: JSON.stringify(body) }),
-  put: (endpoint, body) => request(endpoint, { method: "PUT", body: JSON.stringify(body) }),
-  patch: (endpoint, body) => request(endpoint, { method: "PATCH", body: JSON.stringify(body) }),
-  delete: (endpoint, body) => request(endpoint, { method: "DELETE", body: body ? JSON.stringify(body) : undefined }),
+  post: (endpoint, body) => request(endpoint, { method: "POST", body: JSON.stringify(sanitizeObject(body || {})) }),
+  put: (endpoint, body) => request(endpoint, { method: "PUT", body: JSON.stringify(sanitizeObject(body || {})) }),
+  patch: (endpoint, body) => request(endpoint, { method: "PATCH", body: JSON.stringify(sanitizeObject(body || {})) }),
+  delete: (endpoint, body) => request(endpoint, { method: "DELETE", body: body ? JSON.stringify(sanitizeObject(body)) : undefined }),
   request,
 };
 

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, LogIn, GraduationCap } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { sanitizeInput } from "../../utils/sanitize";
+import { loginSchema } from "../../utils/validationSchema";
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -16,21 +17,40 @@ const Login = () => {
 
   const registered = searchParams.get("registered");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      const data = await login(sanitizeInput(email), password);
-      const role = data.data?.user?.role;
-      const routes = { superadmin: "/admin", admin: "/admin", evaluator: "/evaluator" };
-      navigate(routes[role] || "/");
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+   const handleSubmit = async (e) => {
+     e.preventDefault();
+     setError("");
+     setLoading(true);
+
+     try {
+       // Validate with Yup
+       await loginSchema.validate({
+         email: email,
+         password: password,
+       });
+
+       try {
+         const data = await login(sanitizeInput(email), password);
+         const role = data.data?.user?.role;
+         const routes = { superadmin: "/admin", admin: "/admin", evaluator: "/evaluator" };
+         navigate(routes[role] || "/");
+       } catch (err) {
+         setError(err.message);
+       } finally {
+         setLoading(false);
+       }
+     } catch (validationErrors) {
+       setLoading(false);
+       // Yup validation errors
+       if (validationErrors.inner) {
+         // Collect all errors
+         const messages = validationErrors.inner.map(err => err.message);
+         setError(messages.join('. '));
+       } else {
+         setError(validationErrors.message);
+       }
+     }
+   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12">

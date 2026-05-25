@@ -115,11 +115,6 @@ const NAV_ITEMS = {
       icon: ClipboardList,
     },
     {
-      key: "enrolled",
-      label: "Enrolled Students",
-      icon: UserCheck,
-    },
-    {
       key: "users",
       label: "Pending Approvals",
       icon: UserCheck,
@@ -174,9 +169,6 @@ const PERMISSION_MAP = {
   students: "students.view",
   "pre-evaluate": "pre-evaluate",
   "pre-enrolled": "pre-enrolled",
-  enrolled: "enrolled-students.view",
-  users: "users.view",
-
   "all-users": "user-management.view",
   "audit-logs": "audit-logs",
   "evaluator-logs": "evaluator-logs",

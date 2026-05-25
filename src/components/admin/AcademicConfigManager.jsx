@@ -54,9 +54,14 @@ export default function AcademicConfigManager() {
   const [ojtGroups, setOjtGroups] = useState([]);
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState("");
+  const [selectedChainCourse, setSelectedChainCourse] = useState("");
   const [newOjtCode, setNewOjtCode] = useState("");
+  const [newChainCode, setNewChainCode] = useState("");
   const [addingOjt, setAddingOjt] = useState(false);
+  const [addingChain, setAddingChain] = useState(false);
   const [expandedCourses, setExpandedCourses] = useState(new Set());
+  const [expandedChainCourses, setExpandedChainCourses] = useState(new Set());
+  const [chainGroups, setChainGroups] = useState([]);
 
   const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -64,6 +69,13 @@ export default function AcademicConfigManager() {
     try {
       const data = await api.get("/api/config/ojt-subjects");
       setOjtGroups(data.data ?? []);
+    } catch { /* ignore */ }
+  };
+
+  const loadChainSubjects = async () => {
+    try {
+      const data = await api.get("/api/config/chain-prereq-subjects");
+      setChainGroups(data.data ?? []);
     } catch { /* ignore */ }
   };
 
@@ -77,6 +89,7 @@ export default function AcademicConfigManager() {
   useEffect(() => {
     api.get("/api/config").then((d) => { if (d?.data) { setConfig(d.data); setOriginal({ ...d.data }); } }).catch(() => {}).finally(() => setLoading(false));
     loadOjtSubjects();
+    loadChainSubjects();
     loadCourses();
   }, []);
 
@@ -110,8 +123,37 @@ export default function AcademicConfigManager() {
     } catch (err) { showToast(err.message || "Failed to remove", "error"); }
   };
 
+  const handleAddChainCode = async () => {
+    if (!selectedChainCourse || !newChainCode.trim()) { showToast("Select a course and enter a subject code", "error"); return; }
+    setAddingChain(true);
+    try {
+      await api.post("/api/config/chain-prereq-subjects", { course_id: selectedChainCourse, subject_code: newChainCode.trim() });
+      setNewChainCode("");
+      showToast("Chain prerequisite subject code added");
+      await loadChainSubjects();
+      setExpandedChainCourses((prev) => new Set(prev).add(selectedChainCourse));
+    } catch (err) { showToast(err.message || "Failed to add", "error"); }
+    finally { setAddingChain(false); }
+  };
+
+  const handleRemoveChainCode = async (id) => {
+    try {
+      await api.delete(`/api/config/chain-prereq-subjects/${id}`);
+      showToast("Chain prerequisite subject code removed");
+      await loadChainSubjects();
+    } catch (err) { showToast(err.message || "Failed to remove", "error"); }
+  };
+
   const toggleExpand = (courseId) => {
     setExpandedCourses((prev) => {
+      const next = new Set(prev);
+      if (next.has(courseId)) next.delete(courseId); else next.add(courseId);
+      return next;
+    });
+  };
+
+  const toggleChainExpand = (courseId) => {
+    setExpandedChainCourses((prev) => {
       const next = new Set(prev);
       if (next.has(courseId)) next.delete(courseId); else next.add(courseId);
       return next;
@@ -239,6 +281,95 @@ export default function AcademicConfigManager() {
                           {can("academic-config") && (
                             <button
                               onClick={() => handleRemoveOjtCode(subj.id)}
+                              className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Chain Prerequisite Subjects */}
+          <div className="card overflow-hidden">
+            <div className="flex items-center gap-2.5 px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="p-1.5 rounded-lg bg-primary-50 text-primary-600"><SvgIcon path="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" className="w-4 h-4" /></div>
+              <h3 className="text-sm font-semibold text-slate-800">Chain Prerequisite Subjects</h3>
+            </div>
+
+            {can("academic-config") && (
+              <div className="px-6 py-4 border-b border-slate-100 space-y-3">
+                <select
+                  value={selectedChainCourse}
+                  onChange={(e) => setSelectedChainCourse(e.target.value)}
+                  className="input-field text-sm"
+                >
+                  <option value="">-- Select Course --</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
+                  ))}
+                </select>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newChainCode}
+                    onChange={(e) => setNewChainCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. CS101"
+                    className="input-field flex-1 text-sm"
+                  />
+                  <button
+                    onClick={handleAddChainCode}
+                    disabled={addingChain || !selectedChainCourse || !newChainCode.trim()}
+                    className="btn btn-primary btn-sm whitespace-nowrap"
+                  >
+                    {addingChain ? "..." : "Add"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="px-6 py-4 max-h-[480px] overflow-y-auto space-y-2">
+              {chainGroups.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-6">No chain prerequisite subjects configured yet.<br />Select a course and add one above.</p>
+              )}
+              {chainGroups.map((group) => (
+                <div key={group.course_id} className="border border-slate-200 rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => toggleChainExpand(group.course_id)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 bg-slate-50 hover:bg-slate-100 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <SvgIcon
+                        path={expandedChainCourses.has(group.course_id) ? "M19 9l-7 7-7-7" : "M9 5l7 7-7 7"}
+                        className="w-3.5 h-3.5 text-slate-400"
+                      />
+                      <span className="text-sm font-semibold text-slate-700">{group.course_code}</span>
+                      <span className="text-xs text-slate-400 font-normal">{group.course_name}</span>
+                    </div>
+                    <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">{group.subjects.length}</span>
+                  </button>
+                  {expandedChainCourses.has(group.course_id) && (
+                    <div className="divide-y divide-slate-100">
+                      {group.subjects.map((subj) => (
+                        <div key={subj.id} className="flex items-center justify-between px-4 py-2.5 pl-10">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {subj.chain?.map((code, ci) => (
+                              <span key={code} className="flex items-center gap-1">
+                                <span className="text-sm font-mono font-medium text-slate-700">{code}</span>
+                                {ci < subj.chain.length - 1 && (
+                                  <span className="text-xs text-slate-300 mx-0.5">···→</span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                          {can("academic-config") && (
+                            <button
+                              onClick={() => handleRemoveChainCode(subj.id)}
                               className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
                             >
                               Remove

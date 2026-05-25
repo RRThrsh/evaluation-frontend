@@ -113,7 +113,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const isThesis = (code) => /^THESIS/i.test(code || "");
 
   const allSections = useMemo(() => {
-    // Gap filler only triggers for failed subjects in the SAME semester as current
+    // Gap filler: add failed subjects from previous years' same semester as retakes
     const gapFillers = [];
     const addedCodes = new Set();
 
@@ -123,24 +123,12 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
 
       const prevYear = Number(sub.year_level) < Number(student.year_level);
 
-      // 1. Retakeable: same semester, previous year (only if not blocked by its own prereq)
+      // Retakeable: same semester, previous year (only if not blocked by its own prereq)
       const subPrereqId = prereqById[sub.id];
       const subBlocked = subPrereqId && failedIds.has(subPrereqId);
       if (prevYear && !subBlocked) {
         gapFillers.push({ ...sub, isGapFiller: true });
         addedCodes.add(sub.subject_code);
-      }
-
-      // 2. Prerequisite of this fail (only if in the same semester and not blocked)
-      if (subPrereqId && !failedIds.has(subPrereqId)) {
-        const prereqSub = curriculum.find((s) => s.id === subPrereqId);
-        if (!prereqSub || Number(prereqSub.semester) !== Number(student.current_semester)) continue;
-        const prereqOfPrereq = prereqById[subPrereqId];
-        const prereqBlocked = prereqOfPrereq && failedIds.has(prereqOfPrereq);
-        if (!addedCodes.has(prereqSub.subject_code) && !prereqBlocked) {
-          gapFillers.push({ ...prereqSub, isGapFiller: true });
-          addedCodes.add(prereqSub.subject_code);
-        }
       }
     }
 
@@ -237,9 +225,17 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
       for (const sub of currentSection.subjects) coveredIds.add(sub.id);
     }
 
+    const semsPerYear = 2;
+    const nextSem = Number(student.current_semester) >= semsPerYear ? 1 : Number(student.current_semester) + 1;
+
     const blocking = sections
       .flatMap((s) => s.subjects)
-      .filter((sub) => failedIds.has(sub.id) && !coveredIds.has(sub.id));
+      .filter((sub) => {
+        if (!failedIds.has(sub.id)) return false;
+        if (coveredIds.has(sub.id)) return false;
+        if (Number(sub.semester) === nextSem) return false;
+        return true;
+      });
 
     if (blocking.length === 0) return null;
 

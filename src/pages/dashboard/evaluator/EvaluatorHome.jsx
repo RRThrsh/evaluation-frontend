@@ -212,7 +212,7 @@ export default function EvaluatorHome() {
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
     { key: "subject_name", label: "Subject", width: "40%" },
     { key: "prerequisite", label: "Prereq", width: "30%", render: (s) => s.prerequisite || "\u2014" },
-    { key: "is_retake", label: "", width: "15%", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
+    { key: "badge", label: "", width: "15%", render: (s) => s.is_gap_filler ? <span className="text-xs font-bold text-purple-600 uppercase">[GAP]</span> : s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
   ], []);
 
   const failColumns = useMemo(() => [
@@ -299,7 +299,19 @@ export default function EvaluatorHome() {
                 color="blue"
               />
 
-
+              {gapFillers.length > 0 && (
+                <SubjectTable
+                  title="Gap Fillers"
+                  subjects={gapFillers}
+                  columns={[
+                    { key: "subject_code", label: "Code", width: "20%", className: "whitespace-nowrap" },
+                    { key: "subject_name", label: "Subject", width: "55%" },
+                    { key: "units", label: "Units", width: "15%", align: "right", render: (s) => s.units ?? "\u2014" },
+                    { key: "badge", label: "", width: "10%", render: () => <span className="text-xs font-bold text-purple-600 uppercase">[GAP]</span> },
+                  ]}
+                  color="amber"
+                />
+              )}
             </div>
           </div>
         )}

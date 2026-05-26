@@ -16,7 +16,7 @@ export default function SubjectManager() {
     const YEARS = Array.from({ length: Number(config.max_year_level) }, (_, i) => i + 1);
     const SEMESTERS = Array.from({ length: Number(config.semesters_per_year) }, (_, i) => i + 1);
     const [editing, setEditing] = useState(null);
-    const [form, setForm] = useState({ subject_code: "", subject_name: "", year_level: 1, semester: 1, units: 3, course_id: "", prerequisite_id: "", subject_type: "major" });
+    const [form, setForm] = useState({ subject_code: "", subject_name: "", year_level: 1, semester: 1, units: 3, course_id: "", prerequisite_id: "", subject_type: "major", is_fourth_year_only: false });
     const [saving, setSaving] = useState(false);
     const [toast, setToast] = useState(null);
     const [search, setSearch] = useState("");
@@ -42,7 +42,7 @@ export default function SubjectManager() {
     useEffect(() => { load(); }, []);
 
     const resetForm = () => {
-        setForm({ subject_code: "", subject_name: "", year_level: 1, semester: 1, units: 3, course_id: "", prerequisite_id: "", subject_type: "major" });
+        setForm({ subject_code: "", subject_name: "", year_level: 1, semester: 1, units: 3, course_id: "", prerequisite_id: "", subject_type: "major", is_fourth_year_only: false });
         setEditing(null);
     };
 
@@ -60,7 +60,7 @@ export default function SubjectManager() {
     };
 
     const handleEdit = (s) => {
-        setForm({ subject_code: s.subject_code, subject_name: s.subject_name, year_level: s.year_level, semester: s.semester, units: s.units, course_id: s.course_id || "", prerequisite_id: s.prerequisite_id || "", subject_type: s.subject_type || "major" });
+        setForm({ subject_code: s.subject_code, subject_name: s.subject_name, year_level: s.year_level, semester: s.semester, units: s.units, course_id: s.course_id || "", prerequisite_id: s.prerequisite_id || "", subject_type: s.subject_type || "major", is_fourth_year_only: s.is_fourth_year_only || false });
         setEditing(s.id);
     };
 
@@ -152,6 +152,12 @@ export default function SubjectManager() {
                                 <option value="">— Select Course —</option>
                                 {courses.map((c) => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
                             </select>
+                        </div>
+                        <div className="flex items-end">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" checked={form.is_fourth_year_only} onChange={(e) => setForm({ ...form, is_fourth_year_only: e.target.checked })} className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" />
+                                <span className="text-xs text-slate-600">4th Year Only</span>
+                            </label>
                         </div>
                         <div>
                             <label className="block text-xs text-slate-500 mb-1">Prerequisite</label>

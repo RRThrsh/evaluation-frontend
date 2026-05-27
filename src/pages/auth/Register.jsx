@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, Lock, Eye, EyeOff, UserPlus, GraduationCap } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { sanitizeInput } from "../../utils/sanitize";
+import { registerSchema } from "../../utils/validationSchema";
 
 const Register = () => {
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
@@ -23,43 +24,48 @@ const Register = () => {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+   const handleSubmit = async (e) => {
+     e.preventDefault();
+     setError("");
 
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
+     try {
+       // Validate with Yup
+       await registerSchema.validate({
+         name: form.name,
+         email: form.email,
+         password: form.password,
+         confirmPassword: form.confirmPassword,
+       }, { abortEarly: false });
 
-    if (form.password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
+       if (!agreed) {
+         setError("You must agree to the Terms of Service and Privacy Policy.");
+         return;
+       }
 
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/.test(form.password)) {
-      setError("Password must contain uppercase, lowercase, number, and special character.");
-      return;
-    }
-
-    if (!agreed) {
-      setError("You must agree to the Terms and Privacy Policy.");
-      return;
-    }
-    if (!agreed) {
-      setError("You must agree to the Terms of Service and Privacy Policy.");
-      return;
-    }
-    setLoading(true);
-    try {
-      await register({ full_name: sanitizeInput(form.name), email: sanitizeInput(form.email), password: form.password });
-      navigate("/login?registered=1");
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+       setLoading(true);
+       try {
+         await register({ 
+           full_name: sanitizeInput(form.name), 
+           email: sanitizeInput(form.email), 
+           password: form.password 
+         });
+         navigate("/login?registered=1");
+       } catch (err) {
+         setError(err.message);
+       } finally {
+         setLoading(false);
+       }
+     } catch (validationErrors) {
+       // Yup validation errors
+       if (validationErrors.inner) {
+         // Collect all errors
+         const messages = validationErrors.inner.map(err => err.message);
+         setError(messages.join('. '));
+       } else {
+         setError(validationErrors.message);
+       }
+     }
+   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12">

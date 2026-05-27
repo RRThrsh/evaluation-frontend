@@ -72,7 +72,7 @@ export default function StudentManager() {
                     try {
                         const cur = await api.get(`/api/admin/students/${newStudent.id}/curriculum`);
                         const curriculum = cur.data ?? [];
-                        const hasSubjects = curriculum.some((s) => s.year_level <= newStudent.year_level);
+                        const hasSubjects = curriculum.some((s) => s.year_level <= newStudent.year_level && (!s.is_fourth_year_only || Number(newStudent.year_level) >= 4));
                         if (hasSubjects) {
                             setWizardStudent(newStudent);
                             setWizardCurriculum(curriculum);

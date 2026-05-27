@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import api from "../../services/api";
 
@@ -45,13 +45,24 @@ function StepBar({ sections, step }) {
   );
 }
 
-export default function StudentGradeWizard({ student, curriculum, onClose, onDone, onToast }) {
+export default function StudentGradeWizard({ student, curriculum, onClose, onDone, onToast, ojtMinYearLevel = 4, ojtMaxFailedSubjects = 4 }) {
   const [step, setStep] = useState(0);
   const [grades, setGrades] = useState({});
+  const [gapGrades, setGapGrades] = useState({});
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [enrollmentType, setEnrollmentType] = useState(null);
+  const [ojtCodes, setOjtCodes] = useState(new Set());
+
+  useEffect(() => {
+    if (!student?.course_id) return;
+    api.get("/api/config/ojt-subjects").then((d) => {
+      const groups = d.data ?? [];
+      const group = groups.find((g) => g.course_id === student.course_id);
+      if (group) setOjtCodes(new Set(group.subjects.map((s) => s.subject_code.toUpperCase())));
+    }).catch(() => {});
+  }, [student?.course_id]);
 
   const sections = useMemo(() => {
     const byYearSem = {};
@@ -65,10 +76,202 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     return Object.values(byYearSem).sort((a, b) => a.year - b.year || a.sem - b.sem);
   }, [curriculum, student]);
 
-  const current = sections[step];
-  const isLast  = step === sections.length - 1;
-  const subjectCount = sections.reduce((sum, s) => sum + s.subjects.length, 0);
-  const gradedCount  = Object.keys(grades).length;
+  const isFailingGrade = (grade) => {
+    if (grade == null || grade === "") return false;
+    if (/^\d+$/.test(grade)) return Number(grade) < 75;
+    return ["F", "INC", "W", "D"].includes(String(grade).toUpperCase());
+  };
+
+  const prereqById = useMemo(() => {
+    const map = {};
+    for (const sub of curriculum) {
+      if (sub.prerequisite_id) map[sub.id] = sub.prerequisite_id;
+    }
+    return map;
+  }, [curriculum]);
+
+  const failedIds = useMemo(() => {
+    const ids = new Set();
+    for (const [subId, grade] of Object.entries(grades)) {
+      if (isFailingGrade(grade)) ids.add(subId);
+    }
+    return ids;
+  }, [grades]);
+
+  const filteredSections = useMemo(() => {
+    return sections.reduce((acc, section) => {
+      const filtered = section.subjects.filter((sub) => {
+        const prereqId = prereqById[sub.id];
+        return !(prereqId && failedIds.has(prereqId));
+      });
+      if (filtered.length > 0) acc.push({ ...section, subjects: filtered });
+      return acc;
+    }, []);
+  }, [sections, failedIds, prereqById]);
+
+  const isOJT = (code) => ojtCodes.has((code || "").toUpperCase());
+  const isThesis = (code) => /^THESIS/i.test(code || "");
+
+  const allSections = useMemo(() => {
+    // Gap filler: add failed subjects from previous years' same semester as retakes
+    const gapFillers = [];
+    const addedCodes = new Set();
+
+    for (const sub of sections.flatMap((s) => s.subjects)) {
+      if (!failedIds.has(sub.id)) continue;
+      if (Number(sub.semester) !== Number(student.current_semester)) continue;
+
+      const prevYear = Number(sub.year_level) < Number(student.year_level);
+
+      // Retakeable: same semester, previous year (only if not blocked by its own prereq)
+      const subPrereqId = prereqById[sub.id];
+      const subBlocked = subPrereqId && failedIds.has(subPrereqId);
+      if (prevYear && !subBlocked) {
+        gapFillers.push({ ...sub, isGapFiller: true });
+        addedCodes.add(sub.subject_code);
+      }
+    }
+
+    const result = gapFillers.length === 0
+      ? [...filteredSections]
+      : [...filteredSections, { year: student.year_level, sem: student.current_semester, subjects: gapFillers, isGapFiller: true }];
+
+    const thesisItems = sections.flatMap((s) => s.subjects).filter((sub) => isThesis(sub.subject_code));
+    if (thesisItems.length >= 2) {
+      const sorted = [...thesisItems].sort((a, b) => a.year_level - b.year_level || a.semester - b.semester);
+      const highest = sorted[sorted.length - 1];
+      if (failedIds.has(highest.id)) {
+        for (let i = 0; i < sorted.length - 1; i++) {
+          const lower = sorted[i];
+          if (!failedIds.has(lower.id)) {
+            const lowerPrereqId = prereqById[lower.id];
+            const lowerBlocked = lowerPrereqId && failedIds.has(lowerPrereqId);
+            if (!lowerBlocked) {
+              const targetIdx = result.findIndex((sec) => sec.subjects.some((s) => s.id === highest.id));
+              if (targetIdx >= 0) {
+                result[targetIdx] = { ...result[targetIdx], subjects: [...result[targetIdx].subjects, { ...lower }] };
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return result;
+  }, [filteredSections, sections, curriculum, student, failedIds]);
+
+  const thesisChainWarnings = useMemo(() => {
+    const thesisItems = sections.flatMap((s) => s.subjects).filter((sub) => isThesis(sub.subject_code));
+    if (thesisItems.length < 2) return [];
+    const sorted = [...thesisItems].sort((a, b) => a.year_level - b.year_level || a.semester - b.semester);
+    const highest = sorted[sorted.length - 1];
+    if (!failedIds.has(highest.id)) return [];
+    const warnings = [];
+    for (let i = 0; i < sorted.length - 1; i++) {
+      if (!failedIds.has(sorted[i].id)) {
+        warnings.push(`"${sorted[i].subject_code}" must also be retaken because "${highest.subject_code}" failed`);
+      }
+    }
+    return warnings;
+  }, [sections, failedIds]);
+
+  const repeatYearWarnings = useMemo(() => {
+    const warnings = [];
+    const yearGroups = {};
+    for (const section of allSections) {
+      if (section.isGapFiller) continue;
+      for (const sub of section.subjects) {
+        if (!yearGroups[sub.year_level]) yearGroups[sub.year_level] = { total: 0, failed: 0 };
+        yearGroups[sub.year_level].total++;
+        if (failedIds.has(sub.id)) yearGroups[sub.year_level].failed++;
+      }
+    }
+    for (const [year, stats] of Object.entries(yearGroups)) {
+      if (stats.failed > stats.total / 2) {
+        warnings.push(`Failed ${stats.failed}/${stats.total} subjects in Year ${year} — entire year should be repeated`);
+      }
+    }
+    return warnings;
+  }, [allSections, failedIds]);
+
+  const graduationBlocked = useMemo(() => {
+    const maxYear = 4;
+    if (!student || Number(student.year_level) < maxYear) return null;
+
+    if (Number(student.current_semester) >= 2) {
+      // Y4S2: last sem — ANY remaining fail blocks graduation
+      const blocking = sections
+        .flatMap((s) => s.subjects)
+        .filter((sub) => failedIds.has(sub.id));
+      if (blocking.length === 0) return null;
+      return {
+        blocking,
+        message: `Cannot graduate — student has ${blocking.length} failed subject(s). Must repeat 4th year to retake: ${blocking.map((s) => s.subject_code).join(", ")}`,
+      };
+    }
+
+    // Y4S1: still have next sem — only block fails with no retake path
+    const coveredIds = new Set();
+
+    const gapFillerSection = allSections.find((s) => s.isGapFiller);
+    if (gapFillerSection) {
+      for (const sub of gapFillerSection.subjects) coveredIds.add(sub.id);
+    }
+
+    const currentSection = sections.find(
+      (s) => s.year === Number(student.year_level) && s.sem === Number(student.current_semester)
+    );
+    if (currentSection) {
+      for (const sub of currentSection.subjects) coveredIds.add(sub.id);
+    }
+
+    const semsPerYear = 2;
+    const nextSem = Number(student.current_semester) >= semsPerYear ? 1 : Number(student.current_semester) + 1;
+
+    const blocking = sections
+      .flatMap((s) => s.subjects)
+      .filter((sub) => {
+        if (!failedIds.has(sub.id)) return false;
+        if (coveredIds.has(sub.id)) return false;
+        if (Number(sub.semester) === nextSem) return false;
+        return true;
+      });
+
+    if (blocking.length === 0) return null;
+
+    return {
+      blocking,
+      message: `Cannot graduate — ${blocking.length} failed subject(s) have no retake path: ${blocking.map((s) => s.subject_code).join(", ")}`,
+    };
+  }, [student, failedIds, allSections, sections]);
+
+  const ojtBlocked = useMemo(() => {
+    if (!student || Number(student.year_level) < ojtMinYearLevel) return null;
+    const ojt = sections.flatMap((s) => s.subjects).find((sub) => isOJT(sub.subject_code));
+    if (!ojt) return null;
+    const failedMajorCount = sections
+      .flatMap((s) => s.subjects)
+      .filter((sub) => sub.subject_type === "major" && failedIds.has(sub.id))
+      .length;
+    if (failedMajorCount >= ojtMaxFailedSubjects) {
+      return `OJT not available — student has ${failedMajorCount} failed major subject(s) (max ${ojtMaxFailedSubjects})`;
+    }
+    return null;
+  }, [sections, failedIds, student, ojtMinYearLevel, ojtMaxFailedSubjects, ojtCodes]);
+
+  useEffect(() => {
+    if (step >= allSections.length) {
+      setStep(Math.max(0, allSections.length - 1));
+    }
+  }, [allSections.length]);
+
+  const current = allSections[step];
+  const isLast  = step === allSections.length - 1;
+  const subjectCount = allSections.reduce((sum, s) => sum + s.subjects.length, 0);
+  const gradedCount  = allSections.flatMap((s) => s.subjects).filter((sub) => {
+    const g = sub.isGapFiller ? gapGrades[sub.id] : grades[sub.id];
+    return g !== undefined && g !== "";
+  }).length;
 
   const handleGrade = (subjectId, value) => {
     if (value === "" || /^\d+$/.test(value)) {
@@ -79,11 +282,26 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
     }
   };
 
+  const handleGapGrade = (subjectId, value) => {
+    if (value === "" || /^\d+$/.test(value)) {
+      const num = Number(value);
+      if (value === "" || (num >= 0 && num <= 100)) {
+        setGapGrades((prev) => ({ ...prev, [subjectId]: value }));
+      }
+    }
+  };
+
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      const allSubjects = sections.flatMap((s) => s.subjects);
-      const subjects = allSubjects.map((sub) => ({ subject_id: sub.id, grade: grades[sub.id] || null }));
+      const map = new Map();
+      for (const sub of allSections.flatMap((s) => s.subjects)) {
+        map.set(sub.id, {
+          subject_id: sub.id,
+          grade: sub.isGapFiller ? (gapGrades[sub.id] || null) : (grades[sub.id] || null),
+        });
+      }
+      const subjects = Array.from(map.values());
       const res = await api.post(`/api/admin/students/${student.id}/bulk-enroll`, { subjects });
       setEnrollmentType(res.data?.enrollment_type || (res.data?.data?.enrollment_type) || null);
       onToast("Grades saved");
@@ -142,10 +360,34 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
         </div>
 
         {/* ── Step bar ── */}
-        {sections.length > 0 && <StepBar sections={sections} step={step} />}
+        {allSections.length > 0 && <StepBar sections={allSections} step={step} />}
 
         {/* ── Content ── */}
         <div className="p-6 space-y-4">
+          {thesisChainWarnings.length > 0 && thesisChainWarnings.map((w, i) => (
+            <div key={i} className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
+              <span className="text-red-600 font-bold text-sm shrink-0 mt-0.5">!</span>
+              <p className="text-xs text-red-700">{w}</p>
+            </div>
+          ))}
+          {repeatYearWarnings.length > 0 && repeatYearWarnings.map((w, i) => (
+            <div key={i} className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
+              <span className="text-amber-600 font-bold text-sm shrink-0 mt-0.5">!</span>
+              <p className="text-xs text-amber-700">{w}</p>
+            </div>
+          ))}
+          {graduationBlocked && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
+              <span className="text-red-600 font-bold text-sm shrink-0 mt-0.5">!</span>
+              <p className="text-xs text-red-700">{graduationBlocked.message}</p>
+            </div>
+          )}
+          {ojtBlocked && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
+              <span className="text-red-600 font-bold text-sm shrink-0 mt-0.5">!</span>
+              <p className="text-xs text-red-700">{ojtBlocked}</p>
+            </div>
+          )}
           {confirm && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
               <span className="text-amber-600 font-bold text-sm shrink-0 mt-0.5">!</span>
@@ -164,12 +406,12 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-bold text-slate-800">
-                    {ordinal(current.year)} Year — {SEM_LABELS[current.sem] ?? `Sem ${current.sem}`}
+                    {current.isGapFiller ? "Gap Fillers" : `${ordinal(current.year)} Year — ${SEM_LABELS[current.sem] ?? `Sem ${current.sem}`}`}
                   </h4>
                   <p className="text-xs text-slate-400 mt-0.5">{current.subjects.length} subjects · enter grades below</p>
                 </div>
                 <span className="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                  Step {step + 1} of {sections.length}
+                  Step {step + 1} of {allSections.length}
                 </span>
               </div>
 
@@ -179,14 +421,16 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
                     <div className="flex-1 min-w-0">
                       <span className="font-mono font-medium text-slate-700 text-xs">{sub.subject_code}</span>
                       <span className="text-slate-400 ml-1.5 text-xs">{sub.subject_name}</span>
+                      {(sub.is_retaken || (sub.isGapFiller && failedIds.has(sub.id))) && <span className="badge badge-blue ml-1">Retaken</span>}
                       <span className={`badge ml-2 ${sub.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{sub.subject_type}</span>
+                      {current?.isGapFiller && <span className="badge badge-gray ml-1">Gap</span>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-[11px] text-slate-400 font-medium">{sub.units} units</span>
                       <input
                         type="number" min={0} max={100}
-                        value={grades[sub.id] ?? ""}
-                        onChange={(e) => handleGrade(sub.id, e.target.value)}
+                        value={sub.isGapFiller ? (gapGrades[sub.id] ?? "") : (grades[sub.id] ?? "")}
+                        onChange={(e) => sub.isGapFiller ? handleGapGrade(sub.id, e.target.value) : handleGrade(sub.id, e.target.value)}
                         placeholder="Grade"
                         className="input-field w-24 sm:w-28 py-2 text-sm text-center font-mono [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
@@ -211,7 +455,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
           <div className="flex gap-2">
             <button onClick={onClose} className="btn btn-secondary btn-sm">Cancel</button>
             {!isLast ? (
-              <button onClick={() => { setConfirm(false); setStep((s) => Math.min(sections.length - 1, s + 1)); }} className="btn btn-primary btn-sm gap-1">
+              <button onClick={() => { setConfirm(false); setStep((s) => Math.min(allSections.length - 1, s + 1)); }} className="btn btn-primary btn-sm gap-1">
                 Next <ChevronRight size={14} />
               </button>
             ) : !confirm ? (
@@ -220,7 +464,6 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
               </button>
             ) : (
               <div className="flex gap-2">
-                <button onClick={() => setConfirm(false)} className="btn btn-secondary btn-sm">Cancel</button>
                 <button onClick={handleSubmit} disabled={saving} className="btn btn-primary btn-sm">
                   {saving ? "Saving..." : `Confirm — Save ${subjectCount} Subjects`}
                 </button>

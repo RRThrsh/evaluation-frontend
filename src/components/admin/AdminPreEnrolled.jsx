@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, Trash2, Download } from "lucide-react";
 import { usePermissions } from "../../context/PermissionContext";
+import * as XLSX from "xlsx";
 import api from "../../services/api";
 
 function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
@@ -139,6 +140,19 @@ function PreEnrolledModal({ request, onClose }) {
                 <div className="card p-8 text-center text-slate-400 text-sm">No possible subjects available.</div>
               )}
 
+              {evalData.is_graduating_candidate && evalData.graduation && !evalData.graduation.can_graduate && evalData.graduation.blocking_subjects?.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
+                  <AlertTriangle size={16} className="text-red-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-red-700">Cannot Graduate</p>
+                    <p className="text-xs text-red-600 mt-0.5">
+                      Student has {evalData.graduation.blocking_subjects.length} failed subject(s) with no retake path.
+                      Must repeat 4th year to retake: {evalData.graduation.blocking_subjects.map((s) => s.subject_code).join(", ")}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {evalData.recommendations?.length > 0 && (
                 <div className="card p-4">
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Evaluation Notes</h4>
@@ -176,6 +190,8 @@ export default function AdminPreEnrolled() {
   const [error, setError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [confirmExport, setConfirmExport] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [modal, setModal] = useState(null);
   const { can } = usePermissions();
 
@@ -202,6 +218,29 @@ export default function AdminPreEnrolled() {
     fetchRequests(p);
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await api.get("/api/admin/evaluations", { params: { limit: 99999, status: "PRE_ENROLLED" } });
+      const data = (res.data.requests || []).map((r) => ({
+        "School Year": r.school_year || "",
+        Semester: r.semester ? `Sem ${r.semester}` : "",
+        "Student No.": r.student_number,
+        Name: `${r.first_name} ${r.last_name}`.trim(),
+        Course: r.course_name || "",
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Pre-Enrolled");
+      XLSX.writeFile(wb, "pre-enrolled-students.xlsx");
+    } catch (err) {
+      setError(err.message || "Export failed");
+    } finally {
+      setExporting(false);
+      setConfirmExport(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirmDelete) return;
     setDeleting(true);
@@ -223,9 +262,14 @@ export default function AdminPreEnrolled() {
           <h3 className="font-semibold text-sm text-slate-700">
             Pre-Enrolled Students {!loading && <span className="text-slate-400 font-normal">({total})</span>}
           </h3>
-          {loading && (
-            <span className="inline-block w-4 h-4 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-          )}
+          <div className="flex items-center gap-2">
+            <button onClick={() => setConfirmExport(true)} disabled={loading || requests.length === 0} className="btn btn-ghost btn-sm gap-1.5">
+              <Download size={14} /> Export
+            </button>
+            {loading && (
+              <span className="inline-block w-4 h-4 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+            )}
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -281,6 +325,23 @@ export default function AdminPreEnrolled() {
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium">{error}</div>
+      )}
+
+      {confirmExport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => !exporting && setConfirmExport(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-slate-800 mb-2">Export Pre-Enrolled</h3>
+            <p className="text-sm text-slate-600 mb-5">
+              Export <span className="font-semibold">{total}</span> pre-enrolled student{total !== 1 ? "s" : ""} to Excel?
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button onClick={() => setConfirmExport(false)} disabled={exporting} className="btn btn-ghost btn-sm">Cancel</button>
+              <button onClick={handleExport} disabled={exporting} className="btn btn-primary btn-sm">
+                {exporting ? "Exporting..." : "Export"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {confirmDelete && (

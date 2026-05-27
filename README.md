@@ -50,7 +50,7 @@ src/
 ├── components/
 │   ├── admin/           # AdminHome, Sidebar, StatsCards, DashboardOverview,
 │   │                    # CourseManager, SubjectManager, StudentManager,
-│   │                    # AcademicConfigManager, ClassSubject, Grading,
+│   │                    # AcademicConfigManager, Grading,
 │   │                    # PreEvaluate, PreEnrolled, EnrolledStudents,
 │   │                    # PermissionManager, DatabaseViewer, AuditLogViewer,
 │   │                    # EvaluatorLogs, SessionManager, Snapshots,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { X, User, BookOpen, GraduationCap } from "lucide-react";
 import api from "../../services/api";
 import AcademicRecord from "./AcademicRecord";
@@ -66,6 +66,13 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
   };
 
   const fullName = (s) => [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(" ") || s.full_name || "—";
+
+  const currentSubjects = useMemo(() => {
+    return studentSubjects.filter((ss) => {
+      if (ss.sub_year == null || ss.sub_semester == null) return true;
+      return ss.sub_year === student.year_level && ss.sub_semester === student.current_semester;
+    });
+  }, [studentSubjects, student.year_level, student.current_semester]);
 
   const tabIndex = TABS.findIndex((t) => t.key === tab);
 
@@ -169,11 +176,13 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
           {tab === "subjects" && (
             <div className="card overflow-hidden">
               <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-                <span className="text-sm font-semibold text-slate-800">Enrolled Subjects</span>
-                <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{studentSubjects.length} subjects</span>
+                <span className="text-sm font-semibold text-slate-800">
+                  {ordinal(student.year_level)} Year — {ordinal(student.current_semester)} Semester Subjects
+                </span>
+                <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{currentSubjects.length} subjects</span>
               </div>
-              {studentSubjects.length === 0 ? (
-                <div className="p-10 text-center text-sm text-slate-400">No subjects enrolled</div>
+              {currentSubjects.length === 0 ? (
+                <div className="p-10 text-center text-sm text-slate-400">No subjects enrolled for this semester</div>
               ) : (
                 <table className="w-full text-left text-xs">
                   <thead className="table-header">
@@ -185,11 +194,12 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {studentSubjects.map((ss) => (
+                    {currentSubjects.map((ss) => (
                       <tr key={ss.id} className="table-row">
                         <td className="table-cell">
                           <span className="font-mono font-medium text-slate-800">{ss.subject_code}</span>
                           <p className="text-[11px] text-slate-500">{ss.subject_name}</p>
+                          {ss.is_retake && <span className="badge badge-blue ml-1 text-[10px]">Retake</span>}
                         </td>
                         <td className="table-cell"><span className={`badge ${ss.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{ss.subject_type}</span></td>
                         <td className="table-cell text-slate-600">{ss.units}</td>

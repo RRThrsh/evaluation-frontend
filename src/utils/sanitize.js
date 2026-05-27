@@ -5,6 +5,9 @@ export function sanitizeInput(value) {
 
 export function sanitizeObject(obj) {
   if (typeof obj !== "object" || obj === null) return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeObject(item));
+  }
   const sanitized = {};
   for (const key of Object.keys(obj)) {
     if (typeof obj[key] === "string") {

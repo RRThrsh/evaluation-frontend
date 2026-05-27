@@ -30,7 +30,7 @@ import { memo } from "react";
 
 export default memo(function EvaluationReport({ evaluation }) {
   if (!evaluation) return null;
-  const { student, summary, current_semester_subjects, next_semester_subjects, failed_subjects, unresolved_failed_subjects, retake_subjects, prerequisite_checks, recommendations, overall, decision, is_regular, is_irregular_candidate } = evaluation;
+  const { student, summary, current_semester_subjects, next_semester_subjects, failed_subjects, unresolved_failed_subjects, retake_subjects, prerequisite_checks, recommendations, overall, decision, is_regular, is_irregular_candidate, is_graduating_candidate, graduation } = evaluation;
 
   return (
     <div className="space-y-6">
@@ -57,6 +57,19 @@ export default memo(function EvaluationReport({ evaluation }) {
           {decision && <span className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${decisionColor(decision)}`}>{decision}</span>}
         </div>
       </div>
+
+      {is_graduating_candidate && graduation && !graduation.can_graduate && graduation.blocking_subjects?.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
+          <span className="text-red-600 font-bold text-sm shrink-0 mt-0.5">!</span>
+          <div>
+            <p className="text-xs font-semibold text-red-700">Cannot Graduate</p>
+            <p className="text-xs text-red-600 mt-0.5">
+              Student has {graduation.blocking_subjects.length} failed subject(s) with no retake path.
+              Must repeat 4th year to retake: {graduation.blocking_subjects.map((s) => s.subject_code).join(", ")}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Current Semester */}
       <div className="border-l-4 border-blue-500 pl-3">

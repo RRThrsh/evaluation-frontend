@@ -1,12 +1,16 @@
-import { useState, useMemo } from "react";
-import { Search, ChevronRight, AlertTriangle, CheckCircle } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { Search, AlertTriangle, CheckCircle } from "lucide-react";
 import api from "../../../services/api";
 import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
 
 const YEAR_LEVELS = { 1: "1st Year", 2: "2nd Year", 3: "3rd Year", 4: "4th Year" };
 
-const gradeBadge = (grade) =>
-  grade ? `badge badge-green` : `badge badge-yellow`;
+const gradeBadge = (grade) => {
+  if (!grade || grade === "INC") return "badge badge-yellow";
+  const num = Number(grade);
+  if (!isNaN(num) && num < 75) return "badge badge-red";
+  return "badge badge-green";
+};
 
 function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pendingRequestedBy }) {
   return (
@@ -54,21 +58,29 @@ function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pending
   );
 }
 
-function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
+const THEMES = {
+  green: { card: "border-emerald-200", head: "bg-emerald-50 border-emerald-100", text: "text-emerald-700", count: "text-emerald-500", thText: "text-emerald-600", thRow: "bg-emerald-50/50 border-emerald-100" },
+  blue:  { card: "border-blue-200",    head: "bg-blue-50 border-blue-100",       text: "text-blue-700",    count: "text-blue-500",    thText: "text-blue-600",    thRow: "bg-blue-50/50 border-blue-100" },
+  amber: { card: "border-amber-200",   head: "bg-amber-50 border-amber-100",     text: "text-amber-700",   count: "text-amber-500",   thText: "text-amber-600",   thRow: "bg-amber-50/50 border-amber-100" },
+  red:   { card: "border-red-200",     head: "bg-red-50 border-red-100",         text: "text-red-700",     count: "text-red-500",     thText: "text-red-600",     thRow: "bg-red-50/50 border-red-100" },
+};
+
+function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName, color = "green" }) {
+  const t = THEMES[color] || THEMES.green;
   return (
-    <div className="card overflow-hidden">
-      <div className="px-5 py-3 border-b border-slate-100">
-        <h3 className="font-semibold text-sm text-slate-700">
-          {title} <span className="text-slate-400 font-normal">({subjects.length})</span>
+    <div className={`card overflow-hidden border ${t.card}`}>
+      <div className={`px-5 py-3 border-b ${t.head}`}>
+        <h3 className={`font-semibold text-sm ${t.text}`}>
+          {title} <span className={`font-normal ${t.count}`}>({subjects.length})</span>
         </h3>
       </div>
       {subjects.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/50">
+              <tr className={`border-b ${t.thRow}`}>
                 {columns.map((col) => (
-                  <th key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide ${col.align === "right" ? "text-right" : ""} ${col.className || ""}`}>
+                  <th key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wide ${t.thText} ${col.align === "right" ? "text-right" : ""} ${col.className || ""}`}>
                     {col.label}
                   </th>
                 ))}
@@ -100,17 +112,17 @@ function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
 export default function EvaluatorHome() {
   const [searchValue, setSearchValue] = useState("");
   const [student, setStudent] = useState(null);
-  const [subjects, setSubjects] = useState({ taken: [], available: [] });
-  const [replacements, setReplacements] = useState([]);
-  const [remainingFails, setRemainingFails] = useState([]);
-  const [unresolvedFails, setUnresolvedFails] = useState([]);
-  const [blockedCount, setBlockedCount] = useState(0);
+  const [currentSubjects, setCurrentSubjects] = useState([]);
+  const [nextSubjects, setNextSubjects] = useState([]);
+  const [gapFillers, setGapFillers] = useState([]);
+  const [allFails, setAllFails] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [hasPendingRequest, setHasPendingRequest] = useState(false);
   const [pendingRequestedBy, setPendingRequestedBy] = useState(null);
   const [toast, setToast] = useState(null);
+  const snapshotRef = useRef(null);
 
   const handleSearch = async () => {
     const q = searchValue.trim();
@@ -118,11 +130,10 @@ export default function EvaluatorHome() {
     setLoading(true);
     setError("");
     setStudent(null);
-    setSubjects({ taken: [], available: [] });
-    setReplacements([]);
-    setRemainingFails([]);
-    setUnresolvedFails([]);
-    setBlockedCount(0);
+    setCurrentSubjects([]);
+    setNextSubjects([]);
+    setGapFillers([]);
+    setAllFails([]);
     setHasPendingRequest(false);
     setPendingRequestedBy(null);
 
@@ -135,25 +146,24 @@ export default function EvaluatorHome() {
       let current = [];
       let next = [];
       let gaps = [];
-      let remainingFailsData = [];
-      let unresolvedFailsData = [];
-      let blocked = 0;
+      let allFails = [];
       let enrollmentType = "regular";
+      let evalData = null;
       try {
         const evalRes = await api.get(`/api/evaluator/students/${data.id}/evaluate`);
-        courseName = evalRes.data?.student?.course || "";
-        overall = evalRes.data?.overall || null;
-        current = evalRes.data?.current_semester_subjects || [];
-        next = evalRes.data?.next_semester_subjects || [];
-        gaps = evalRes.data?.gap_fillers || [];
-        remainingFailsData = evalRes.data?.remaining_failed_subjects || [];
-        unresolvedFailsData = evalRes.data?.unresolved_failed_subjects || [];
-        blocked = evalRes.data?.summary_extras?.blocked_count || 0;
-        enrollmentType = evalRes.data?.student?.enrollment_type || "regular";
-        const pendingReq = evalRes.data?.has_pending_request;
+        evalData = evalRes.data;
+        courseName = evalData?.student?.course || "";
+        overall = evalData?.overall || null;
+        current = evalData?.current_enrolled_subjects || [];
+        next = evalData?.next_semester_subjects || [];
+        gaps = evalData?.gap_fillers || [];
+        allFails = evalData?.remaining_failed_subjects || [];
+        enrollmentType = evalData?.student?.enrollment_type || "regular";
+        const pendingReq = evalData?.has_pending_request;
         setHasPendingRequest(pendingReq);
-        if (pendingReq) setPendingRequestedBy(evalRes.data?.pending_requested_by || "another evaluator");
+        if (pendingReq) setPendingRequestedBy(evalData?.pending_requested_by || "another evaluator");
       } catch {}
+      snapshotRef.current = evalData;
 
       setStudent({
         id: data.id, full_name: `${data.first_name} ${data.last_name}`,
@@ -161,11 +171,10 @@ export default function EvaluatorHome() {
         course: courseName, overall,
         enrollment_type: enrollmentType,
       });
-      setSubjects({ taken: current, available: next });
-      setReplacements(gaps);
-      setRemainingFails(remainingFailsData);
-      setUnresolvedFails(unresolvedFailsData);
-      setBlockedCount(blocked);
+      setCurrentSubjects(current);
+      setNextSubjects(next);
+      setGapFillers(gaps);
+      setAllFails(allFails);
     } catch (err) {
       setError(err.message || "Student not found");
     } finally {
@@ -179,7 +188,10 @@ export default function EvaluatorHome() {
     if (!student || submitting) return;
     setSubmitting(true);
     try {
-      await api.post("/api/evaluator/evaluate", { student_number: student.student_number });
+      await api.post("/api/evaluator/evaluate", {
+        student_number: student.student_number,
+        snapshot: snapshotRef.current,
+      });
       setToast({ type: "success", message: "Evaluation request submitted" });
       setTimeout(() => setToast(null), 3000);
     } catch (err) {
@@ -192,8 +204,8 @@ export default function EvaluatorHome() {
 
   const currentColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "45%" },
-    { key: "status", label: "Grade", width: "25%", render: (s) => <span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span> },
+    { key: "subject_name", label: "Subject", width: "40%" },
+    { key: "grade", label: "Grade", width: "20%", render: (s) => <span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span> },
   ], []);
 
   const nextColumns = useMemo(() => [
@@ -203,16 +215,16 @@ export default function EvaluatorHome() {
     { key: "is_retake", label: "", width: "15%", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
   ], []);
 
-  const remainingColumns = useMemo(() => [
-    { key: "subject_code", label: "Code", width: "20%", className: "whitespace-nowrap" },
+  const failColumns = useMemo(() => [
+    { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
     { key: "subject_name", label: "Subject", width: "55%" },
-    { key: "grade", label: "Grade", align: "right", width: "25%", className: "whitespace-nowrap", render: (s) => <span className="text-red-600 font-semibold">{s.grade || "\u2014"}</span> },
+    { key: "grade", label: "Grade", width: "20%", align: "right", render: (s) => <span className="text-red-600 font-semibold">{s.grade || "\u2014"}</span> },
   ], []);
 
   return (
     <div className="min-h-screen bg-slate-50">
       <EvaluatorHeader />
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="max-w-[1600px] mx-auto p-4 sm:p-6 space-y-6">
         <div className="card p-4 sm:p-5">
           <label htmlFor="student-search" className="text-sm font-semibold text-slate-700 mb-2 block">
             Search Student Record
@@ -268,91 +280,52 @@ export default function EvaluatorHome() {
             <p className="text-slate-400 text-sm">Enter a student number to view their records</p>
           </div>
         )}
-      </div>
 
-      {student && (
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 space-y-6 pb-6">
+        {student && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <SubjectTable
-              title="Current Semester Subjects"
-              subjects={subjects.taken}
+              title="Current Subjects"
+              subjects={currentSubjects}
               columns={currentColumns}
               emptyMsg="No current semester subjects."
+              color="green"
             />
             <div className="space-y-6">
               <SubjectTable
-                title="Possible Subjects (Next Semester)"
-                subjects={subjects.available}
+                title="Possible Subjects"
+                subjects={nextSubjects}
                 columns={nextColumns}
-                emptyMsg="No next semester subjects."
-                rowClassName={(s) => s.prereq_failed ? "opacity-50 bg-slate-50" : ""}
+                emptyMsg="No possible subjects."
+                color="blue"
               />
-              {blockedCount > 0 && (
-                <div className="card overflow-hidden border border-amber-200">
-                  <div className="px-5 py-3 border-b border-amber-100 bg-amber-50/50">
-                    <h3 className="font-semibold text-sm text-amber-700 flex items-center gap-2">
-                      <AlertTriangle size={16} />
-                      Fill the Gap
-                      {replacements[0]?.gap_year && (
-                        <span className="text-xs font-normal text-amber-500">(Y{replacements[0].gap_year}S{replacements[0].gap_semester})</span>
-                      )}
-                    </h3>
-                  </div>
-                  <div className="p-4 text-sm text-slate-600 border-b border-amber-100 bg-amber-50/20">
-                    {blockedCount} subject{blockedCount > 1 ? "s" : ""} blocked by failed prerequisites &mdash; filling with {replacements.length} minor subject{replacements.length > 1 ? "s" : ""} from next year
-                  </div>
-                  {replacements.length > 0 && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-amber-100 bg-amber-50/30">
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide w-[18%]">Code</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide w-[48%]">Subject</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide w-[18%]">Type</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide w-[16%]">Units</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-amber-50">
-                          {replacements.map((r, i) => (
-                            <tr key={i} className="transition hover:bg-amber-50/40">
-                              <td className="px-6 py-3 text-emerald-700 font-mono text-sm font-semibold truncate">{r.subject_code}</td>
-                              <td className="px-6 py-3 text-slate-700 truncate">{r.subject_name}</td>
-                              <td className="px-6 py-3"><span className="badge badge-blue">{r.subject_type}</span></td>
-                              <td className="px-6 py-3 text-slate-700 text-right">{r.units}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
+
+              {gapFillers.length > 0 && (
+                <SubjectTable
+                  title="Gap Fillers"
+                  subjects={gapFillers}
+                  columns={[
+                    { key: "subject_code", label: "Code", width: "20%", className: "whitespace-nowrap" },
+                    { key: "subject_name", label: "Subject", width: "55%" },
+                    { key: "units", label: "Units", width: "15%", align: "right", render: (s) => s.units ?? "\u2014" },
+                    { key: "badge", label: "", width: "10%", render: () => <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> },
+                  ]}
+                  color="amber"
+                />
               )}
             </div>
           </div>
+        )}
 
-          {unresolvedFails.length > 0 && (
-            <div className="border-t border-slate-200 pt-6">
-              <SubjectTable
-                title="Failed Subjects — Not Offered Next Semester"
-                subjects={unresolvedFails}
-                columns={remainingColumns}
-                emptyMsg="No unresolved failed subjects."
-              />
-            </div>
-          )}
-
-          {remainingFails.length > 0 && (
-            <div className="border-t border-slate-200 pt-6">
-              <SubjectTable
-                title="Remaining Failed Subjects"
-                subjects={remainingFails}
-                columns={remainingColumns}
-                emptyMsg="No remaining failed subjects."
-              />
-            </div>
-          )}
-        </div>
-      )}
+        {allFails.length > 0 && student && (
+          <SubjectTable
+            title="Failed Subjects"
+            subjects={allFails}
+            columns={failColumns}
+            emptyMsg="No failed subjects."
+            color="red"
+          />
+        )}
+      </div>
     </div>
   );
 }

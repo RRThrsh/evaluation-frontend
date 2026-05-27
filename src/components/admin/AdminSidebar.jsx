@@ -19,7 +19,7 @@ import {
   ClipboardList,
   Activity,
   X,
-  Clipboard,
+
   Shield,
   History,
 } from "lucide-react";
@@ -115,20 +115,11 @@ const NAV_ITEMS = {
       icon: ClipboardList,
     },
     {
-      key: "enrolled",
-      label: "Enrolled Students",
-      icon: UserCheck,
-    },
-    {
       key: "users",
       label: "Pending Approvals",
       icon: UserCheck,
     },
-    {
-      key: "class-subjects",
-      label: "Class Subjects",
-      icon: Clipboard,
-    },
+
   ],
   system: [
     {
@@ -178,9 +169,6 @@ const PERMISSION_MAP = {
   students: "students.view",
   "pre-evaluate": "pre-evaluate",
   "pre-enrolled": "pre-enrolled",
-  enrolled: "enrolled-students.view",
-  users: "users.view",
-  "class-subjects": "class-subjects",
   "all-users": "user-management.view",
   "audit-logs": "audit-logs",
   "evaluator-logs": "evaluator-logs",

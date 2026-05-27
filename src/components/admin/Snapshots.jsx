@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { AlertTriangle, Clock, User, FileText, Search, Send, CheckCircle, X } from "lucide-react";
 import api from "../../services/api";
 import Pagination from "../common/Pagination";
+import { sanitizeInput, sanitizeObject } from "../../utils/sanitize";
 
 const PAGE_SIZE = 10;
 

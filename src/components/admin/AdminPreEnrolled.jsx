@@ -234,42 +234,47 @@ export default function AdminPreEnrolled() {
       const data = [];
       requests.forEach((r, i) => {
         const info = details[i];
-        const allSubjects = [
-          ...(info?.current_semester_subjects || []).map((s) => ({ ...s, _tag: "Current" })),
-          ...(info?.subjects || []).map((s) => ({ ...s, _tag: "Pre-Enrolled" })),
-        ];
-        if (allSubjects.length === 0) {
+        const studentHeader = {
+          "School Year": r.school_year || "",
+          Semester: r.semester ? `Sem ${r.semester}` : "",
+          "Student No.": r.student_number,
+          "First Name": r.first_name || "",
+          "Last Name": r.last_name || "",
+          "Middle Name": r.middle_name || "",
+          "Extension": r.extension_name || "",
+          "Email": r.email || "",
+          "Contact No.": r.contact_number || "",
+          "Year Level": r.year_level ?? "",
+          "Current Semester": r.current_semester ?? "",
+          "Enrollment Type": r.enrollment_type || "",
+          "Student Status": r.student_status || "",
+          "Course": r.course_name || "",
+          "Course Code": r.course_code || "",
+        };
+        const pushRow = (subject, tag) => {
           data.push({
-            "School Year": r.school_year || "",
-            Semester: r.semester ? `Sem ${r.semester}` : "",
-            "Student No.": r.student_number,
-            Name: `${r.first_name} ${r.last_name}`.trim(),
-            Course: r.course_name || "",
-            "Subject Code": "",
-            "Subject Name": "",
-            Type: "",
-            Units: "",
-            "Gap Filler": "",
-            Retake: "",
-            Status: "",
+            ...studentHeader,
+            "Source": tag,
+            "Subject Code": subject.subject_code || "",
+            "Subject Name": subject.subject_name || "",
+            "Subject Type": subject.subject_type || "",
+            "Units": subject.units ?? "",
+            "Year Level": subject.sub_year_level ?? subject.year_level ?? "",
+            "Semester": subject.sub_semester ?? subject.semester ?? "",
+            "Grade": subject.grade ?? "",
+            "Status": subject.status ?? "",
+            "Result": subject.result ?? "",
+            "Gap Filler": subject.is_gap_filler ? "Yes" : "",
+            "Retake": subject.is_retake ? "Yes" : "",
+            "Prerequisite": subject.prerequisite ?? subject.prereq_code ?? "",
+            "Prereq Name": subject.prereq_name ?? "",
           });
-        } else {
-          allSubjects.forEach((s) => {
-            data.push({
-              "School Year": r.school_year || "",
-              Semester: r.semester ? `Sem ${r.semester}` : "",
-              "Student No.": r.student_number,
-              Name: `${r.first_name} ${r.last_name}`.trim(),
-              Course: r.course_name || "",
-              "Subject Code": s.subject_code || "",
-              "Subject Name": s.subject_name || "",
-              Type: s.subject_type || "",
-              Units: s.units ?? "",
-              "Gap Filler": s.is_gap_filler ? "Yes" : "",
-              Retake: s.is_retake ? "Yes" : "",
-              Status: s._tag || "",
-            });
-          });
+        };
+        (info?.raw_student_subjects || []).forEach((s) => pushRow(s, "Raw"));
+        (info?.current_semester_subjects || []).forEach((s) => pushRow(s, "Current"));
+        (info?.subjects || []).forEach((s) => pushRow(s, "Pre-Enrolled"));
+        if (!info?.raw_student_subjects?.length && !info?.current_semester_subjects?.length && !info?.subjects?.length) {
+          data.push({ ...studentHeader, "Subject Code": "" });
         }
       });
       const ws = XLSX.utils.json_to_sheet(data);

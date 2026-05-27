@@ -222,13 +222,50 @@ export default function AdminPreEnrolled() {
     setExporting(true);
     try {
       const res = await api.get("/api/admin/evaluations", { params: { limit: 99999, status: "PRE_ENROLLED" } });
-      const data = (res.data.requests || []).map((r) => ({
-        "School Year": r.school_year || "",
-        Semester: r.semester ? `Sem ${r.semester}` : "",
-        "Student No.": r.student_number,
-        Name: `${r.first_name} ${r.last_name}`.trim(),
-        Course: r.course_name || "",
-      }));
+      const requests = res.data.requests || [];
+      const details = await Promise.all(
+        requests.map(async (r) => {
+          try {
+            const d = await api.get(`/api/admin/evaluations/${r.id}/pre-enrolled-data`);
+            return d.data.subjects || [];
+          } catch { return []; }
+        })
+      );
+      const data = [];
+      requests.forEach((r, i) => {
+        const subs = details[i] || [];
+        if (subs.length === 0) {
+          data.push({
+            "School Year": r.school_year || "",
+            Semester: r.semester ? `Sem ${r.semester}` : "",
+            "Student No.": r.student_number,
+            Name: `${r.first_name} ${r.last_name}`.trim(),
+            Course: r.course_name || "",
+            "Subject Code": "",
+            "Subject Name": "",
+            Type: "",
+            Units: "",
+            "Gap Filler": "",
+            Retake: "",
+          });
+        } else {
+          subs.forEach((s) => {
+            data.push({
+              "School Year": r.school_year || "",
+              Semester: r.semester ? `Sem ${r.semester}` : "",
+              "Student No.": r.student_number,
+              Name: `${r.first_name} ${r.last_name}`.trim(),
+              Course: r.course_name || "",
+              "Subject Code": s.subject_code || "",
+              "Subject Name": s.subject_name || "",
+              Type: s.subject_type || "",
+              Units: s.units ?? "",
+              "Gap Filler": s.is_gap_filler ? "Yes" : "",
+              Retake: s.is_retake ? "Yes" : "",
+            });
+          });
+        }
+      });
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Pre-Enrolled");

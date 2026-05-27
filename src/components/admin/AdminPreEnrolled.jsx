@@ -227,14 +227,18 @@ export default function AdminPreEnrolled() {
         requests.map(async (r) => {
           try {
             const d = await api.get(`/api/admin/evaluations/${r.id}/pre-enrolled-data`);
-            return d.data.subjects || [];
-          } catch { return []; }
+            return d.data;
+          } catch { return null; }
         })
       );
       const data = [];
       requests.forEach((r, i) => {
-        const subs = details[i] || [];
-        if (subs.length === 0) {
+        const info = details[i];
+        const allSubjects = [
+          ...(info?.current_semester_subjects || []).map((s) => ({ ...s, _tag: "Current" })),
+          ...(info?.subjects || []).map((s) => ({ ...s, _tag: "Pre-Enrolled" })),
+        ];
+        if (allSubjects.length === 0) {
           data.push({
             "School Year": r.school_year || "",
             Semester: r.semester ? `Sem ${r.semester}` : "",
@@ -247,9 +251,10 @@ export default function AdminPreEnrolled() {
             Units: "",
             "Gap Filler": "",
             Retake: "",
+            Status: "",
           });
         } else {
-          subs.forEach((s) => {
+          allSubjects.forEach((s) => {
             data.push({
               "School Year": r.school_year || "",
               Semester: r.semester ? `Sem ${r.semester}` : "",
@@ -262,6 +267,7 @@ export default function AdminPreEnrolled() {
               Units: s.units ?? "",
               "Gap Filler": s.is_gap_filler ? "Yes" : "",
               Retake: s.is_retake ? "Yes" : "",
+              Status: s._tag || "",
             });
           });
         }

@@ -60,7 +60,7 @@ function EvalModal({ request, onClose, onPreEnroll }) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.get(`/api/evaluator/students/${request.student_id}/evaluate`);
+        const res = await api.get(`/api/admin/evaluations/${request.id}/pre-enrolled-data`);
         setEvalData(res.data);
       } catch (err) {
         console.error("Preview fetch failed:", err);
@@ -68,7 +68,7 @@ function EvalModal({ request, onClose, onPreEnroll }) {
         setLoading(false);
       }
     })();
-  }, [request.student_id]);
+  }, [request.id]);
 
   const handleOverlay = (e) => {
     if (e.target === overlayRef.current) onClose();

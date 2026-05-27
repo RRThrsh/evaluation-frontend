@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef } from "react";
-import { Search, AlertTriangle, CheckCircle } from "lucide-react";
+import { useState, useMemo, useRef, useCallback } from "react";
+import { Search, AlertTriangle, CheckCircle, X, Undo2, Plus } from "lucide-react";
 import api from "../../../services/api";
 import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
 
@@ -65,14 +65,15 @@ const THEMES = {
   red:   { card: "border-red-200",     head: "bg-red-50 border-red-100",         text: "text-red-700",     count: "text-red-500",     thText: "text-red-600",     thRow: "bg-red-50/50 border-red-100" },
 };
 
-function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName, color = "green" }) {
+function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName, color = "green", headerRight }) {
   const t = THEMES[color] || THEMES.green;
   return (
     <div className={`card overflow-hidden border ${t.card}`}>
-      <div className={`px-5 py-3 border-b ${t.head}`}>
+      <div className={`px-5 py-3 border-b ${t.head} flex items-center justify-between`}>
         <h3 className={`font-semibold text-sm ${t.text}`}>
           {title} <span className={`font-normal ${t.count}`}>({subjects.length})</span>
         </h3>
+        {headerRight && <div className="flex items-center gap-2">{headerRight}</div>}
       </div>
       {subjects.length > 0 ? (
         <div className="overflow-x-auto">
@@ -123,6 +124,42 @@ export default function EvaluatorHome() {
   const [pendingRequestedBy, setPendingRequestedBy] = useState(null);
   const [toast, setToast] = useState(null);
   const snapshotRef = useRef(null);
+  const [removedSubjectCodes, setRemovedSubjectCodes] = useState(new Set());
+  const [specialClassSubjects, setSpecialClassSubjects] = useState([]);
+
+  const handleRemoveSubject = useCallback((subject) => {
+    setRemovedSubjectCodes((prev) => new Set([...prev, subject.subject_code]));
+    setNextSubjects((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
+    setAllFails((prev) => prev.some((s) => s.subject_code === subject.subject_code) ? prev : [subject, ...prev]);
+  }, []);
+
+  const handleUndoSubject = useCallback((subject) => {
+    setRemovedSubjectCodes((prev) => {
+      const next = new Set(prev);
+      next.delete(subject.subject_code);
+      return next;
+    });
+    setSpecialClassSubjects((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
+    setAllFails((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
+    setNextSubjects((prev) => [subject, ...prev]);
+  }, []);
+
+  const handleAddSpecialClass = useCallback((subject) => {
+    const special = { ...subject, special_class: true };
+    setSpecialClassSubjects((prev) => [special, ...prev]);
+    setNextSubjects((prev) => [special, ...prev]);
+    setAllFails((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
+  }, []);
+
+  const handleAddSpecialClassFromNext = useCallback((subjectCode) => {
+    const subject = nextSubjects.find((s) => s.subject_code === subjectCode);
+    if (!subject) return;
+    setRemovedSubjectCodes((prev) => new Set([...prev, subject.subject_code]));
+    setNextSubjects((prev) => prev.filter((s) => s.subject_code !== subjectCode));
+    const special = { ...subject, special_class: true };
+    setSpecialClassSubjects((prev) => [special, ...prev]);
+    setAllFails((prev) => [special, ...prev]);
+  }, [nextSubjects]);
 
   const handleSearch = async () => {
     const q = searchValue.trim();
@@ -136,6 +173,8 @@ export default function EvaluatorHome() {
     setAllFails([]);
     setHasPendingRequest(false);
     setPendingRequestedBy(null);
+    setRemovedSubjectCodes(new Set());
+    setSpecialClassSubjects([]);
 
     try {
       const lookupRes = await api.get(`/api/students/lookup/${encodeURIComponent(q)}`);
@@ -188,9 +227,24 @@ export default function EvaluatorHome() {
     if (!student || submitting) return;
     setSubmitting(true);
     try {
+      const snapshot = snapshotRef.current
+        ? {
+            ...snapshotRef.current,
+            next_semester_subjects: [
+              ...(snapshotRef.current.next_semester_subjects || []).filter(
+                (s) => !removedSubjectCodes.has(s.subject_code)
+              ),
+              ...specialClassSubjects,
+            ],
+            gap_fillers: (snapshotRef.current.gap_fillers || []).filter(
+              (s) => !removedSubjectCodes.has(s.subject_code)
+            ),
+            special_class_subjects: specialClassSubjects,
+          }
+        : null;
       await api.post("/api/evaluator/evaluate", {
         student_number: student.student_number,
-        snapshot: snapshotRef.current,
+        snapshot,
       });
       setToast({ type: "success", message: "Evaluation request submitted" });
       setTimeout(() => setToast(null), 3000);
@@ -210,16 +264,40 @@ export default function EvaluatorHome() {
 
   const nextColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "40%" },
-    { key: "prerequisite", label: "Prereq", width: "30%", render: (s) => s.prerequisite || "\u2014" },
-    { key: "is_retake", label: "", width: "15%", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
-  ], []);
+    { key: "subject_name", label: "Subject", width: "35%" },
+    { key: "prerequisite", label: "Prereq", width: "20%", render: (s) => (
+      <div className="flex items-center gap-2">
+        {s.special_class && <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded px-1.5 py-0.5 uppercase tracking-wide">Special Class</span>}
+        <span>{s.prerequisite || "\u2014"}</span>
+      </div>
+    )},
+    { key: "is_retake", label: "", width: "10%", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
+    { key: "actions", label: "", width: "10%", render: (s) => (
+      <button onClick={() => handleRemoveSubject(s)} title="Remove subject" className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+        <X size={14} />
+      </button>
+    )},
+  ], [handleRemoveSubject]);
 
   const failColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "55%" },
-    { key: "grade", label: "Grade", width: "20%", align: "right", render: (s) => <span className="text-red-600 font-semibold">{s.grade || "\u2014"}</span> },
-  ], []);
+    { key: "subject_name", label: "Subject", width: "40%" },
+    { key: "grade", label: "Grade", width: "15%", align: "right", render: (s) => (
+      <span className="text-red-600 font-semibold">{s.grade || "\u2014"}</span>
+    )},
+    { key: "actions", label: "", width: "10%", render: (s) => (
+      <div className="flex items-center gap-1">
+        {removedSubjectCodes.has(s.subject_code) && (
+          <button onClick={() => handleUndoSubject(s)} title="Restore subject" className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors">
+            <Undo2 size={14} />
+          </button>
+        )}
+        <button onClick={() => handleAddSpecialClass(s)} title="Mark as special class" className="p-1 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">
+          <Plus size={14} />
+        </button>
+      </div>
+    )},
+  ], [removedSubjectCodes, handleUndoSubject, handleAddSpecialClass]);
 
   return (
     <div className="min-h-screen bg-slate-50">

@@ -89,12 +89,6 @@ const SessionManager = lazy(
       "../../../components/admin/SessionManager"
     )
 );
-const AdminPreEvaluate = lazy(
-  () =>
-    import(
-      "../../../components/admin/AdminPreEvaluate"
-    )
-);
 const AdminPreEnrolled = lazy(
   () =>
     import(
@@ -433,8 +427,10 @@ export default function AdminHome() {
               )}
 
               {activeTab ===
-                "pre-evaluate" && (
-                <AdminPreEvaluate />
+                "undecided" && (
+                <div className="card p-10 text-center">
+                  <p className="text-sm text-slate-500">Undecided section coming soon</p>
+                </div>
               )}
 
               {activeTab ===

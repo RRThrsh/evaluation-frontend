@@ -104,8 +104,8 @@ const NAV_ITEMS = {
       icon: Users,
     },
     {
-      key: "pre-evaluate",
-      label: "Pre-Evaluate",
+      key: "undecided",
+      label: "Undecided",
       icon: ClipboardCheck,
     },
     {
@@ -166,7 +166,7 @@ const PERMISSION_MAP = {
   courses: "courses.view",
   subjects: "subjects.view",
   students: "students.view",
-  "pre-evaluate": "pre-evaluate",
+  "undecided": "undecided",
   "pre-enrolled": "pre-enrolled",
   "all-users": "user-management.view",
   "audit-logs": "audit-logs",

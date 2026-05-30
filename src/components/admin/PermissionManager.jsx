@@ -18,7 +18,7 @@ const SIMPLE_PERMS = [
   { key: "academic-config", label: "Academic Config" },
   { key: "sessions",        label: "Active Sessions" },
 
-  { key: "pre-evaluate",    label: "Pre-Evaluate" },
+  { key: "undecided",      label: "Undecided" },
   { key: "pre-enrolled",    label: "Pre-Enrolled" },
   { key: "permissions",     label: "Permissions" },
   { key: "snapshots",       label: "Snapshots" },

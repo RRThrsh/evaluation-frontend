@@ -30,7 +30,7 @@ import { memo } from "react";
 
 export default memo(function EvaluationReport({ evaluation }) {
   if (!evaluation) return null;
-  const { student, summary, current_semester_subjects, next_semester_subjects, failed_subjects, unresolved_failed_subjects, retake_subjects, prerequisite_checks, recommendations, overall, decision, is_regular, is_irregular_candidate, is_graduating_candidate, graduation } = evaluation;
+  const { student, summary, current_semester_subjects, next_semester_subjects, failed_subjects, unresolved_failed_subjects, retake_subjects, prerequisite_checks, recommendations, overall, decision, is_graduating_candidate, graduation } = evaluation;
 
   return (
     <div className="space-y-6">
@@ -51,8 +51,6 @@ export default memo(function EvaluationReport({ evaluation }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="font-bold text-lg uppercase">{overall}</span>
-            {is_regular && <span className="px-2 py-0.5 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-700 border border-emerald-300">Regular</span>}
-            {is_irregular_candidate && <span className="px-2 py-0.5 rounded-full text-xs font-bold uppercase bg-purple-100 text-purple-700 border border-purple-300">Irregular Candidate</span>}
           </div>
           {decision && <span className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${decisionColor(decision)}`}>{decision}</span>}
         </div>

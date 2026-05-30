@@ -34,8 +34,8 @@ function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pending
             <p className="font-semibold text-slate-800 mt-0.5">{YEAR_LEVELS[student.year_level] || `${student.year_level}th Year`}</p>
           </div>
           <div>
-            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Status</span>
-            <p className="font-semibold mt-0.5">{student.enrollment_type === "irregular" ? <span className="text-amber-600">Irregular</span> : <span className="text-emerald-600">Regular</span>}</p>
+            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Current Sem</span>
+            <p className="font-semibold text-slate-800 mt-0.5">{student.current_semester === 1 ? "1st Semester" : "2nd Semester"}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -186,7 +186,6 @@ export default function EvaluatorHome() {
       let next = [];
       let gaps = [];
       let allFails = [];
-      let enrollmentType = "regular";
       let evalData = null;
       try {
         const evalRes = await api.get(`/api/evaluator/students/${data.id}/evaluate`);
@@ -197,7 +196,6 @@ export default function EvaluatorHome() {
         next = evalData?.next_semester_subjects || [];
         gaps = evalData?.gap_fillers || [];
         allFails = evalData?.remaining_failed_subjects || [];
-        enrollmentType = evalData?.student?.enrollment_type || "regular";
         const pendingReq = evalData?.has_pending_request;
         setHasPendingRequest(pendingReq);
         if (pendingReq) setPendingRequestedBy(evalData?.pending_requested_by || "another evaluator");
@@ -208,7 +206,6 @@ export default function EvaluatorHome() {
         id: data.id, full_name: `${data.first_name} ${data.last_name}`,
         student_number: data.student_number, year_level: data.year_level,
         course: courseName, overall,
-        enrollment_type: enrollmentType,
       });
       setCurrentSubjects(current);
       setNextSubjects(next);

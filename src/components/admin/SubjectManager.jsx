@@ -28,6 +28,7 @@ export default function SubjectManager() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const [search, setSearch] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
   const [confirmAction, setConfirmAction] = useState(null);
   const [expandedCourses, setExpandedCourses] = useState({});
   const [page, setPage] = useState(1);
@@ -90,10 +91,14 @@ export default function SubjectManager() {
 
   const activeSubjects = subjects.filter((s) => s.is_active !== false);
   const filteredSubjects = useMemo(() => {
-    if (!search.trim()) return activeSubjects;
-    const q = search.toLowerCase();
-    return activeSubjects.filter((s) => s.subject_code.toLowerCase().includes(q) || s.subject_name.toLowerCase().includes(q) || (s.course_name || "").toLowerCase().includes(q));
-  }, [activeSubjects, search]);
+    let list = activeSubjects;
+    if (courseFilter) list = list.filter((s) => s.course_id === courseFilter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((s) => s.subject_code.toLowerCase().includes(q) || s.subject_name.toLowerCase().includes(q) || (s.course_name || "").toLowerCase().includes(q));
+    }
+    return list;
+  }, [activeSubjects, search, courseFilter]);
 
   const subjectsByCourse = useMemo(() => {
     const map = {};
@@ -187,7 +192,7 @@ export default function SubjectManager() {
                 <div className="flex items-center gap-2">
                   <select value={newPrereq} onChange={(e) => setNewPrereq(e.target.value)} className="input-field py-1.5 text-xs flex-1">
                     <option value="">— Add Prerequisite —</option>
-                    {activeSubjects.filter((s) => s.id !== editing && !form.prerequisites.find(p => p.prerequisite_id === s.id)).map((s) => <option key={s.id} value={s.id}>{s.subject_code} — {s.subject_name}</option>)}
+                    {activeSubjects.filter((s) => s.id !== editing && s.course_id === form.course_id && !form.prerequisites.find(p => p.prerequisite_id === s.id)).map((s) => <option key={s.id} value={s.id}>{s.subject_code} — {s.subject_name}</option>)}
                   </select>
                   <button type="button" disabled={!newPrereq} onClick={() => { const sub = activeSubjects.find(s => s.id === newPrereq); if (sub) { setForm({ ...form, prerequisites: [...form.prerequisites, { prerequisite_id: sub.id, subject_code: sub.subject_code, subject_name: sub.subject_name }] }); setNewPrereq(""); } }} className="btn btn-primary btn-sm">Add</button>
                 </div>
@@ -206,6 +211,10 @@ export default function SubjectManager() {
         <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
           <span className="text-sm font-semibold text-slate-800">Curriculum Layout</span>
           <div className="flex items-center gap-2">
+            <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="input-field py-1.5 text-xs w-44">
+              <option value="">All Courses</option>
+              {courses.map((c) => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
+            </select>
             <input value={search} onChange={(e) => setSearch(e.target.value)} className="input-field py-1.5 text-xs w-48" placeholder="Search subjects..." />
             <button onClick={expandAll} className="btn btn-ghost btn-sm">Expand All</button>
             <button onClick={collapseAll} className="btn btn-ghost btn-sm">Collapse All</button>
@@ -261,17 +270,19 @@ export default function SubjectManager() {
                                       <div className="divide-y divide-slate-50">
                                         {subs.map((s) => (
                                           <div key={s.id} className="px-3.5 py-2 flex items-center justify-between group hover:bg-slate-50 transition-colors">
-                                            <div className="min-w-0">
+                                            <div className="min-w-0 flex-1">
                                               <div className="flex items-center gap-1.5">
                                                 <span className="text-[11px] font-mono font-medium text-slate-800">{s.subject_code}</span>
                                                 <span className={`badge ${s.subject_type === "Lab" ? "badge-blue" : s.subject_type === "Lab & Lec" ? "badge-purple" : "badge-amber"}`}>{s.subject_type}</span>
                                               </div>
-                                              <p className="text-[10px] text-slate-500 truncate max-w-[200px]">{s.subject_name}</p>
-                                              {s.prerequisites && s.prerequisites.length > 0 && (
-                                                <p className="text-[9px] text-amber-600/70 truncate max-w-[200px] mt-0.5">
-                                                  Requires: {s.prerequisites.map((p, i) => <span key={p.prerequisite_id}>{i > 0 && <span className="text-slate-300"> → </span>}{p.subject_code}</span>)}
-                                                </p>
-                                              )}
+                                              <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-[10px] text-slate-500">{s.subject_name}</span>
+                                                {s.prerequisites && s.prerequisites.length > 0 && (
+                                                  <span className="text-[10px] text-amber-600/70 ml-1">
+                                                    → {s.prerequisites.map((p, i) => <span key={p.prerequisite_id}>{i > 0 && <span className="text-slate-400 mx-0.5">→</span>}{p.subject_code}</span>)}
+                                                  </span>
+                                                )}
+                                              </div>
                                             </div>
                                             <div className="flex items-center gap-1 shrink-0 ml-2">
                                               <span className="text-[10px] text-slate-400">{s.units}u</span>

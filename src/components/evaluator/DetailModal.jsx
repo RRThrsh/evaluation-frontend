@@ -6,7 +6,7 @@ import ConfirmModal from "../common/ConfirmModal";
 export default function DetailModal({
   request, evaluation, evaluating, editingSubjects, subjectData, selectedSubjectToAdd,
   setSelectedSubjectToAdd, onAddSubject, onUpdateSubject, onDeleteSubject,
-  onToggleEdit, onEvaluate, onMarkIrregular, onReject, onClose,
+  onToggleEdit, onEvaluate, onReject, onClose,
 }) {
   const [confirmAction, setConfirmAction] = useState(null);
 
@@ -60,13 +60,6 @@ export default function DetailModal({
                 className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 disabled:opacity-50">
                 {evaluating ? "Processing..." : "Save Evaluation & Approve"}
               </button>
-              {evaluation?.is_irregular_candidate && (
-                <button onClick={() => setConfirmAction({ id: request.id, action: "irregular" })}
-                  disabled={evaluating}
-                  className="flex-1 bg-purple-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-purple-700 disabled:opacity-50">
-                  {evaluating ? "Processing..." : "Mark as Irregular"}
-                </button>
-              )}
               <button onClick={() => setConfirmAction({ id: request.id, action: "reject" })}
                 disabled={evaluating}
                 className="flex-1 bg-rose-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-rose-700 disabled:opacity-50">
@@ -84,16 +77,15 @@ export default function DetailModal({
         <ConfirmModal
           title="Confirm Action"
           message={`Are you sure you want to ${confirmAction.action === "approve" ? "approve" : confirmAction.action === "irregular" ? "mark as irregular" : "reject"} this evaluation?`}
-          extra={confirmAction.action === "approve" ? "The student will be sent to admin for enrollment confirmation." : confirmAction.action === "irregular" ? "The student will be sent to admin as an Irregular enrollment." : ""}
+          extra={confirmAction.action === "approve" ? "The student will be sent to admin for enrollment confirmation." : ""}
           confirmLabel="Yes"
-          confirmColor={confirmAction.action === "approve" ? "bg-indigo-600 hover:bg-indigo-700" : confirmAction.action === "irregular" ? "bg-purple-600 hover:bg-purple-700" : "bg-rose-600 hover:bg-rose-700"}
+          confirmColor={confirmAction.action === "approve" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-rose-600 hover:bg-rose-700"}
           onConfirm={async () => {
             try {
               const a = confirmAction.action;
               const id = confirmAction.id;
               setConfirmAction(null);
               if (a === "approve") { await onEvaluate(id); onClose(); }
-              else if (a === "irregular") { await onMarkIrregular(id); onClose(); }
               else if (a === "reject") onReject(id);
             } catch (err) {
               alert(err.message || "An error occurred");

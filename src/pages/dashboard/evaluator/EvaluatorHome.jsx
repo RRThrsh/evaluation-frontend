@@ -146,6 +146,11 @@ export default function EvaluatorHome() {
     setAllFails((prev) => prev.some((s) => s.subject_code === subject.subject_code) ? prev : [subject, ...prev]);
   }, []);
 
+  const handleAddFailedToNext = useCallback((subject) => {
+    setNextSubjects((prev) => [{ ...subject, is_retake: true }, ...prev]);
+    setAllFails((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
+  }, []);
+
   const handleUndoSubject = useCallback((subject) => {
     setRemovedSubjectCodes((prev) => {
       const next = new Set(prev);
@@ -155,13 +160,6 @@ export default function EvaluatorHome() {
     setSpecialClassSubjects((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
     setAllFails((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
     setNextSubjects((prev) => [subject, ...prev]);
-  }, []);
-
-  const handleAddSpecialClass = useCallback((subject) => {
-    const special = { ...subject, special_class: true };
-    setSpecialClassSubjects((prev) => [special, ...prev]);
-    setNextSubjects((prev) => [special, ...prev]);
-    setAllFails((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
   }, []);
 
   const handleAddSpecialClassFromNext = useCallback((subjectCode) => {
@@ -300,17 +298,18 @@ export default function EvaluatorHome() {
     )},
     { key: "actions", label: "", width: "auto", render: (s) => (
       <div className="flex items-center gap-1">
-        {removedSubjectCodes.has(s.subject_code) && (
+        {removedSubjectCodes.has(s.subject_code) ? (
           <button onClick={() => handleUndoSubject(s)} title="Restore subject" className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors">
             <Undo2 size={14} />
           </button>
+        ) : (
+          <button onClick={() => handleAddFailedToNext(s)} title="Add to next semester" className="p-1 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">
+            <Plus size={14} />
+          </button>
         )}
-        <button onClick={() => handleAddSpecialClass(s)} title="Mark as special class" className="p-1 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">
-          <Plus size={14} />
-        </button>
       </div>
     )},
-  ], [removedSubjectCodes, handleUndoSubject, handleAddSpecialClass]);
+  ], [removedSubjectCodes, handleUndoSubject, handleAddFailedToNext]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -413,18 +412,12 @@ export default function EvaluatorHome() {
 
         {(student && (gapFillers.length > 0 || recommendations.length > 0)) && (
           <div className="space-y-3">
-            {gapFillers.length > 0 && (
-              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
-                <AlertTriangle size={16} className="shrink-0" />
-                <span>Subjects recommended to fill remaining units — <strong>higher priority</strong> means they unlock more future subjects.</span>
-              </div>
-            )}
             <div className="flex flex-col lg:flex-row gap-4">
-              {gapFillers.length > 0 && (
+              {gapFillers.filter((s) => s.prereq_dependents > 0).length > 0 && (
                 <div className="flex-1 min-w-0">
                   <SubjectTable
-                    title="Recommended Subjects"
-                    subjects={gapFillers}
+                    title="You add a subject to fill remaining units — higher priority unlocks more courses."
+                    subjects={gapFillers.filter((s) => s.prereq_dependents > 0)}
                     columns={[
                       { key: "subject_code", label: "Code", width: "auto", className: "whitespace-nowrap font-mono font-medium" },
                       { key: "units", label: "Units", width: "auto", align: "right", render: (s) => s.units ?? "\u2014" },
@@ -439,7 +432,7 @@ export default function EvaluatorHome() {
                 </div>
               )}
               {recommendations.length > 0 && (
-                <div className={gapFillers.length > 0 ? "w-full lg:w-72 shrink-0" : "w-full"}>
+                <div className={gapFillers.filter((s) => s.prereq_dependents > 0).length > 0 ? "w-full lg:w-72 shrink-0" : "w-full"}>
                   <div className="card p-4 border border-amber-200 bg-amber-50/30 space-y-3">
                     <h4 className="text-sm font-semibold text-amber-800">Recommendation Notes</h4>
                     <ul className="space-y-2 text-xs text-amber-700">
@@ -453,6 +446,12 @@ export default function EvaluatorHome() {
                         <li className="flex gap-2">
                           <span className="text-amber-500 font-bold mt-0.5">•</span>
                           <span>Fill <strong>{gapFillers.reduce((sum, g) => sum + Number(g.units || 0), 0)} units</strong> for this semester.</span>
+                        </li>
+                      )}
+                      {gapFillers.length > 0 && (
+                        <li className="flex gap-2">
+                          <span className="text-amber-500 font-bold mt-0.5">•</span>
+                          <span>Added to Possible Subjects: <strong>{gapFillers.map((g) => g.subject_code).join(", ")}</strong></span>
                         </li>
                       )}
                       {gapFillers.filter((s) => s.is_cross_course).length > 0 && (

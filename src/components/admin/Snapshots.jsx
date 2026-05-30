@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { AlertTriangle, Clock, User, FileText, Search, Send, CheckCircle, X } from "lucide-react";
+import { AlertTriangle, Clock, User, FileText, Search, CheckCircle, X } from "lucide-react";
 import api from "../../services/api";
 import Pagination from "../common/Pagination";
-import { sanitizeInput, sanitizeObject } from "../../utils/sanitize";
 
 const PAGE_SIZE = 10;
 
 const SNAPSHOT_CONFIG = {
-  evaluator_submit: { icon: Send, color: "text-blue-600", bg: "bg-blue-50", label: "Evaluator Submit" },
   admin_pre_enroll: { icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50", label: "Admin Pre-Enroll" },
 };
 
@@ -179,8 +177,8 @@ export default function Snapshots() {
   const [snapshots, setSnapshots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filterType, setFilterType] = useState("");
   const [search, setSearch] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
   const [selectedSnapshot, setSelectedSnapshot] = useState(null);
   const [page, setPage] = useState(1);
 
@@ -188,9 +186,7 @@ export default function Snapshots() {
     setLoading(true);
     setError("");
     try {
-      const params = { limit: 1000 };
-      if (filterType) params.type = filterType;
-      const res = await api.get("/api/admin/snapshots", { params });
+      const res = await api.get("/api/admin/snapshots", { params: { limit: 1000, type: "admin_pre_enroll" } });
       const data = res.data || {};
       setSnapshots(data.snapshots || []);
     } catch (err) {
@@ -198,18 +194,27 @@ export default function Snapshots() {
     } finally {
       setLoading(false);
     }
-  }, [filterType]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  useEffect(() => { setPage(1); }, [filterType, search]);
+  useEffect(() => { setPage(1); }, [search, courseFilter]);
+
+  const courses = useMemo(() => {
+    const map = {};
+    snapshots.forEach((s) => {
+      if (s.course_name && s.course_code) map[s.course_code] = s.course_name;
+    });
+    return Object.entries(map).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [snapshots]);
 
   const filtered = useMemo(() =>
-    snapshots.filter((s) =>
-      !search ||
-      `${s.student_name || ""} ${s.student_number || ""} ${s.requested_by_name || ""} ${s.reviewed_by_name || ""} ${s.course_name || ""} ${s.course_code || ""}`
-        .toLowerCase().includes(search.toLowerCase())
-    ), [snapshots, search]
+    snapshots.filter((s) => {
+      if (courseFilter && s.course_code !== courseFilter) return false;
+      if (search && !`${s.student_name || ""} ${s.student_number || ""} ${s.requested_by_name || ""} ${s.reviewed_by_name || ""} ${s.course_name || ""} ${s.course_code || ""}`
+          .toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    }), [snapshots, search, courseFilter]
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -249,10 +254,11 @@ export default function Snapshots() {
             />
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="input-field text-sm w-auto">
-            <option value="">All Types</option>
-            {Object.entries(SNAPSHOT_CONFIG).map(([key, cfg]) => <option key={key} value={key}>{cfg.label}</option>)}
+          <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="input-field text-sm w-auto">
+            <option value="">All Courses</option>
+            {courses.map(([code, name]) => <option key={code} value={code}>{name} ({code})</option>)}
           </select>
+
         </div>
       </div>
 

@@ -1,7 +1,8 @@
 import { useState, useMemo, useRef, useCallback } from "react";
-import { Search, AlertTriangle, CheckCircle, X, Undo2, Plus } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, X, Undo2, Plus, Send } from "lucide-react";
 import api from "../../../services/api";
 import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
+import ConfirmModal from "../../../components/common/ConfirmModal";
 
 const YEAR_LEVELS = { 1: "1st Year", 2: "2nd Year", 3: "3rd Year", 4: "4th Year" };
 const SEM_LABELS = { 1: "1st Semester", 2: "2nd Semester" };
@@ -43,7 +44,8 @@ function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pending
               Already submitted by <span className="font-semibold">{pendingRequestedBy || "another evaluator"}</span>
             </div>
           ) : (
-            <button onClick={onSubmit} disabled={submitting} className="btn btn-primary btn-sm">
+            <button onClick={onSubmit} disabled={submitting} className="btn btn-primary btn-sm gap-1.5">
+              <Send size={14} />
               {submitting ? "Submitting..." : "Submit Evaluation"}
             </button>
           )}
@@ -136,6 +138,7 @@ export default function EvaluatorHome() {
   const [hasPendingRequest, setHasPendingRequest] = useState(false);
   const [pendingRequestedBy, setPendingRequestedBy] = useState(null);
   const [toast, setToast] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const snapshotRef = useRef(null);
   const [removedSubjectCodes, setRemovedSubjectCodes] = useState(new Set());
   const [specialClassSubjects, setSpecialClassSubjects] = useState([]);
@@ -236,7 +239,10 @@ export default function EvaluatorHome() {
 
   const handleKeyDown = (e) => { if (e.key === "Enter") handleSearch(); };
 
-  const handleSubmit = async () => {
+  const handleShowConfirm = () => setShowConfirm(true);
+
+  const handleConfirmSubmit = async () => {
+    setShowConfirm(false);
     if (!student || submitting) return;
     setSubmitting(true);
     try {
@@ -360,7 +366,17 @@ export default function EvaluatorHome() {
           </div>
         )}
 
-        {student && <StudentCard student={student} onSubmit={handleSubmit} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} />}
+        {student && <StudentCard student={student} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} />}
+        {showConfirm && (
+          <ConfirmModal
+            title="Submit Evaluation"
+            message="Are you sure you want to submit this evaluation? The student will be notified."
+            confirmLabel="Submit"
+            confirmVariant="primary"
+            onConfirm={handleConfirmSubmit}
+            onCancel={() => setShowConfirm(false)}
+          />
+        )}
 
         {!student && !loading && !error && (
           <div className="text-center py-16">

@@ -4,6 +4,12 @@ import api from "../../../services/api";
 import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
 
 const YEAR_LEVELS = { 1: "1st Year", 2: "2nd Year", 3: "3rd Year", 4: "4th Year" };
+const SEM_LABELS = { 1: "1st Semester", 2: "2nd Semester" };
+
+function prevSem(year, sem) {
+  if (sem === 1) return { year: Math.max(1, year - 1), sem: 2 };
+  return { year, sem: 1 };
+}
 
 const gradeBadge = (grade) => {
   if (!grade || grade === "INC") return "badge badge-yellow";
@@ -13,10 +19,11 @@ const gradeBadge = (grade) => {
 };
 
 function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pendingRequestedBy }) {
+  const evalYear = student.next_semester === 1 ? Number(student.year_level) + 1 : Number(student.year_level);
   return (
     <div className="card p-5">
       <div className="flex items-start justify-between">
-        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-2 text-sm flex-1">
           <div>
             <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Name</span>
             <p className="font-semibold text-slate-800 mt-0.5">{student.full_name}</p>
@@ -29,29 +36,34 @@ function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pending
             <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Program</span>
             <p className="font-semibold text-slate-800 mt-0.5">{student.course || "N/A"}</p>
           </div>
-          <div>
-            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Year Level</span>
-            <p className="font-semibold text-slate-800 mt-0.5">{YEAR_LEVELS[student.year_level] || `${student.year_level}th Year`}</p>
-          </div>
-          <div>
-            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Current Sem</span>
-            <p className="font-semibold text-slate-800 mt-0.5">{student.current_semester === 1 ? "1st Semester" : "2nd Semester"}</p>
-          </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 ml-4">
           {hasPendingRequest ? (
             <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-[220px] text-right leading-relaxed">
               Already submitted by <span className="font-semibold">{pendingRequestedBy || "another evaluator"}</span>
             </div>
           ) : (
-            <button
-              onClick={onSubmit}
-              disabled={submitting}
-              className="btn btn-primary btn-sm"
-            >
+            <button onClick={onSubmit} disabled={submitting} className="btn btn-primary btn-sm">
               {submitting ? "Submitting..." : "Submit Evaluation"}
             </button>
           )}
+        </div>
+      </div>
+      <div className="mt-4 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-center gap-0">
+          <div className="flex flex-col items-center">
+            <div className="w-3 h-3 rounded-full bg-slate-300" />
+            <span className="text-slate-400 text-[10px] uppercase tracking-wide font-medium mt-2">previous</span>
+            <p className="font-semibold text-slate-500 text-xs mt-0.5">{YEAR_LEVELS[student.year_level] || `${student.year_level}th Year`} {SEM_LABELS[student.current_semester]}</p>
+          </div>
+          <div className="w-12 h-0.5 bg-slate-200 relative mx-2 mt-0">
+            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-slate-300 text-sm">→</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="w-3 h-3 rounded-full bg-primary-600" />
+            <span className="text-primary-600 text-[10px] uppercase tracking-wide font-medium mt-2">evaluating semester</span>
+            <p className="font-semibold text-primary-700 text-xs mt-0.5">{YEAR_LEVELS[evalYear] || `${evalYear}th Year`} {SEM_LABELS[student.next_semester]}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -117,6 +129,7 @@ export default function EvaluatorHome() {
   const [nextSubjects, setNextSubjects] = useState([]);
   const [gapFillers, setGapFillers] = useState([]);
   const [allFails, setAllFails] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -186,6 +199,7 @@ export default function EvaluatorHome() {
       let next = [];
       let gaps = [];
       let allFails = [];
+      let recs = [];
       let evalData = null;
       try {
         const evalRes = await api.get(`/api/evaluator/students/${data.id}/evaluate`);
@@ -196,6 +210,7 @@ export default function EvaluatorHome() {
         next = evalData?.next_semester_subjects || [];
         gaps = evalData?.gap_fillers || [];
         allFails = evalData?.remaining_failed_subjects || [];
+        recs = evalData?.recommendations || [];
         const pendingReq = evalData?.has_pending_request;
         setHasPendingRequest(pendingReq);
         if (pendingReq) setPendingRequestedBy(evalData?.pending_requested_by || "another evaluator");
@@ -205,12 +220,15 @@ export default function EvaluatorHome() {
       setStudent({
         id: data.id, full_name: `${data.first_name} ${data.last_name}`,
         student_number: data.student_number, year_level: data.year_level,
+        current_semester: evalData?.student?.current_semester || 1,
+        next_semester: evalData?.student?.next_semester || 1,
         course: courseName, overall,
       });
       setCurrentSubjects(current);
       setNextSubjects(next);
       setGapFillers(gaps);
       setAllFails(allFails);
+      setRecommendations(recs);
     } catch (err) {
       setError(err.message || "Student not found");
     } finally {
@@ -254,22 +272,21 @@ export default function EvaluatorHome() {
   };
 
   const currentColumns = useMemo(() => [
-    { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "40%" },
-    { key: "grade", label: "Grade", width: "20%", render: (s) => <span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span> },
+    { key: "subject_code", label: "Code", width: "auto", className: "whitespace-nowrap font-mono font-medium" },
+    { key: "grade", label: "Grade", width: "auto", render: (s) => <span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span> },
   ], []);
 
   const nextColumns = useMemo(() => [
-    { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "35%" },
-    { key: "prerequisite", label: "Prereq", width: "20%", render: (s) => (
+    { key: "subject_code", label: "Code", width: "auto", className: "whitespace-nowrap font-mono font-medium" },
+    { key: "units", label: "Units", width: "auto", align: "right", render: (s) => s.units ?? "\u2014" },
+    { key: "prerequisite", label: "Prereq", width: "auto", render: (s) => (
       <div className="flex items-center gap-2">
         {s.special_class && <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded px-1.5 py-0.5 uppercase tracking-wide">Special Class</span>}
         <span>{s.prerequisite || "\u2014"}</span>
       </div>
     )},
-    { key: "is_retake", label: "", width: "10%", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
-    { key: "actions", label: "", width: "10%", render: (s) => (
+    { key: "is_retake", label: "", width: "auto", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
+    { key: "actions", label: "", width: "auto", render: (s) => (
       <button onClick={() => handleRemoveSubject(s)} title="Remove subject" className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
         <X size={14} />
       </button>
@@ -277,12 +294,11 @@ export default function EvaluatorHome() {
   ], [handleRemoveSubject]);
 
   const failColumns = useMemo(() => [
-    { key: "subject_code", label: "Code", width: "15%", className: "whitespace-nowrap" },
-    { key: "subject_name", label: "Subject", width: "40%" },
-    { key: "grade", label: "Grade", width: "15%", align: "right", render: (s) => (
+    { key: "subject_code", label: "Code", width: "auto", className: "whitespace-nowrap font-mono font-medium" },
+    { key: "grade", label: "Grade", width: "auto", render: (s) => (
       <span className="text-red-600 font-semibold">{s.grade || "\u2014"}</span>
     )},
-    { key: "actions", label: "", width: "10%", render: (s) => (
+    { key: "actions", label: "", width: "auto", render: (s) => (
       <div className="flex items-center gap-1">
         {removedSubjectCodes.has(s.subject_code) && (
           <button onClick={() => handleUndoSubject(s)} title="Restore subject" className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors">
@@ -357,48 +373,106 @@ export default function EvaluatorHome() {
         )}
 
         {student && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SubjectTable
-              title="Current Subjects"
-              subjects={currentSubjects}
-              columns={currentColumns}
-              emptyMsg="No current semester subjects."
-              color="green"
-            />
-            <div className="space-y-6">
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex-1 min-w-0">
+              <SubjectTable
+                title="Current Subjects"
+                subjects={currentSubjects}
+                columns={currentColumns}
+                emptyMsg="No current semester subjects."
+                color="green"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
               <SubjectTable
                 title="Possible Subjects"
                 subjects={nextSubjects}
                 columns={nextColumns}
                 emptyMsg="No possible subjects."
                 color="blue"
+                headerRight={
+                  <span className="text-xs font-medium text-blue-600 bg-blue-100/60 px-2.5 py-1 rounded-full">
+                    Total: {nextSubjects.reduce((sum, s) => sum + Number(s.units || 0), 0)} units
+                  </span>
+                }
               />
-
-              {gapFillers.length > 0 && (
+            </div>
+            <div className="flex-1 min-w-0">
+              {allFails.length > 0 && (
                 <SubjectTable
-                  title="Gap Fillers"
-                  subjects={gapFillers}
-                  columns={[
-                    { key: "subject_code", label: "Code", width: "20%", className: "whitespace-nowrap" },
-                    { key: "subject_name", label: "Subject", width: "55%" },
-                    { key: "units", label: "Units", width: "15%", align: "right", render: (s) => s.units ?? "\u2014" },
-                    { key: "badge", label: "", width: "10%", render: () => <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> },
-                  ]}
-                  color="amber"
+                  title="Failed Subjects"
+                  subjects={allFails}
+                  columns={failColumns}
+                  emptyMsg="No failed subjects."
+                  color="red"
                 />
               )}
             </div>
           </div>
         )}
 
-        {allFails.length > 0 && student && (
-          <SubjectTable
-            title="Failed Subjects"
-            subjects={allFails}
-            columns={failColumns}
-            emptyMsg="No failed subjects."
-            color="red"
-          />
+        {(student && (gapFillers.length > 0 || recommendations.length > 0)) && (
+          <div className="space-y-3">
+            {gapFillers.length > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                <AlertTriangle size={16} className="shrink-0" />
+                <span>Subjects recommended to fill remaining units — <strong>higher priority</strong> means they unlock more future subjects.</span>
+              </div>
+            )}
+            <div className="flex flex-col lg:flex-row gap-4">
+              {gapFillers.length > 0 && (
+                <div className="flex-1 min-w-0">
+                  <SubjectTable
+                    title="Recommended Subjects"
+                    subjects={gapFillers}
+                    columns={[
+                      { key: "subject_code", label: "Code", width: "auto", className: "whitespace-nowrap font-mono font-medium" },
+                      { key: "units", label: "Units", width: "auto", align: "right", render: (s) => s.units ?? "\u2014" },
+                      { key: "priority", label: "Priority", width: "auto", render: (s) =>
+                        s.prereq_dependents > 0
+                          ? <span className="text-xs font-bold text-amber-600">Unlocks {s.prereq_dependents} subject{s.prereq_dependents !== 1 ? "s" : ""}</span>
+                          : <span className="text-xs text-slate-400">\u2014</span>
+                      },
+                    ]}
+                    color="amber"
+                  />
+                </div>
+              )}
+              {recommendations.length > 0 && (
+                <div className={gapFillers.length > 0 ? "w-full lg:w-72 shrink-0" : "w-full"}>
+                  <div className="card p-4 border border-amber-200 bg-amber-50/30 space-y-3">
+                    <h4 className="text-sm font-semibold text-amber-800">Recommendation Notes</h4>
+                    <ul className="space-y-2 text-xs text-amber-700">
+                      {gapFillers.filter((s) => s.prereq_dependents > 0).length > 0 && (
+                        <li className="flex gap-2">
+                          <span className="text-amber-500 font-bold mt-0.5">•</span>
+                          <span><strong>{gapFillers.filter((s) => s.prereq_dependents > 0).length} subject(s)</strong> have prerequisites that unlock future courses. Prioritize these to avoid delays.</span>
+                        </li>
+                      )}
+                      {gapFillers.length > 0 && (
+                        <li className="flex gap-2">
+                          <span className="text-amber-500 font-bold mt-0.5">•</span>
+                          <span>Fill <strong>{gapFillers.reduce((sum, g) => sum + Number(g.units || 0), 0)} units</strong> for this semester.</span>
+                        </li>
+                      )}
+                      {gapFillers.filter((s) => s.is_cross_course).length > 0 && (
+                        <li className="flex gap-2">
+                          <span className="text-amber-500 font-bold mt-0.5">•</span>
+                          <span><strong>{gapFillers.filter((s) => s.is_cross_course).length} subject(s)</strong> are from other courses with matching subject codes.</span>
+                        </li>
+                      )}
+                      {recommendations.map((r, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="text-amber-500 font-bold mt-0.5">•</span>
+                          <span>{r}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>

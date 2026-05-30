@@ -46,7 +46,7 @@ function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pending
           ) : (
             <button onClick={onSubmit} disabled={submitting} className="btn btn-primary btn-sm gap-1.5">
               <Send size={14} />
-              {submitting ? "Submitting..." : "Submit Evaluation"}
+              {submitting ? "Submitting..." : "Submit"}
             </button>
           )}
         </div>

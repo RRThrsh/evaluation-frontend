@@ -180,8 +180,23 @@ export default function AdminHome() {
   const [userPermissions, setUserPermissions] =
     useState([]);
 
+  const [badgeCounts, setBadgeCounts] =
+    useState({ pending_users: 0, pending_evaluations: 0, pre_enrolled: 0 });
+
   const isSuperAdmin =
     user?.role === "superadmin";
+
+  /* badge counts */
+  useEffect(() => {
+    const fetch = () => {
+      api.get("/api/admin/badge-counts")
+        .then((r) => setBadgeCounts(r.data ?? { pending_users: 0, pending_evaluations: 0, pre_enrolled: 0 }))
+        .catch(() => {});
+    };
+    fetch();
+    const id = setInterval(fetch, 30000);
+    return () => clearInterval(id);
+  }, []);
 
   /* permissions */
   useEffect(() => {
@@ -315,20 +330,21 @@ export default function AdminHome() {
 
       {/* sidebar */}
       <AdminSidebar
-        activeTab={activeTab}
-        onNavigate={navigateTab}
-        availableGroups={availableGroups}
-        activeGroup={activeGroup}
-        setActiveGroup={setActiveGroup}
-        selectedTable={selectedTable}
-        onSelectTable={loadTable}
-        user={user}
-        logout={logout}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        userPermissions={userPermissions}
-        isSuperAdmin={isSuperAdmin}
-      />
+          activeTab={activeTab}
+          onNavigate={navigateTab}
+          availableGroups={availableGroups}
+          activeGroup={activeGroup}
+          setActiveGroup={setActiveGroup}
+          selectedTable={selectedTable}
+          onSelectTable={loadTable}
+          user={user}
+          logout={logout}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          userPermissions={userPermissions}
+          isSuperAdmin={isSuperAdmin}
+          badgeCounts={badgeCounts}
+        />
 
       {/* content */}
       <div className="md:ml-64">

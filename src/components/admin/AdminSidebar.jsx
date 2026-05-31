@@ -31,6 +31,7 @@ export function NavItem({
   label,
   active,
   onClick,
+  badge,
 }) {
   return (
     <button
@@ -58,6 +59,12 @@ export function NavItem({
       )}
 
       <span className="truncate">{label}</span>
+
+      {badge != null && badge > 0 && (
+        <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold leading-none text-white">
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
     </button>
   );
 }
@@ -178,6 +185,12 @@ const PERMISSION_MAP = {
 };
 
 /* ---------- SIDEBAR ---------- */
+const BADGE_MAP = {
+  "undecided": "pending_evaluations",
+  "pre-enrolled": "pre_enrolled",
+  "users": "pending_users",
+};
+
 export default function AdminSidebar({
   activeTab,
   onNavigate,
@@ -192,6 +205,7 @@ export default function AdminSidebar({
   setSidebarOpen,
   userPermissions = [],
   isSuperAdmin = false,
+  badgeCounts = {},
 }) {
   const navigate = useNavigate();
 
@@ -265,12 +279,9 @@ export default function AdminSidebar({
               key={item.key}
               icon={item.icon}
               label={item.label}
-              active={
-                activeTab === item.key
-              }
-              onClick={() =>
-                handleNav(item.key)
-              }
+              active={activeTab === item.key}
+              onClick={() => handleNav(item.key)}
+              badge={badgeCounts[BADGE_MAP[item.key]]}
             />
           )
         )}
@@ -282,12 +293,9 @@ export default function AdminSidebar({
               key={item.key}
               icon={item.icon}
               label={item.label}
-              active={
-                activeTab === item.key
-              }
-              onClick={() =>
-                handleNav(item.key)
-              }
+              active={activeTab === item.key}
+              onClick={() => handleNav(item.key)}
+              badge={badgeCounts[BADGE_MAP[item.key]]}
             />
           )
         )}
@@ -299,12 +307,9 @@ export default function AdminSidebar({
               key={item.key}
               icon={item.icon}
               label={item.label}
-              active={
-                activeTab === item.key
-              }
-              onClick={() =>
-                handleNav(item.key)
-              }
+              active={activeTab === item.key}
+              onClick={() => handleNav(item.key)}
+              badge={badgeCounts[BADGE_MAP[item.key]]}
             />
           )
         )}

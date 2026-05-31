@@ -108,6 +108,12 @@ const Snapshots = lazy(
       "../../../components/admin/Snapshots"
     )
 );
+const GuideManager = lazy(
+  () =>
+    import(
+      "../../../components/admin/GuideManager"
+    )
+);
 const AdminUndecided = lazy(
   () =>
     import(
@@ -491,6 +497,11 @@ export default function AdminHome() {
               {activeTab ===
                 "snapshots" && (
                 <Snapshots />
+              )}
+
+              {activeTab ===
+                "guides" && (
+                <GuideManager />
               )}
 
               {activeTab ===

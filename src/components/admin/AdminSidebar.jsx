@@ -22,6 +22,7 @@ import {
   Shield,
   History,
   Palette,
+  Bookmark,
 } from "lucide-react";
 
 import { useMemo, useState, useRef, useEffect } from "react";
@@ -165,6 +166,11 @@ const NAV_ITEMS = {
       label: "Snapshots",
       icon: History,
     },
+    {
+      key: "guides",
+      label: "Guides",
+      icon: Bookmark,
+    },
   ],
 };
 
@@ -185,6 +191,7 @@ const PERMISSION_MAP = {
   sessions: "sessions",
   permissions: "permissions",
   snapshots: "snapshots",
+  guides: "guides.view",
 };
 
 /* ---------- SIDEBAR ---------- */

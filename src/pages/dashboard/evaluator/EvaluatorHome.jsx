@@ -139,6 +139,7 @@ export default function EvaluatorHome() {
   const [pendingRequestedBy, setPendingRequestedBy] = useState(null);
   const [toast, setToast] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [undecided, setUndecided] = useState(false);
   const snapshotRef = useRef(null);
   const [removedSubjectCodes, setRemovedSubjectCodes] = useState(new Set());
   const [specialClassSubjects, setSpecialClassSubjects] = useState([]);
@@ -241,26 +242,28 @@ export default function EvaluatorHome() {
 
   const handleShowConfirm = () => setShowConfirm(true);
 
-  const handleConfirmSubmit = async () => {
+  const handleConfirmSubmit = async (isUndecided) => {
     setShowConfirm(false);
     if (!student || submitting) return;
     setSubmitting(true);
     try {
       const snapshot = snapshotRef.current
-        ? {
-            ...snapshotRef.current,
-            next_semester_subjects: [
-              ...(snapshotRef.current.next_semester_subjects || []).filter(
+        ? (() => {
+            const { overall, ...rest } = snapshotRef.current;
+            return {
+              ...rest,
+              undecided: isUndecided,
+              next_semester_subjects: [
+                ...nextSubjects,
+                ...specialClassSubjects,
+              ],
+              gap_fillers: (snapshotRef.current.gap_fillers || []).filter(
                 (s) => !removedSubjectCodes.has(s.subject_code)
               ),
-              ...specialClassSubjects,
-            ],
-            gap_fillers: (snapshotRef.current.gap_fillers || []).filter(
-              (s) => !removedSubjectCodes.has(s.subject_code)
-            ),
-            special_class_subjects: specialClassSubjects,
-          }
-        : null;
+              special_class_subjects: specialClassSubjects,
+            };
+          })()
+        : { undecided: isUndecided };
       await api.post("/api/evaluator/evaluate", {
         student_number: student.student_number,
         snapshot,
@@ -368,14 +371,20 @@ export default function EvaluatorHome() {
 
         {student && <StudentCard student={student} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} />}
         {showConfirm && (
-          <ConfirmModal
-            title="Submit Evaluation"
-            message="Are you sure you want to submit this evaluation? The student will be notified."
-            confirmLabel="Submit"
-            confirmVariant="primary"
-            onConfirm={handleConfirmSubmit}
-            onCancel={() => setShowConfirm(false)}
-          />
+          <div className="modal-overlay" onClick={() => setShowConfirm(false)}>
+            <div className="modal-content max-w-sm p-6 text-center" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">Submit Evaluation</h3>
+              <p className="text-sm text-slate-500 mb-6">Are you sure you want to submit this evaluation? The student will be notified.</p>
+              <label className="flex items-center justify-center gap-2 mb-6 cursor-pointer">
+                <input type="checkbox" checked={undecided} onChange={(e) => setUndecided(e.target.checked)} className="rounded border-slate-300" />
+                <span className="text-sm text-slate-600">Undecided</span>
+              </label>
+              <div className="flex gap-3">
+                <button onClick={() => { const u = undecided; setUndecided(false); handleConfirmSubmit(u); }} className="flex-1 btn btn-primary btn-md">Submit</button>
+                <button onClick={() => { setUndecided(false); setShowConfirm(false); }} className="flex-1 btn btn-secondary btn-md">Cancel</button>
+              </div>
+            </div>
+          </div>
         )}
 
         {!student && !loading && !error && (

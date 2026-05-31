@@ -108,6 +108,12 @@ const Snapshots = lazy(
       "../../../components/admin/Snapshots"
     )
 );
+const AdminUndecided = lazy(
+  () =>
+    import(
+      "../../../components/admin/AdminUndecided"
+    )
+);
 
 const TABLE_GROUPS = [
   {
@@ -428,9 +434,7 @@ export default function AdminHome() {
 
               {activeTab ===
                 "undecided" && (
-                <div className="card p-10 text-center">
-                  <p className="text-sm text-slate-500">Undecided section coming soon</p>
-                </div>
+                <AdminUndecided />
               )}
 
               {activeTab ===

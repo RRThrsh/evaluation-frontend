@@ -40,8 +40,8 @@ export function NavItem({
       onClick={onClick}
       className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
         active
-          ? "bg-slate-100 text-slate-900 shadow-sm"
-          : "text-slate-500 hover:bg-slate-800/40 hover:text-white"
+          ? "bg-surface-muted text-text shadow-sm"
+          : "text-text-secondary hover:bg-surface-muted hover:text-text"
       }`}
     >
       {/* active indicator */}
@@ -55,7 +55,7 @@ export function NavItem({
           className={`transition ${
             active
               ? "text-primary-600"
-              : "text-slate-500 group-hover:text-white"
+              : "text-text-secondary group-hover:text-text"
           }`}
         />
       )}
@@ -75,7 +75,7 @@ export function NavItem({
 export function SidebarLabel({ title }) {
   return (
     <div className="px-3 pt-5 pb-1">
-      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500">
+      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-text-secondary">
         {title}
       </p>
     </div>
@@ -246,24 +246,24 @@ export default function AdminSidebar({
 
   return (
     <aside
-      className={`fixed left-0 top-0 z-40 flex h-screen w-72 flex-col border-r border-slate-200 bg-white transition-transform md:translate-x-0 ${
+      className={`fixed left-0 top-0 z-40 flex h-screen w-72 flex-col border-r border-border bg-surface transition-transform md:translate-x-0 ${
         sidebarOpen
           ? "translate-x-0"
           : "-translate-x-full"
       }`}
     >
       {/* HEADER */}
-      <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
+      <div className="flex h-16 items-center justify-between border-b border-border px-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-sm">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-sm">
             <GraduationCap size={16} />
           </div>
 
           <div className="leading-tight">
-            <p className="text-sm font-bold text-slate-900">
+            <p className="text-sm font-bold text-text">
               Academic Evaluation
             </p>
-            <p className="text-[10px] uppercase tracking-widest text-slate-400">
+            <p className="text-[10px] uppercase tracking-widest text-text-muted">
               Admin Console
             </p>
           </div>
@@ -273,7 +273,7 @@ export default function AdminSidebar({
           onClick={() =>
             setSidebarOpen?.(false)
           }
-          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 md:hidden"
+          className="rounded-lg p-1.5 text-text-muted hover:bg-surface-muted md:hidden"
         >
           <X size={18} />
         </button>
@@ -342,7 +342,7 @@ export default function AdminSidebar({
                           : g.name
                       )
                     }
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-100"
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-text-secondary hover:bg-surface-muted"
                   >
                     <span>{g.name}</span>
                     {open ? (
@@ -365,8 +365,8 @@ export default function AdminSidebar({
                           className={`w-full rounded-md px-3 py-1.5 text-left text-xs font-mono transition ${
                             selectedTable ===
                             t
-                              ? "bg-slate-900 text-white"
-                              : "text-slate-500 hover:bg-slate-100"
+                              ? "bg-primary-600 text-white"
+                              : "text-text-secondary hover:bg-surface-muted"
                           }`}
                         >
                           {t}
@@ -382,19 +382,19 @@ export default function AdminSidebar({
       </nav>
 
       {/* FOOTER */}
-      <div className="border-t border-slate-200 p-3 space-y-1">
-        <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+      <div className="border-t border-border p-3 space-y-1">
+        <div className="flex items-center justify-between rounded-xl bg-surface-muted px-3 py-2">
           <button
             onClick={() =>
               navigate("/profile")
             }
             className="min-w-0 text-left"
           >
-            <p className="truncate text-sm font-semibold text-slate-900">
+            <p className="truncate text-sm font-semibold text-text">
               {user?.full_name ??
                 "Admin"}
             </p>
-            <p className="text-xs capitalize text-slate-400">
+            <p className="text-xs capitalize text-text-muted">
               {user?.role ?? "Admin"}
             </p>
           </button>
@@ -403,7 +403,7 @@ export default function AdminSidebar({
             <ThemeToggle />
             <button
               onClick={logout}
-              className="rounded-lg p-1.5 text-slate-400 hover:text-red-500"
+              className="rounded-lg p-1.5 text-text-muted hover:text-red-500"
             >
               <LogOut size={16} />
             </button>
@@ -441,19 +441,19 @@ function ThemeToggle() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((p) => !p)}
-        className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600"
+        className="rounded-lg p-1.5 text-text-muted hover:text-text-secondary"
         title={`Theme: ${THEME_LABELS[theme]}`}
       >
         <Palette size={16} />
       </button>
       {open && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 min-w-[130px] bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 min-w-[130px] bg-surface border border-border rounded-xl shadow-lg overflow-hidden">
           {themes.map((t, i) => (
             <button
               key={t}
               onClick={() => { setTheme(t); setOpen(false); }}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-left transition hover:bg-slate-50 ${
-                i === currentIdx ? "font-semibold text-slate-900 bg-slate-50" : "text-slate-600"
+              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-left transition hover:bg-surface-muted ${
+                i === currentIdx ? "font-semibold text-text bg-surface-muted" : "text-text-secondary"
               }`}
             >
               <span className={`w-2.5 h-2.5 rounded-full ${
@@ -461,7 +461,7 @@ function ThemeToggle() {
                 t === "dark" ? "bg-slate-800" :
                 t === "neutral" ? "bg-slate-400" :
                 "bg-gray-300"
-              } ring-1 ring-slate-300/50 shrink-0`} />
+              } ring-1 ring-border/50 shrink-0`} />
               <span>{THEME_LABELS[t]}</span>
               {i === currentIdx && <span className="ml-auto text-primary-500 text-[10px]">✓</span>}
             </button>

@@ -168,10 +168,11 @@ export default function ChatBox() {
     const d = new Date(t);
     const now = new Date();
     const diff = now - d;
-    if (diff < 60000) return "just now";
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    return d.toLocaleDateString();
+    const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (diff < 60000) return `${time} (just now)`;
+    if (diff < 3600000) return `${time} (${Math.floor(diff / 60000)}m ago)`;
+    if (diff < 86400000) return time;
+    return `${d.toLocaleDateString()} ${time}`;
   }
 
   return (

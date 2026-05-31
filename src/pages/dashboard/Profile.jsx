@@ -86,7 +86,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white text-slate-900">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-surface text-text">
       {/* Header */}
       <ProfileHeader />
 

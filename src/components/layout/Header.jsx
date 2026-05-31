@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ChevronRight, LogOut, LayoutDashboard, GraduationCap } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import ThemeSwitcher from "../common/ThemeSwitcher";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -53,7 +54,8 @@ const Header = () => {
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-2.5 border-l border-slate-200 ml-3 pl-3">
+        <div className="hidden md:flex items-center gap-2 border-l border-slate-200 ml-3 pl-3">
+          <ThemeSwitcher />
           {user ? (
             <>
               <Link

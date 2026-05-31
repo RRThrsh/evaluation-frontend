@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 const Maintenance = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden px-6">
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden px-6">
       <div className="absolute inset-0 z-0 opacity-40">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary-100 blur-3xl" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-100 blur-3xl" />

@@ -561,7 +561,7 @@ export default function EvaluatorHome() {
   ], [removedSubjectCodes, handleUndoSubject, handleAddFailedToNext]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       <EvaluatorHeader />
       <div className="max-w-[1600px] mx-auto p-4 sm:p-6 space-y-6">
         <div className="card p-4 sm:p-5">

@@ -1,5 +1,6 @@
 import { Menu } from "lucide-react";
 import NotificationBell from "../common/NotificationBell";
+import ThemeSwitcher from "../common/ThemeSwitcher";
 
 export default function AdminHeader({
   sidebarOpen,
@@ -51,6 +52,8 @@ export default function AdminHeader({
 
         {/* RIGHT SIDE */}
         <div className="flex items-center gap-3">
+
+          <ThemeSwitcher />
 
           <NotificationBell />
 

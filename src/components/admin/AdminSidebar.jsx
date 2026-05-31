@@ -21,9 +21,11 @@ import {
   X,
   Shield,
   History,
+  Palette,
 } from "lucide-react";
 
-import { useMemo } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
+import { useTheme } from "../../context/ThemeContext";
 
 /* ---------- Nav Item ---------- */
 export function NavItem({
@@ -380,7 +382,7 @@ export default function AdminSidebar({
       </nav>
 
       {/* FOOTER */}
-      <div className="border-t border-slate-200 p-3">
+      <div className="border-t border-slate-200 p-3 space-y-1">
         <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
           <button
             onClick={() =>
@@ -397,14 +399,75 @@ export default function AdminSidebar({
             </p>
           </button>
 
-          <button
-            onClick={logout}
-            className="rounded-lg p-1.5 text-slate-400 hover:text-red-500"
-          >
-            <LogOut size={16} />
-          </button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <button
+              onClick={logout}
+              className="rounded-lg p-1.5 text-slate-400 hover:text-red-500"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
       </div>
     </aside>
+  );
+}
+
+/* ---------- Theme Toggle (minified for sidebar) ---------- */
+const THEME_LABELS = {
+  default: "Default",
+  dark: "Dark",
+  neutral: "Neutral",
+  minimalist: "Minimal",
+};
+
+function ThemeToggle() {
+  const { theme, setTheme, themes } = useTheme();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const currentIdx = themes.indexOf(theme);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((p) => !p)}
+        className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600"
+        title={`Theme: ${THEME_LABELS[theme]}`}
+      >
+        <Palette size={16} />
+      </button>
+      {open && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 min-w-[130px] bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+          {themes.map((t, i) => (
+            <button
+              key={t}
+              onClick={() => { setTheme(t); setOpen(false); }}
+              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-left transition hover:bg-slate-50 ${
+                i === currentIdx ? "font-semibold text-slate-900 bg-slate-50" : "text-slate-600"
+              }`}
+            >
+              <span className={`w-2.5 h-2.5 rounded-full ${
+                t === "default" ? "bg-indigo-500" :
+                t === "dark" ? "bg-slate-800" :
+                t === "neutral" ? "bg-slate-400" :
+                "bg-gray-300"
+              } ring-1 ring-slate-300/50 shrink-0`} />
+              <span>{THEME_LABELS[t]}</span>
+              {i === currentIdx && <span className="ml-auto text-primary-500 text-[10px]">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

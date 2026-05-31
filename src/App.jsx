@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ClickSoundProvider from "./components/common/ClickSoundProvider";
 import ErrorBoundary from "./components/common/ErrorBoundary";
@@ -30,6 +31,7 @@ import Maintenance from "./pages/error/Maintenance";
 
 function App() {
     return (
+        <ThemeProvider>
         <ClickSoundProvider>
         <ErrorBoundary>
         <AuthProvider>
@@ -84,6 +86,7 @@ function App() {
         </AuthProvider>
         </ErrorBoundary>
         </ClickSoundProvider>
+        </ThemeProvider>
     );
 }
 

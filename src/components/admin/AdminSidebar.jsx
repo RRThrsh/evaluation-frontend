@@ -186,7 +186,7 @@ const PERMISSION_MAP = {
 
 /* ---------- SIDEBAR ---------- */
 const BADGE_MAP = {
-  "undecided": "pending_evaluations",
+  "undecided": "undecided",
   "pre-enrolled": "pre_enrolled",
   "users": "pending_users",
 };

@@ -15,7 +15,6 @@ export default function ChatBox() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [token, setToken] = useState(localStorage.getItem("token"));
   const [broadcastMode, setBroadcastMode] = useState(false);
   const [tab, setTab] = useState("global");
   const [users, setUsers] = useState([]);
@@ -24,17 +23,18 @@ export default function ChatBox() {
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const listRef = useRef(null);
   const socketRef = useRef(null);
+  const conversationRef = useRef({ tab: "global", userId: null });
+  const fetchGenRef = useRef(0);
 
   const isSuperadmin = authUser?.role === "superadmin";
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    const handleStorage = () => setToken(localStorage.getItem("token"));
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
+    conversationRef.current = { tab, userId: selectedUser?.id ?? null };
+  }, [tab, selectedUser]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !authUser) return;
     const socket = io(SOCKET_URL, {
       auth: { token },
       reconnection: true,
@@ -42,7 +42,14 @@ export default function ChatBox() {
       reconnectionDelay: 2000,
     });
     socket.on("receiveMessage", (data) => {
-      setMessages((prev) => [...prev, data]);
+      const conv = conversationRef.current;
+      const inGlobal = conv.tab === "global" && !data.recipient_id;
+      const isBroadcast = data.is_broadcast === true;
+      const inPrivate = conv.tab === "private" && conv.userId &&
+        (data.recipient_id === conv.userId || data.user_id === conv.userId);
+      if (inGlobal || isBroadcast || inPrivate) {
+        setMessages((prev) => [...prev, data]);
+      }
     });
     socket.on("messagesSeen", ({ message_ids }) => {
       setMessages((prev) => prev.map((m) => message_ids.includes(m.id) ? { ...m, status: "seen" } : m));
@@ -53,28 +60,32 @@ export default function ChatBox() {
     socketRef.current = socket;
     socket.emit("joinChat");
     return () => { socket.disconnect(); socketRef.current = null; };
-  }, [token]);
+  }, [token, authUser]);
 
   const fetchMessages = useCallback(async () => {
-    if (!token) return;
+    if (!token || !authUser) return;
     setLoading(true);
+    const gen = ++fetchGenRef.current;
+    const conv = conversationRef.current;
     try {
       const params = {};
-      if (tab === "private" && selectedUser) params.recipient_id = selectedUser.id;
+      if (conv.tab === "private" && conv.userId) params.recipient_id = conv.userId;
       const res = await api.get("/api/chat/messages", { params });
+      if (gen !== fetchGenRef.current) return;
       setMessages(res.data ?? []);
     } catch (e) {
     } finally {
-      setLoading(false);
+      if (gen === fetchGenRef.current) setLoading(false);
     }
-  }, [token, tab, selectedUser]);
+  }, [token, authUser]);
 
   const fetchUsers = useCallback(async () => {
-    if (!token) return;
+    if (!token || !authUser) return;
     try {
       const res = await api.get("/api/chat/users");
-      setUsers((res.data ?? []).filter((u) => u.id !== authUser?.id));
-    } catch (e) {}
+      setUsers(res.data?.filter((u) => u.id !== authUser.id) ?? []);
+    } catch (e) {
+    }
   }, [token, authUser]);
 
   useEffect(() => {
@@ -82,7 +93,7 @@ export default function ChatBox() {
       if (tab === "private") fetchUsers();
       fetchMessages();
     }
-  }, [open, tab, selectedUser, fetchMessages, fetchUsers]);
+  }, [open, tab, selectedUser, fetchMessages, fetchUsers, authUser]);
 
   useEffect(() => {
     if (tab === "global") setSelectedUser(null);

@@ -37,6 +37,7 @@ export default function ChatBox() {
     if (!token || !authUser) return;
     const socket = io(SOCKET_URL, {
       auth: { token },
+      transports: ["websocket"],
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 2000,
@@ -143,7 +144,7 @@ export default function ChatBox() {
 
   useEffect(() => {
     if (open && tab === "private" && selectedUser) {
-      const timer = setTimeout(markSeen, 500);
+      const timer = setTimeout(markSeen, 0);
       return () => clearTimeout(timer);
     }
   }, [open, tab, selectedUser, markSeen]);

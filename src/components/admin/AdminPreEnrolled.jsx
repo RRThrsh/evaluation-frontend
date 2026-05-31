@@ -193,7 +193,11 @@ export default function AdminPreEnrolled() {
   const [confirmExport, setConfirmExport] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [modal, setModal] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const timerRef = useRef(null);
   const { can } = usePermissions();
+
+  useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
 
   const fetchRequests = useCallback(async (pg) => {
     setLoading(true);
@@ -289,18 +293,39 @@ export default function AdminPreEnrolled() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirmDelete) return;
+  const executeDelete = async (id) => {
     setDeleting(true);
     try {
-      await api.delete(`/api/admin/evaluations/${confirmDelete.id}`);
-      setConfirmDelete(null);
+      await api.delete(`/api/admin/evaluations/${id}`);
       fetchRequests(page);
     } catch (err) {
       setError(err.message || "Failed to delete");
     } finally {
       setDeleting(false);
     }
+  };
+
+  const scheduleDelete = (id, name) => {
+    let remaining = 3;
+    setPendingDelete({ id, name, remaining });
+    timerRef.current = setInterval(() => {
+      remaining--;
+      if (remaining > 0) {
+        setPendingDelete((prev) => prev ? { ...prev, remaining } : null);
+      } else {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+        const targetId = id;
+        setPendingDelete(null);
+        executeDelete(targetId);
+      }
+    }, 1000);
+  };
+
+  const undoDelete = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+    setPendingDelete(null);
   };
 
   return (
@@ -341,7 +366,7 @@ export default function AdminPreEnrolled() {
                   <td className="px-6 py-4 text-slate-700">{row.course_name || "N/A"}</td>
                   {can("enrolled-students.manage") && (
                   <td className="px-6 py-4 text-right">
-                    <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(row); }} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600" title="Delete">
+                    <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ ...row, step: 1 }); }} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600" title="Delete">
                       <Trash2 size={16} />
                     </button>
                   </td>
@@ -392,7 +417,7 @@ export default function AdminPreEnrolled() {
         </div>
       )}
 
-      {confirmDelete && (
+      {confirmDelete?.step === 1 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => !deleting && setConfirmDelete(null)}>
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-bold text-slate-800 mb-2">Delete Pre-Enrolled</h3>
@@ -400,8 +425,22 @@ export default function AdminPreEnrolled() {
               Remove <span className="font-semibold">{confirmDelete.first_name} {confirmDelete.last_name}</span> from pre-enrolled list?
             </p>
             <div className="flex items-center justify-end gap-2">
+              <button onClick={() => setConfirmDelete(null)} className="btn btn-ghost btn-sm">Cancel</button>
+              <button onClick={() => setConfirmDelete({ ...confirmDelete, step: 2 })} className="btn btn-primary btn-sm">Continue</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmDelete?.step === 2 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => !deleting && setConfirmDelete(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-slate-800 mb-2">Confirm Delete</h3>
+            <p className="text-sm text-slate-600 mb-5">
+              Are you sure you want to permanently delete <span className="font-semibold">{confirmDelete.first_name} {confirmDelete.last_name}</span>'s pre-enrolled record?
+            </p>
+            <div className="flex items-center justify-end gap-2">
               <button onClick={() => setConfirmDelete(null)} disabled={deleting} className="btn btn-ghost btn-sm">Cancel</button>
-              <button onClick={handleDelete} disabled={deleting} className="btn btn-danger btn-sm">
+              <button onClick={() => { const { id, first_name, last_name } = confirmDelete; setConfirmDelete(null); scheduleDelete(id, `${first_name} ${last_name}`); }} disabled={deleting} className="btn btn-danger btn-sm">
                 {deleting ? "Deleting..." : "Delete"}
               </button>
             </div>
@@ -410,6 +449,13 @@ export default function AdminPreEnrolled() {
       )}
 
       {modal && <PreEnrolledModal request={modal} onClose={() => setModal(null)} />}
+
+      {pendingDelete && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl text-sm">
+          <span>Deleting <strong>{pendingDelete.name}</strong>... <span className="text-slate-400">({pendingDelete.remaining}s)</span></span>
+          <button onClick={undoDelete} className="btn bg-white text-slate-900 hover:bg-slate-200 btn-sm font-semibold px-3">Undo</button>
+        </div>
+      )}
     </div>
   );
 }

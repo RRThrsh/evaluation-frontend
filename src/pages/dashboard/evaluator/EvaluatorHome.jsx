@@ -19,56 +19,240 @@ const gradeBadge = (grade) => {
   return "badge badge-green";
 };
 
-function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pendingRequestedBy }) {
+function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pendingRequestedBy, onShowToast, onShiftComplete }) {
+  const [showShift, setShowShift] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+  const [targetCourseId, setTargetCourseId] = useState("");
+  const [preview, setPreview] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [shifting, setShifting] = useState(false);
   const evalYear = student.next_semester === 1 ? Number(student.year_level) + 1 : Number(student.year_level);
+
+  const openShift = async () => {
+    setShowShift(true);
+    setLoadingCourses(true);
+    setTargetCourseId("");
+    setPreview(null);
+    try {
+      const res = await api.get("/api/evaluator/courses");
+      setCourses(res.data || []);
+    } catch {
+      if (onShowToast) onShowToast("Failed to load courses", "error");
+    } finally {
+      setLoadingCourses(false);
+    }
+  };
+
+  const handleTargetChange = async (e) => {
+    const id = e.target.value;
+    setTargetCourseId(id);
+    if (!id) { setPreview(null); return; }
+    setLoadingPreview(true);
+    setPreview(null);
+    try {
+      const res = await api.post(`/api/evaluator/students/${student.id}/shift-preview`, { new_course_id: id });
+      setPreview(res.data || res);
+    } catch (err) {
+      if (onShowToast) onShowToast(err.message || "Failed to load preview", "error");
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const handleConfirmShift = async () => {
+    if (!targetCourseId || shifting) return;
+    setShifting(true);
+    try {
+      const res = await api.post(`/api/evaluator/students/${student.id}/shift`, { new_course_id: targetCourseId });
+      if (onShowToast) onShowToast(res.data?.message || "Shift completed", "success");
+      setShowShift(false);
+      if (onShiftComplete && res.data?.evaluation) onShiftComplete(res.data.evaluation);
+    } catch (err) {
+      if (onShowToast) onShowToast(err.message || "Shift failed", "error");
+    } finally {
+      setShifting(false);
+    }
+  };
+
   return (
-    <div className="card p-5">
-      <div className="flex items-start justify-between">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-2 text-sm flex-1">
-          <div>
-            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Name</span>
-            <p className="font-semibold text-slate-800 mt-0.5">{student.full_name}</p>
-          </div>
-          <div>
-            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Student No.</span>
-            <p className="font-semibold text-slate-800 mt-0.5">{student.student_number}</p>
-          </div>
-          <div>
-            <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Program</span>
-            <p className="font-semibold text-slate-800 mt-0.5">{student.course || "N/A"}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 shrink-0 ml-4">
-          {hasPendingRequest ? (
-            <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-[220px] text-right leading-relaxed">
-              Already submitted by <span className="font-semibold">{pendingRequestedBy || "another evaluator"}</span>
+    <>
+      <div className="card p-5">
+        <div className="flex items-start justify-between">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-2 text-sm flex-1">
+            <div>
+              <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Name</span>
+              <p className="font-semibold text-slate-800 mt-0.5">{student.full_name}</p>
             </div>
-          ) : (
-            <button onClick={onSubmit} disabled={submitting} className="btn btn-primary btn-sm gap-1.5">
-              <Send size={14} />
-              {submitting ? "Submitting..." : "Submit"}
+            <div>
+              <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Student No.</span>
+              <p className="font-semibold text-slate-800 mt-0.5">{student.student_number}</p>
+            </div>
+            <div>
+              <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Program</span>
+              <p className="font-semibold text-slate-800 mt-0.5">{student.course || "N/A"}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0 ml-4">
+            {hasPendingRequest ? (
+              <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-[220px] text-right leading-relaxed">
+                Already submitted by <span className="font-semibold">{pendingRequestedBy || "another evaluator"}</span>
+              </div>
+            ) : (
+              <button onClick={onSubmit} disabled={submitting} className="btn btn-primary btn-sm gap-1.5">
+                <Send size={14} />
+                {submitting ? "Submitting..." : "Submit"}
+              </button>
+            )}
+            <button onClick={openShift} className="btn btn-secondary btn-sm gap-1.5">
+              Shifting
             </button>
-          )}
-        </div>
-      </div>
-      <div className="mt-4 pt-4 border-t border-slate-100">
-        <div className="flex items-center justify-center gap-0">
-          <div className="flex flex-col items-center">
-            <div className="w-3 h-3 rounded-full bg-slate-300" />
-            <span className="text-slate-400 text-[10px] uppercase tracking-wide font-medium mt-2">previous</span>
-            <p className="font-semibold text-slate-500 text-xs mt-0.5">{YEAR_LEVELS[student.year_level] || `${student.year_level}th Year`} {SEM_LABELS[student.current_semester]}</p>
-          </div>
-          <div className="w-12 h-0.5 bg-slate-200 relative mx-2 mt-0">
-            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-slate-300 text-sm">→</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="w-3 h-3 rounded-full bg-primary-600" />
-            <span className="text-primary-600 text-[10px] uppercase tracking-wide font-medium mt-2">evaluating semester</span>
-            <p className="font-semibold text-primary-700 text-xs mt-0.5">{YEAR_LEVELS[evalYear] || `${evalYear}th Year`} {SEM_LABELS[student.next_semester]}</p>
           </div>
         </div>
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-center gap-0">
+            <div className="flex flex-col items-center">
+              <div className="w-3 h-3 rounded-full bg-slate-300" />
+              <span className="text-slate-400 text-[10px] uppercase tracking-wide font-medium mt-2">previous</span>
+              <p className="font-semibold text-slate-500 text-xs mt-0.5">{YEAR_LEVELS[student.year_level] || `${student.year_level}th Year`} {SEM_LABELS[student.current_semester]}</p>
+            </div>
+            <div className="w-12 h-0.5 bg-slate-200 relative mx-2 mt-0">
+              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-slate-300 text-sm">→</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-3 h-3 rounded-full bg-primary-600" />
+              <span className="text-primary-600 text-[10px] uppercase tracking-wide font-medium mt-2">evaluating semester</span>
+              <p className="font-semibold text-primary-700 text-xs mt-0.5">{YEAR_LEVELS[evalYear] || `${evalYear}th Year`} {SEM_LABELS[student.next_semester]}</p>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+
+      {showShift && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 pb-8 overflow-y-auto bg-black/40 backdrop-blur-sm" onClick={() => setShowShift(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-2xl mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-lg text-slate-800 mb-4">Shifting Request</h3>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Student</span>
+                  <p className="font-semibold text-slate-800 mt-0.5">{student.full_name}</p>
+                  <p className="text-slate-500 text-xs">{student.student_number}</p>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Current Course</span>
+                  <p className="font-semibold text-slate-800 mt-0.5">{student.course || "N/A"}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">Target Course</label>
+                {loadingCourses ? (
+                  <div className="text-sm text-slate-400">Loading courses...</div>
+                ) : (
+                  <select value={targetCourseId} onChange={handleTargetChange} className="input-field">
+                    <option value="">Select a course...</option>
+                    {courses
+                      .filter((c) => c.id !== student.course_id)
+                      .map((c) => <option key={c.id} value={c.id}>{c.name} ({c.code})</option>)}
+                  </select>
+                )}
+              </div>
+
+              {loadingPreview && (
+                <div className="text-sm text-slate-400 py-4 text-center">Loading subject comparison...</div>
+              )}
+
+              {preview && !loadingPreview && (
+                <>
+                  <div className="border-t border-slate-100 pt-4 space-y-3">
+                    <h4 className="text-sm font-semibold text-slate-700">
+                      From: <span className="text-slate-500 font-normal">{preview.current_course?.name || student.course}</span>
+                      {" → "}
+                      To: <span className="text-primary-600">{preview.target_course?.name} ({preview.target_course?.code})</span>
+                    </h4>
+
+                    <div>
+                      <h5 className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
+                        Already Taken ({preview.already_taken_subjects?.length || 0})
+                        <span className="text-slate-400 font-normal normal-case ml-1">— will not be repeated</span>
+                      </h5>
+                      {preview.already_taken_subjects?.length > 0 ? (
+                        <div className="max-h-40 overflow-y-auto border border-emerald-200 rounded-lg">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-emerald-50 border-b border-emerald-100">
+                                <th className="px-3 py-2 text-left font-medium text-emerald-700">Code</th>
+                                <th className="px-3 py-2 text-left font-medium text-emerald-700">Name</th>
+                                <th className="px-3 py-2 text-center font-medium text-emerald-700">Units</th>
+                                <th className="px-3 py-2 text-center font-medium text-emerald-700">Grade</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-emerald-50">
+                              {preview.already_taken_subjects.map((s) => (
+                                <tr key={s.id} className="hover:bg-emerald-50/40">
+                                  <td className="px-3 py-1.5 font-mono font-medium text-slate-700">{s.subject_code}</td>
+                                  <td className="px-3 py-1.5 text-slate-600">{s.subject_name}</td>
+                                  <td className="px-3 py-1.5 text-center text-slate-600">{s.units}</td>
+                                  <td className="px-3 py-1.5 text-center"><span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span></td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">No matched subjects taken yet.</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <h5 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">
+                        Need to Take ({preview.not_taken_subjects?.length || 0})
+                        <span className="text-slate-400 font-normal normal-case ml-1">— subjects to enroll</span>
+                      </h5>
+                      {preview.not_taken_subjects?.length > 0 ? (
+                        <div className="max-h-40 overflow-y-auto border border-blue-200 rounded-lg">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-blue-50 border-b border-blue-100">
+                                <th className="px-3 py-2 text-left font-medium text-blue-700">Code</th>
+                                <th className="px-3 py-2 text-left font-medium text-blue-700">Name</th>
+                                <th className="px-3 py-2 text-center font-medium text-blue-700">Units</th>
+                                <th className="px-3 py-2 text-center font-medium text-blue-700">Year/Sem</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-blue-50">
+                              {preview.not_taken_subjects.map((s) => (
+                                <tr key={s.id} className="hover:bg-blue-50/40">
+                                  <td className="px-3 py-1.5 font-mono font-medium text-slate-700">{s.subject_code}</td>
+                                  <td className="px-3 py-1.5 text-slate-600">{s.subject_name}</td>
+                                  <td className="px-3 py-1.5 text-center text-slate-600">{s.units}</td>
+                                  <td className="px-3 py-1.5 text-center text-slate-600">{YEAR_LEVELS[s.year_level] || `${s.year_level}th Year`} - {SEM_LABELS[s.semester]}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">All subjects already taken.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button onClick={() => setShowShift(false)} className="btn btn-ghost btn-sm">Cancel</button>
+                    <button onClick={handleConfirmShift} disabled={shifting || !targetCourseId} className="btn btn-primary btn-sm">
+                      {shifting ? "Shifting..." : "Confirm Shift"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -369,7 +553,7 @@ export default function EvaluatorHome() {
           </div>
         )}
 
-        {student && <StudentCard student={student} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} />}
+        {student && <StudentCard student={student} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} onShowToast={(msg, type) => { setToast({ type, message: msg }); setTimeout(() => setToast(null), 3000); }} onShiftComplete={(evalData) => { if (evalData) { setCurrentSubjects(evalData.current_enrolled_subjects || []); setNextSubjects(evalData.next_semester_subjects || []); setGapFillers(evalData.gap_fillers || []); setAllFails(evalData.remaining_failed_subjects || []); setRecommendations(evalData.recommendations || []); setStudent((prev) => ({ ...prev, course: evalData.student?.course || prev.course, overall: evalData.overall })); } }} />}
         {showConfirm && (
           <div className="modal-overlay" onClick={() => setShowConfirm(false)}>
             <div className="modal-content max-w-sm p-6 text-center" onClick={(e) => e.stopPropagation()}>

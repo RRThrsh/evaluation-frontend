@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Search, Edit3, Trash2, Eye } from "lucide-react";
 import api from "../../services/api";
 import { sanitizeObject } from "../../utils/sanitize";
@@ -39,7 +39,11 @@ export default function StudentManager() {
   const [page, setPage] = useState(1);
   const [recordModalStudent, setRecordModalStudent] = useState(null);
   const [gradeWizard, setGradeWizard] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const timerRef = useRef(null);
   const { can } = usePermissions();
+
+  useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
 
   const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -93,10 +97,30 @@ export default function StudentManager() {
     finally { setSaving(false); }
   };
 
-  const handleDelete = async (id) => {
-    setConfirmAction(null);
-    try { await api.delete(`/api/students/${id}`); showToast("Student deleted"); await load(); }
-    catch (err) { showToast(err.message, "error"); }
+  const scheduleDelete = (id, name) => {
+    let remaining = 3;
+    setPendingDelete({ id, name, remaining });
+    timerRef.current = setInterval(() => {
+      remaining--;
+      if (remaining > 0) {
+        setPendingDelete((prev) => prev ? { ...prev, remaining } : null);
+      } else {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+        const targetId = id;
+        setPendingDelete(null);
+        (async () => {
+          try { await api.delete(`/api/students/${targetId}`); showToast(`"${name}" deleted`); await load(); }
+          catch (err) { showToast(err.message, "error"); }
+        })();
+      }
+    }, 1000);
+  };
+
+  const undoDelete = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+    setPendingDelete(null);
   };
 
   const filteredStudents = useMemo(() => {
@@ -170,7 +194,7 @@ export default function StudentManager() {
                         <button onClick={() => openEditForm(s)} className="btn btn-ghost btn-sm text-amber-500 hover:text-amber-700" title="Edit">
                           <Edit3 size={14} />
                         </button>
-                        <button onClick={() => setConfirmAction({ id: s.id, name: fullName(s) })} className="btn btn-ghost btn-sm text-red-400 hover:text-red-600" title="Delete">
+                        <button onClick={() => setConfirmAction({ step: 1, id: s.id, name: fullName(s) })} className="btn btn-ghost btn-sm text-red-400 hover:text-red-600" title="Delete">
                           <Trash2 size={14} />
                         </button>
                         </>
@@ -186,8 +210,16 @@ export default function StudentManager() {
         )}
       </div>
 
-      {confirmAction && <ConfirmModal title="Delete Student" message={`Delete student "${confirmAction.name}"?`} extra="All enrollment records and data will also be deleted. This cannot be undone." confirmLabel="Delete" onConfirm={() => handleDelete(confirmAction.id)} onCancel={() => setConfirmAction(null)} />}
+      {confirmAction?.step === 1 && <ConfirmModal title="Delete Student" message={`Delete student "${confirmAction.name}"?`} extra="All enrollment records and data will also be deleted. This cannot be undone." confirmLabel="Continue" onConfirm={() => setConfirmAction({ ...confirmAction, step: 2 })} onCancel={() => setConfirmAction(null)} />}
+      {confirmAction?.step === 2 && <ConfirmModal title="Confirm Delete" message={`Are you sure you want to permanently delete "${confirmAction.name}"?`} extra="All enrollment records and data will be deleted. This cannot be undone." confirmLabel="Delete" onConfirm={() => { const { id, name } = confirmAction; setConfirmAction(null); scheduleDelete(id, name); }} onCancel={() => setConfirmAction(null)} />}
       {recordModalStudent && <StudentSubjectsModal student={recordModalStudent} onClose={() => setRecordModalStudent(null)} />}
+
+      {pendingDelete && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl text-sm">
+          <span>Deleting <strong>{pendingDelete.name}</strong>... <span className="text-slate-400">({pendingDelete.remaining}s)</span></span>
+          <button onClick={undoDelete} className="btn bg-white text-slate-900 hover:bg-slate-200 btn-sm font-semibold px-3">Undo</button>
+        </div>
+      )}
       {gradeWizard && (
         <StudentGradeWizard
           student={gradeWizard.student}

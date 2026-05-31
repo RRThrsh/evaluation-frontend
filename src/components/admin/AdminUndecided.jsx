@@ -202,7 +202,11 @@ export default function AdminUndecided() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [modal, setModal] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const timerRef = useRef(null);
   const { can } = usePermissions();
+
+  useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
 
   useEffect(() => {
     const handler = (e) => {
@@ -247,18 +251,39 @@ export default function AdminUndecided() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirmDelete) return;
+  const executeDelete = async (id) => {
     setDeleting(true);
     try {
-      await api.delete(`/api/admin/evaluations/${confirmDelete.id}`);
-      setConfirmDelete(null);
+      await api.delete(`/api/admin/evaluations/${id}`);
       fetchRequests(page);
     } catch (err) {
       setError(err.message || "Failed to delete");
     } finally {
       setDeleting(false);
     }
+  };
+
+  const scheduleDelete = (id, name) => {
+    let remaining = 3;
+    setPendingDelete({ id, name, remaining });
+    timerRef.current = setInterval(() => {
+      remaining--;
+      if (remaining > 0) {
+        setPendingDelete((prev) => prev ? { ...prev, remaining } : null);
+      } else {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+        const targetId = id;
+        setPendingDelete(null);
+        executeDelete(targetId);
+      }
+    }, 1000);
+  };
+
+  const undoDelete = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+    setPendingDelete(null);
   };
 
   return (
@@ -297,7 +322,7 @@ export default function AdminUndecided() {
                     <button onClick={(e) => { e.stopPropagation(); handlePreEnroll(row); }} className="p-1.5 rounded-lg hover:bg-emerald-50 transition-colors text-slate-400 hover:text-emerald-600 mr-1" title="Pre-Enroll">
                       <Send size={16} />
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(row); }} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600" title="Delete">
+                    <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ ...row, step: 1 }); }} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600" title="Delete">
                       <Trash2 size={16} />
                     </button>
                   </td>
@@ -331,7 +356,7 @@ export default function AdminUndecided() {
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium">{error}</div>
       )}
 
-      {confirmDelete && (
+      {confirmDelete?.step === 1 && (
         <div ref={deleteOverlayRef} onClick={(e) => { if (e.target === deleteOverlayRef.current && !deleting) setConfirmDelete(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-bold text-slate-800 mb-2">Delete Undecided Evaluation</h3>
@@ -339,8 +364,22 @@ export default function AdminUndecided() {
               Remove <span className="font-semibold">{confirmDelete.first_name} {confirmDelete.last_name}</span> from undecided evaluations?
             </p>
             <div className="flex items-center justify-end gap-2">
+              <button onClick={() => setConfirmDelete(null)} className="btn btn-ghost btn-sm">Cancel</button>
+              <button onClick={() => setConfirmDelete({ ...confirmDelete, step: 2 })} className="btn btn-primary btn-sm">Continue</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmDelete?.step === 2 && (
+        <div ref={deleteOverlayRef} onClick={(e) => { if (e.target === deleteOverlayRef.current && !deleting) setConfirmDelete(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-slate-800 mb-2">Confirm Delete</h3>
+            <p className="text-sm text-slate-600 mb-5">
+              Are you sure you want to permanently delete <span className="font-semibold">{confirmDelete.first_name} {confirmDelete.last_name}</span>'s evaluation?
+            </p>
+            <div className="flex items-center justify-end gap-2">
               <button onClick={() => setConfirmDelete(null)} disabled={deleting} className="btn btn-ghost btn-sm">Cancel</button>
-              <button onClick={handleDelete} disabled={deleting} className="btn btn-danger btn-sm">
+              <button onClick={() => { const { id, first_name, last_name } = confirmDelete; setConfirmDelete(null); scheduleDelete(id, `${first_name} ${last_name}`); }} disabled={deleting} className="btn btn-danger btn-sm">
                 {deleting ? "Deleting..." : "Delete"}
               </button>
             </div>
@@ -349,6 +388,13 @@ export default function AdminUndecided() {
       )}
 
       {modal && <UndecidedModal request={modal} onClose={() => setModal(null)} onPreEnroll={handlePreEnroll} />}
+
+      {pendingDelete && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl text-sm">
+          <span>Deleting <strong>{pendingDelete.name}</strong>... <span className="text-slate-400">({pendingDelete.remaining}s)</span></span>
+          <button onClick={undoDelete} className="btn bg-white text-slate-900 hover:bg-slate-200 btn-sm font-semibold px-3">Undo</button>
+        </div>
+      )}
     </div>
   );
 }

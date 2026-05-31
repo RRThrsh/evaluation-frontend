@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Plus, Edit3, Trash2, X, ChevronUp, ChevronDown } from "lucide-react";
 import api from "../../services/api";
 import { sanitizeObject } from "../../utils/sanitize";
@@ -32,7 +32,11 @@ export default function SubjectManager() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [expandedCourses, setExpandedCourses] = useState({});
   const [page, setPage] = useState(1);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const timerRef = useRef(null);
   const { can } = usePermissions();
+
+  useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
 
   const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -83,10 +87,30 @@ export default function SubjectManager() {
     setEditing(s.id);
   };
 
-  const handleDelete = async (id) => {
-    setConfirmAction(null);
-    try { await api.delete(`/api/subjects/${id}`); showToast("Subject deactivated"); await load(); }
-    catch (err) { showToast(err.message, "error"); }
+  const scheduleDelete = (id, name) => {
+    let remaining = 3;
+    setPendingDelete({ id, name, remaining });
+    timerRef.current = setInterval(() => {
+      remaining--;
+      if (remaining > 0) {
+        setPendingDelete((prev) => prev ? { ...prev, remaining } : null);
+      } else {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+        const targetId = id;
+        setPendingDelete(null);
+        (async () => {
+          try { await api.delete(`/api/subjects/${targetId}`); showToast(`"${name}" deactivated`); await load(); }
+          catch (err) { showToast(err.message, "error"); }
+        })();
+      }
+    }, 1000);
+  };
+
+  const undoDelete = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+    setPendingDelete(null);
   };
 
   const activeSubjects = subjects.filter((s) => s.is_active !== false);
@@ -294,7 +318,7 @@ export default function SubjectManager() {
                                             <div className="flex items-center gap-1 shrink-0 ml-2">
                                               <span className="text-[10px] text-slate-400">{s.units}u</span>
                                               {can("subjects.manage") && <button onClick={() => handleEdit(s)} className="btn btn-ghost btn-sm text-amber-500 hover:text-amber-700 opacity-0 group-hover:opacity-100"><Edit3 size={14} /></button>}
-                                              {can("subjects.manage") && <button onClick={() => setConfirmAction({ id: s.id, name: s.subject_code })} className="btn btn-ghost btn-sm text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>}
+                                              {can("subjects.manage") && <button onClick={() => setConfirmAction({ step: 1, id: s.id, name: s.subject_code })} className="btn btn-ghost btn-sm text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>}
                                             </div>
                                           </div>
                                         ))}
@@ -317,7 +341,15 @@ export default function SubjectManager() {
         <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
-      {confirmAction && <ConfirmModal title="Deactivate Subject" message={`Deactivate subject "${confirmAction.name}"?`} extra="This will hide it from the curriculum. Existing enrollments are not affected." confirmLabel="Deactivate" onConfirm={() => handleDelete(confirmAction.id)} onCancel={() => setConfirmAction(null)} />}
+      {confirmAction?.step === 1 && <ConfirmModal title="Deactivate Subject" message={`Deactivate subject "${confirmAction.name}"?`} extra="This will hide it from the curriculum. Existing enrollments are not affected." confirmLabel="Continue" onConfirm={() => setConfirmAction({ ...confirmAction, step: 2 })} onCancel={() => setConfirmAction(null)} />}
+      {confirmAction?.step === 2 && <ConfirmModal title="Confirm Deactivate" message={`Are you sure you want to permanently deactivate "${confirmAction.name}"?`} extra="This will hide it from the curriculum. Existing enrollments are not affected." confirmLabel="Deactivate" onConfirm={() => { const { id, name } = confirmAction; setConfirmAction(null); scheduleDelete(id, name); }} onCancel={() => setConfirmAction(null)} />}
+
+      {pendingDelete && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl text-sm">
+          <span>Deactivating <strong>{pendingDelete.name}</strong>... <span className="text-slate-400">({pendingDelete.remaining}s)</span></span>
+          <button onClick={undoDelete} className="btn bg-white text-slate-900 hover:bg-slate-200 btn-sm font-semibold px-3">Undo</button>
+        </div>
+      )}
     </div>
   );
 }

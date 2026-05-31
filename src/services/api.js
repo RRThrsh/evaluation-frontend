@@ -96,7 +96,7 @@ async function request(endpoint, options = {}) {
   }
 
   if (isGet) setCache(cacheKey, data);
-  else clearCache(endpoint.split("/").slice(0, 4).join("/"));
+  else clearCache(endpoint.split("/").slice(0, 3).join("/"));
 
   return data;
 }

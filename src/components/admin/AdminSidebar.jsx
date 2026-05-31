@@ -21,7 +21,6 @@ import {
   X,
   Shield,
   History,
-  ScrollText,
 } from "lucide-react";
 
 import { useMemo } from "react";
@@ -105,11 +104,6 @@ const NAV_ITEMS = {
       icon: Users,
     },
     {
-      key: "grade-reports",
-      label: "Grade Reports",
-      icon: ScrollText,
-    },
-    {
       key: "undecided",
       label: "Undecided",
       icon: ClipboardCheck,
@@ -173,7 +167,6 @@ const PERMISSION_MAP = {
   subjects: "subjects.view",
   students: "students.view",
   "undecided": "undecided",
-  "grade-reports": "grading.view",
   "pre-enrolled": "pre-enrolled",
   "all-users": "user-management.view",
   "audit-logs": "audit-logs",

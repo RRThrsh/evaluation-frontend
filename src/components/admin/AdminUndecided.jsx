@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, Send, Trash2 } from "lucide-react";
 import { usePermissions } from "../../context/PermissionContext";
 import api from "../../services/api";
@@ -50,7 +50,14 @@ function formatNote(raw) {
 }
 
 function UndecidedModal({ request, onClose, onPreEnroll }) {
+  const overlayRef = useRef(null);
   const snapshot = request.evaluation_result || {};
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
 
   const nextColumns = useMemo(() => [
     { key: "subject_code", label: "Code", width: "20%", className: "whitespace-nowrap" },
@@ -62,7 +69,7 @@ function UndecidedModal({ request, onClose, onPreEnroll }) {
   const nextSubjects = snapshot.next_semester_subjects || [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-10 pb-10 overflow-y-auto bg-black/40 backdrop-blur-sm">
+    <div ref={overlayRef} onClick={(e) => { if (e.target === overlayRef.current) onClose(); }} className="fixed inset-0 z-50 flex items-start justify-center pt-10 pb-10 overflow-y-auto bg-black/40 backdrop-blur-sm">
       <div className="w-full max-w-5xl mx-4 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
         <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-800">Undecided Evaluation</h2>
@@ -185,6 +192,7 @@ function UndecidedModal({ request, onClose, onPreEnroll }) {
 }
 
 export default function AdminUndecided() {
+  const deleteOverlayRef = useRef(null);
   const [requests, setRequests] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -195,6 +203,17 @@ export default function AdminUndecided() {
   const [deleting, setDeleting] = useState(false);
   const [modal, setModal] = useState(null);
   const { can } = usePermissions();
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === "Escape") {
+        if (modal) setModal(null);
+        else if (confirmDelete) setConfirmDelete(null);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [modal, confirmDelete]);
 
   const fetchRequests = useCallback(async (pg) => {
     setLoading(true);
@@ -313,7 +332,7 @@ export default function AdminUndecided() {
       )}
 
       {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => !deleting && setConfirmDelete(null)}>
+        <div ref={deleteOverlayRef} onClick={(e) => { if (e.target === deleteOverlayRef.current && !deleting) setConfirmDelete(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-bold text-slate-800 mb-2">Delete Undecided Evaluation</h3>
             <p className="text-sm text-slate-600 mb-5">

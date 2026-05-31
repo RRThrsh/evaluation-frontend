@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { X, User, BookOpen, GraduationCap } from "lucide-react";
 import api from "../../services/api";
 import AcademicRecord from "./AcademicRecord";
@@ -31,13 +31,26 @@ const TABS = [
   { key: "curriculum", label: "Curriculum", icon: GraduationCap },
 ];
 
-export default function StudentSubjectsModal({ student, subjects, config, onClose, onToast }) {
+export default function StudentSubjectsModal({ student, onClose }) {
+  const overlayRef = useRef(null);
   const [tab, setTab] = useState("subjects");
   const [studentSubjects, setStudentSubjects] = useState([]);
   const [profileData, setProfileData] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [curriculum, setCurriculum] = useState([]);
   const [loadingCurriculum, setLoadingCurriculum] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
 
   useEffect(() => { loadSubjects(); }, []);
 
@@ -48,20 +61,20 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
 
   const loadProfile = async () => {
     setProfileLoading(true);
-    try { const d = await api.get(`/api/admin/students/${student.id}`); setProfileData(d.data ?? d); }
-    catch (err) { onToast(err.message, "error"); }
+    try { const d = await api.get(`/api/students/${student.id}`); setProfileData(d.data ?? d); }
+    catch (err) { showToast(err.message, "error"); }
     finally { setProfileLoading(false); }
   };
 
   const loadSubjects = async () => {
     try { const d = await api.get(`/api/admin/students/${student.id}/subjects`); setStudentSubjects(d.data ?? []); }
-    catch (err) { onToast(err.message, "error"); }
+    catch (err) { showToast(err.message, "error"); }
   };
 
   const loadCurriculum = async () => {
     setLoadingCurriculum(true);
     try { const d = await api.get(`/api/admin/students/${student.id}/curriculum`); setCurriculum(d.data ?? []); }
-    catch (err) { onToast(err.message, "error"); }
+    catch (err) { showToast(err.message, "error"); }
     finally { setLoadingCurriculum(false); }
   };
 
@@ -77,8 +90,13 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
   const tabIndex = TABS.findIndex((t) => t.key === tab);
 
   return (
-    <div className="modal-overlay items-start pt-8 pb-10 overflow-y-auto" onClick={onClose}>
+    <div ref={overlayRef} className="modal-overlay items-start pt-8 pb-10 overflow-y-auto" onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}>
       <div className="modal-content max-w-4xl" onClick={(e) => e.stopPropagation()}>
+        {toast && (
+          <div className={`mx-6 mt-4 px-4 py-2 rounded-xl text-sm font-medium border ${
+            toast.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"
+          }`}>{toast.message}</div>
+        )}
 
         {/* ── Header ── */}
         <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex items-center justify-between gap-4">

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import api from "../../services/api";
 
@@ -46,6 +46,7 @@ function StepBar({ sections, step }) {
 }
 
 export default function StudentGradeWizard({ student, curriculum, onClose, onDone, onToast, ojtMinYearLevel = 4, ojtMaxFailedSubjects = 4 }) {
+  const overlayRef = useRef(null);
   const [step, setStep] = useState(0);
   const [grades, setGrades] = useState({});
   const [gapGrades, setGapGrades] = useState({});
@@ -54,6 +55,12 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   const [confirm, setConfirm] = useState(false);
   const [enrollmentType, setEnrollmentType] = useState(null);
   const [ojtCodes, setOjtCodes] = useState(new Set());
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") { if (confirm) setConfirm(false); else onClose(); } };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose, confirm]);
 
   useEffect(() => {
     if (!student?.course_id) return;
@@ -340,7 +347,7 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
   }
 
   return (
-    <div className="modal-overlay items-start pt-8 pb-10 overflow-y-auto" onClick={onClose}>
+    <div ref={overlayRef} className="modal-overlay items-start pt-8 pb-10 overflow-y-auto" onClick={(e) => { if (e.target === overlayRef.current) { if (confirm) setConfirm(false); else onClose(); } }}>
       <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
 
         {/* ── Header ── */}
@@ -389,15 +396,26 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
             </div>
           )}
           {confirm && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
-              <span className="text-amber-600 font-bold text-sm shrink-0 mt-0.5">!</span>
-              <div>
-                <p className="text-sm font-semibold text-amber-800">Ready to save?</p>
-                <p className="text-xs text-amber-700 mt-0.5">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setConfirm(false)}>
+              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+                <div className="w-12 h-12 mx-auto rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                  <span className="text-amber-600 font-bold text-lg">!</span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-800 text-center mb-2">Ready to save?</h3>
+                <p className="text-sm text-slate-600 text-center mb-1">
                   This will enroll <strong>{subjectCount} subjects</strong> with the grades above.
-                  {subjectCount - gradedCount > 0 && <span> Subjects without a grade will be marked as <strong>INC</strong>.</span>}
-                  Click <strong>Confirm</strong> to proceed or <strong>Cancel</strong> to review.
                 </p>
+                {subjectCount - gradedCount > 0 && (
+                  <p className="text-xs text-amber-600 text-center mb-4">
+                    {subjectCount - gradedCount} subject(s) without a grade will be marked as <strong>INC</strong>.
+                  </p>
+                )}
+                <div className="flex items-center justify-end gap-2 mt-5">
+                  <button onClick={() => setConfirm(false)} className="btn btn-secondary btn-sm">Cancel</button>
+                  <button onClick={handleSubmit} disabled={saving} className="btn btn-primary btn-sm">
+                    {saving ? "Saving..." : `Confirm — Save ${subjectCount} Subjects`}
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -458,16 +476,10 @@ export default function StudentGradeWizard({ student, curriculum, onClose, onDon
               <button onClick={() => { setConfirm(false); setStep((s) => Math.min(allSections.length - 1, s + 1)); }} className="btn btn-primary btn-sm gap-1">
                 Next <ChevronRight size={14} />
               </button>
-            ) : !confirm ? (
+            ) : (
               <button onClick={() => setConfirm(true)} className="btn btn-primary btn-sm">
                 Save All Grades
               </button>
-            ) : (
-              <div className="flex gap-2">
-                <button onClick={handleSubmit} disabled={saving} className="btn btn-primary btn-sm">
-                  {saving ? "Saving..." : `Confirm — Save ${subjectCount} Subjects`}
-                </button>
-              </div>
             )}
           </div>
         </div>

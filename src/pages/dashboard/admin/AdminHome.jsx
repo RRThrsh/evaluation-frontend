@@ -114,6 +114,12 @@ const AdminUndecided = lazy(
       "../../../components/admin/AdminUndecided"
     )
 );
+const GradeReports = lazy(
+  () =>
+    import(
+      "../../../components/admin/GradeReports"
+    )
+);
 
 const TABLE_GROUPS = [
   {
@@ -440,6 +446,11 @@ export default function AdminHome() {
               {activeTab ===
                 "pre-enrolled" && (
                 <AdminPreEnrolled />
+              )}
+
+              {activeTab ===
+                "grade-reports" && (
+                <GradeReports />
               )}
 
               {activeTab ===

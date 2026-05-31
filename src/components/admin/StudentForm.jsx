@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { X, User, Phone, GraduationCap, School } from "lucide-react";
 import { usePermissions } from "../../context/PermissionContext";
 import { sanitizeInput } from "../../utils/sanitize";
@@ -35,7 +36,16 @@ function Field({ label, required, children }) {
 }
 
 export default function StudentForm({ open, editingStudent, form, setForm, saving, YEARS, courses, onSave, onClose }) {
+  const overlayRef = useRef(null);
   const { can } = usePermissions();
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, onClose]);
+
   if (!open || !can("students.manage")) return null;
 
   const isTransfer = form.is_transfer;
@@ -45,7 +55,7 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
   const initials = [form.first_name, form.last_name].filter(Boolean).map((n) => n[0]).join("").slice(0, 2) || "?";
 
   return (
-    <div className="modal-overlay items-start pt-8 pb-10 overflow-y-auto" onClick={onClose}>
+    <div ref={overlayRef} className="modal-overlay items-start pt-8 pb-10 overflow-y-auto" onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}>
       <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}

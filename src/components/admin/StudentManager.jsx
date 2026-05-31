@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, Edit3, Trash2 } from "lucide-react";
+import { Plus, Search, Edit3, Trash2, Eye } from "lucide-react";
 import api from "../../services/api";
 import { sanitizeObject } from "../../utils/sanitize";
 import { usePermissions } from "../../context/PermissionContext";
 import StudentForm from "./StudentForm";
+import StudentSubjectsModal from "./StudentSubjectsModal";
+import StudentGradeWizard from "./StudentGradeWizard";
 import ConfirmModal from "../common/ConfirmModal";
 import Pagination from "../common/Pagination";
 
@@ -35,6 +37,8 @@ export default function StudentManager() {
   const [saving, setSaving] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [page, setPage] = useState(1);
+  const [recordModalStudent, setRecordModalStudent] = useState(null);
+  const [gradeWizard, setGradeWizard] = useState(null);
   const { can } = usePermissions();
 
   const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
@@ -76,8 +80,11 @@ export default function StudentManager() {
         await api.patch(`/api/students/${editingStudent}`, sanitizeObject({ email: form.email.trim() || null, first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, extension_name: form.extension_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null, status: form.status, is_transfer: form.is_transfer, previous_school: form.previous_school.trim() || null, previous_school_address: form.previous_school_address.trim() || null, previous_year_level: form.previous_year_level || null }));
         showToast("Student updated");
       } else {
-        await api.post("/api/students", sanitizeObject({ email: form.email.trim() || null, student_number: form.student_number.toUpperCase(), first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, extension_name: form.extension_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null, is_transfer: form.is_transfer, previous_school: form.previous_school.trim() || null, previous_school_address: form.previous_school_address.trim() || null, previous_year_level: form.previous_year_level || null }));
+        const res = await api.post("/api/students", sanitizeObject({ email: form.email.trim() || null, student_number: form.student_number.toUpperCase(), first_name: form.first_name.trim(), last_name: form.last_name.trim(), middle_name: form.middle_name.trim() || null, extension_name: form.extension_name.trim() || null, date_of_birth: form.date_of_birth || null, gender: form.gender || null, address: form.address.trim() || null, contact_number: form.contact_number.trim() || null, year_level: form.year_level, current_semester: form.current_semester, course_id: form.course_id || null, is_transfer: form.is_transfer, previous_school: form.previous_school.trim() || null, previous_school_address: form.previous_school_address.trim() || null, previous_year_level: form.previous_year_level || null }));
         showToast("Student created");
+        const newStudent = res?.data ?? res;
+        const curRes = await api.get(`/api/admin/students/${newStudent.id}/curriculum`);
+        setGradeWizard({ student: newStudent, curriculum: curRes?.data ?? [] });
       }
       setShowForm(false);
       setEditingStudent(null);
@@ -153,18 +160,23 @@ export default function StudentManager() {
                     <td className="table-cell">
                       <span className={`badge ${s.status === "active" ? "badge-green" : s.status === "graduated" ? "badge-blue" : s.status === "dropped" || s.status === "transferred" ? "badge-red" : "badge-gray"}`}>{s.status || "active"}</span>
                     </td>
-                    {can("students.manage") && (
                     <td className="table-cell">
                       <div className="flex gap-1">
+                        <button onClick={() => setRecordModalStudent(s)} className="btn btn-ghost btn-sm text-blue-500 hover:text-blue-700" title="View Record">
+                          <Eye size={14} />
+                        </button>
+                        {can("students.manage") && (
+                        <>
                         <button onClick={() => openEditForm(s)} className="btn btn-ghost btn-sm text-amber-500 hover:text-amber-700" title="Edit">
                           <Edit3 size={14} />
                         </button>
                         <button onClick={() => setConfirmAction({ id: s.id, name: fullName(s) })} className="btn btn-ghost btn-sm text-red-400 hover:text-red-600" title="Delete">
                           <Trash2 size={14} />
                         </button>
+                        </>
+                        )}
                       </div>
                     </td>
-                    )}
                   </tr>
                 ))}
               </tbody>
@@ -175,6 +187,16 @@ export default function StudentManager() {
       </div>
 
       {confirmAction && <ConfirmModal title="Delete Student" message={`Delete student "${confirmAction.name}"?`} extra="All enrollment records and data will also be deleted. This cannot be undone." confirmLabel="Delete" onConfirm={() => handleDelete(confirmAction.id)} onCancel={() => setConfirmAction(null)} />}
+      {recordModalStudent && <StudentSubjectsModal student={recordModalStudent} onClose={() => setRecordModalStudent(null)} />}
+      {gradeWizard && (
+        <StudentGradeWizard
+          student={gradeWizard.student}
+          curriculum={gradeWizard.curriculum}
+          onClose={() => setGradeWizard(null)}
+          onDone={() => setGradeWizard(null)}
+          onToast={showToast}
+        />
+      )}
     </div>
   );
 }

@@ -142,7 +142,7 @@ export default function CourseManager() {
         <div className="space-y-6">
             {toast && <div className={`px-4 py-3 rounded-xl text-sm font-medium border ${toast.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"}`}>{toast.message}</div>}
 
-            {can("courses.manage") && (
+            {(can("courses.create") || can("courses.manage")) && (
             <div className="card p-5">
                 <h3 className="text-sm font-bold text-slate-800 mb-4">{editing ? "Edit Course" : "Add Course"}</h3>
                 <form onSubmit={handleSave} className="flex gap-3 items-end">

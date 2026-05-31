@@ -266,6 +266,26 @@ export default function AdminHome() {
       );
   }, [activeTab]);
 
+  const handleApprove = async (id) => {
+    try {
+      await api.post(`/api/admin/users/${id}/approve`);
+      setPendingUsers((prev) => prev.filter((u) => u.id !== id));
+      showToast("User approved successfully");
+    } catch (err) {
+      showToast(err.message || "Failed to approve user", "error");
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await api.post(`/api/admin/users/${id}/reject`);
+      setPendingUsers((prev) => prev.filter((u) => u.id !== id));
+      showToast("User rejected");
+    } catch (err) {
+      showToast(err.message || "Failed to reject user", "error");
+    }
+  };
+
   /* helpers */
   const showToast = (
     message,
@@ -423,8 +443,8 @@ export default function AdminHome() {
                   loading={
                     pendingUsersLoading
                   }
-                  onApprove={() => {}}
-                  onReject={() => {}}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
                 />
               )}
 

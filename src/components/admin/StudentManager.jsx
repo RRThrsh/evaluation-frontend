@@ -152,7 +152,7 @@ export default function StudentManager() {
               <input value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-8 py-1.5 text-xs w-44" placeholder="Search students..." />
             </div>
             <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{students.length}</span>
-            {can("students.manage") && <button onClick={openCreateForm} className="btn btn-primary btn-sm flex items-center gap-1"><Plus size={13} /> Add</button>}
+            {(can("students.create") || can("students.manage")) && <button onClick={openCreateForm} className="btn btn-primary btn-sm flex items-center gap-1"><Plus size={13} /> Add</button>}
           </div>
         </div>
         {loading ? (

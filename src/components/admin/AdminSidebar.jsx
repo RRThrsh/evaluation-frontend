@@ -173,6 +173,7 @@ const PERMISSION_MAP = {
   courses: "courses.view",
   subjects: "subjects.view",
   students: "students.view",
+  "users": "users.view",
   "undecided": "undecided",
   "pre-enrolled": "pre-enrolled",
   "all-users": "user-management.view",
@@ -214,14 +215,20 @@ export default function AdminSidebar({
     setSidebarOpen?.(false);
   };
 
+  const hasPerm = (item) => {
+    const perm = PERMISSION_MAP[item.key];
+    if (!perm) return false;
+    if (userPermissions.includes(perm)) return true;
+    if ((item.key === "undecided" || item.key === "pre-enrolled") && userPermissions.includes("enrolled-students.view")) return true;
+    return false;
+  };
+
   const filteredNav = useMemo(() => {
     const filter = (items) =>
       items.filter(
         (item) =>
           isSuperAdmin ||
-          userPermissions.includes(
-            PERMISSION_MAP[item.key]
-          )
+          hasPerm(item)
       );
 
     return {

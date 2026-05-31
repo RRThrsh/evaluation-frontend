@@ -46,7 +46,7 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
-  if (!open || !can("students.manage")) return null;
+  if (!open || (!can("students.create") && !can("students.manage"))) return null;
 
   const isTransfer = form.is_transfer;
   const s    = (fn) => (e) => setForm({ ...form, [fn]: sanitizeInput(e.target.value) });

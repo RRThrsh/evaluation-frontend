@@ -23,7 +23,7 @@ export default function SubjectManager() {
   const YEARS = Array.from({ length: Number(config.max_year_level) }, (_, i) => i + 1);
   const SEMESTERS = Array.from({ length: Number(config.semesters_per_year) }, (_, i) => i + 1);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ subject_code: "", subject_name: "", year_level: 1, semester: 1, units: 3, course_id: "", prerequisites: [], subject_type: "Lec" });
+  const [form, setForm] = useState({ subject_code: "", subject_name: "", year_level: 1, semester: 1, units: 3, course_id: "", prerequisites: [], subject_type: "Lec", yearly_standing: "" });
   const [newPrereq, setNewPrereq] = useState("");
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
@@ -51,7 +51,7 @@ export default function SubjectManager() {
   useEffect(() => { load(); }, []);
 
   const resetForm = () => {
-    setForm({ subject_code: "", subject_name: "", year_level: 1, semester: 1, units: 3, course_id: "", prerequisites: [], subject_type: "Lec" });
+    setForm({ subject_code: "", subject_name: "", year_level: 1, semester: 1, units: 3, course_id: "", prerequisites: [], subject_type: "Lec", yearly_standing: "" });
     setNewPrereq("");
     setEditing(null);
   };
@@ -61,7 +61,7 @@ export default function SubjectManager() {
     if (!form.subject_code.trim() || !form.subject_name.trim()) { showToast("Subject code and name are required", "error"); return; }
     setSaving(true);
     try {
-      const payload = sanitizeObject({ subject_code: form.subject_code, subject_name: form.subject_name, year_level: form.year_level, semester: form.semester, units: form.units, course_id: form.course_id || null, subject_type: form.subject_type });
+      const payload = sanitizeObject({ subject_code: form.subject_code, subject_name: form.subject_name, year_level: form.year_level, semester: form.semester, units: form.units, course_id: form.course_id || null, subject_type: form.subject_type, yearly_standing: form.yearly_standing || null });
       let subjectId;
       if (editing) {
         await api.patch(`/api/subjects/${editing}`, payload);
@@ -79,7 +79,7 @@ export default function SubjectManager() {
   };
 
   const handleEdit = (s) => {
-    setForm({ subject_code: s.subject_code, subject_name: s.subject_name, year_level: s.year_level, semester: s.semester, units: s.units, course_id: s.course_id || "", prerequisites: s.prerequisites ? s.prerequisites.map(p => ({ prerequisite_id: p.prerequisite_id, subject_code: p.subject_code, subject_name: p.subject_name })) : [], subject_type: s.subject_type || "Lec" });
+    setForm({ subject_code: s.subject_code, subject_name: s.subject_name, year_level: s.year_level, semester: s.semester, units: s.units, course_id: s.course_id || "", prerequisites: s.prerequisites ? s.prerequisites.map(p => ({ prerequisite_id: p.prerequisite_id, subject_code: p.subject_code, subject_name: p.subject_name })) : [], subject_type: s.subject_type || "Lec", yearly_standing: s.yearly_standing || "" });
     setEditing(s.id);
   };
 
@@ -156,6 +156,13 @@ export default function SubjectManager() {
               <label className="block text-xs text-slate-500 mb-1">Semester</label>
               <select value={form.semester} onChange={(e) => setForm({ ...form, semester: Number(e.target.value) })} className="input-field">
                 {SEMESTERS.map((s) => <option key={s} value={s}>Semester {s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Yearly Standing</label>
+              <select value={form.yearly_standing} onChange={(e) => setForm({ ...form, yearly_standing: e.target.value })} className="input-field">
+                <option value="">— Select —</option>
+                {YEARS.map((y) => <option key={y} value={y}>{y}{nth(y)} Year Standing</option>)}
               </select>
             </div>
             <div>

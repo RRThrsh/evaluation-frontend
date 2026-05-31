@@ -19,8 +19,9 @@ const gradeBadge = (grade) => {
   return "badge badge-green";
 };
 
-function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pendingRequestedBy, onShowToast, onShiftComplete }) {
+function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pendingRequestedBy, onShowToast, onShiftComplete, studentHistory }) {
   const [showShift, setShowShift] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [courses, setCourses] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [targetCourseId, setTargetCourseId] = useState("");
@@ -104,6 +105,9 @@ function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pending
                 {submitting ? "Submitting..." : "Submit"}
               </button>
             )}
+            <button onClick={() => setShowHistory(true)} className="btn btn-ghost btn-sm gap-1.5">
+              History
+            </button>
             <button onClick={openShift} className="btn btn-secondary btn-sm gap-1.5">
               Shifting
             </button>
@@ -127,6 +131,55 @@ function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pending
           </div>
         </div>
       </div>
+
+      {showHistory && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 pb-8 overflow-y-auto bg-black/40 backdrop-blur-sm" onClick={() => setShowHistory(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-3xl mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-lg text-slate-800 mb-1">Subject History</h3>
+            <p className="text-xs text-slate-400 mb-4">{student.full_name} — {student.student_number}</p>
+            {studentHistory?.length > 0 ? (
+              <div className="max-h-[60vh] overflow-y-auto border border-slate-200 rounded-lg">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 sticky top-0">
+                      <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-slate-500">Code</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-slate-500">Name</th>
+                      <th className="px-4 py-2.5 text-center text-xs font-medium uppercase tracking-wide text-slate-500">Year</th>
+                      <th className="px-4 py-2.5 text-center text-xs font-medium uppercase tracking-wide text-slate-500">Sem</th>
+                      <th className="px-4 py-2.5 text-center text-xs font-medium uppercase tracking-wide text-slate-500">Units</th>
+                      <th className="px-4 py-2.5 text-center text-xs font-medium uppercase tracking-wide text-slate-500">Grade</th>
+                      <th className="px-4 py-2.5 text-center text-xs font-medium uppercase tracking-wide text-slate-500">Result</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {studentHistory.map((s, i) => (
+                      <tr key={s.id ?? i} className="hover:bg-slate-50/40">
+                        <td className="px-4 py-2 font-mono font-medium text-slate-700">{s.subject_code}</td>
+                        <td className="px-4 py-2 text-slate-600">{s.subject_name}</td>
+                        <td className="px-4 py-2 text-center text-slate-600">{s.year_level}</td>
+                        <td className="px-4 py-2 text-center text-slate-600">{s.semester}</td>
+                        <td className="px-4 py-2 text-center text-slate-600">{s.units}</td>
+                        <td className="px-4 py-2 text-center"><span className={gradeBadge(s.grade)}>{s.grade || "INC"}</span></td>
+                        <td className="px-4 py-2 text-center">
+                          {s.result === "pass" ? <span className="text-emerald-600 font-semibold text-xs">PASS</span> :
+                           s.result === "fail" ? <span className="text-red-600 font-semibold text-xs">FAIL</span> :
+                           s.result === "inc"  ? <span className="text-amber-600 font-semibold text-xs">INC</span> :
+                           <span className="text-slate-400 text-xs">—</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400 italic py-8 text-center">No subject history available.</p>
+            )}
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setShowHistory(false)} className="btn btn-primary btn-sm">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showShift && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 pb-8 overflow-y-auto bg-black/40 backdrop-blur-sm" onClick={() => setShowShift(false)}>
@@ -327,6 +380,7 @@ export default function EvaluatorHome() {
   const snapshotRef = useRef(null);
   const [removedSubjectCodes, setRemovedSubjectCodes] = useState(new Set());
   const [specialClassSubjects, setSpecialClassSubjects] = useState([]);
+  const [rawStudentSubjects, setRawStudentSubjects] = useState([]);
 
   const handleRemoveSubject = useCallback((subject) => {
     setRemovedSubjectCodes((prev) => new Set([...prev, subject.subject_code]));
@@ -374,6 +428,7 @@ export default function EvaluatorHome() {
     setPendingRequestedBy(null);
     setRemovedSubjectCodes(new Set());
     setSpecialClassSubjects([]);
+    setRawStudentSubjects([]);
 
     try {
       const lookupRes = await api.get(`/api/students/lookup/${encodeURIComponent(q)}`);
@@ -397,6 +452,7 @@ export default function EvaluatorHome() {
         gaps = evalData?.gap_fillers || [];
         allFails = evalData?.remaining_failed_subjects || [];
         recs = evalData?.recommendations || [];
+        setRawStudentSubjects(evalData?.raw_student_subjects || []);
         const pendingReq = evalData?.has_pending_request;
         setHasPendingRequest(pendingReq);
         if (pendingReq) setPendingRequestedBy(evalData?.pending_requested_by || "another evaluator");
@@ -553,7 +609,7 @@ export default function EvaluatorHome() {
           </div>
         )}
 
-        {student && <StudentCard student={student} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} onShowToast={(msg, type) => { setToast({ type, message: msg }); setTimeout(() => setToast(null), 3000); }} onShiftComplete={(evalData) => { if (evalData) { setCurrentSubjects(evalData.current_enrolled_subjects || []); setNextSubjects(evalData.next_semester_subjects || []); setGapFillers(evalData.gap_fillers || []); setAllFails(evalData.remaining_failed_subjects || []); setRecommendations(evalData.recommendations || []); setStudent((prev) => ({ ...prev, course: evalData.student?.course || prev.course, overall: evalData.overall })); } }} />}
+        {student && <StudentCard student={student} studentHistory={rawStudentSubjects} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} onShowToast={(msg, type) => { setToast({ type, message: msg }); setTimeout(() => setToast(null), 3000); }} onShiftComplete={(evalData) => { if (evalData) { setCurrentSubjects(evalData.current_enrolled_subjects || []); setNextSubjects(evalData.next_semester_subjects || []); setGapFillers(evalData.gap_fillers || []); setAllFails(evalData.remaining_failed_subjects || []); setRecommendations(evalData.recommendations || []); setRawStudentSubjects(evalData.raw_student_subjects || []); setStudent((prev) => ({ ...prev, course: evalData.student?.course || prev.course, overall: evalData.overall })); } }} />}
         {showConfirm && (
           <div className="modal-overlay" onClick={() => setShowConfirm(false)}>
             <div className="modal-content max-w-sm p-6 text-center" onClick={(e) => e.stopPropagation()}>

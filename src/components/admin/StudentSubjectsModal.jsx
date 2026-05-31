@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { X, User, BookOpen, GraduationCap } from "lucide-react";
+import { X, User, BookOpen, GraduationCap, Pencil, Check } from "lucide-react";
 import api from "../../services/api";
 import AcademicRecord from "./AcademicRecord";
 
@@ -40,6 +40,22 @@ export default function StudentSubjectsModal({ student, onClose }) {
   const [curriculum, setCurriculum] = useState([]);
   const [loadingCurriculum, setLoadingCurriculum] = useState(false);
   const [toast, setToast] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editValue, setEditValue] = useState("");
+
+  const handleEditGrade = async (ss) => {
+    try {
+      await api.post(`/api/admin/students/${student.id}/bulk-enroll`, {
+        subjects: [{ subject_id: ss.subject_id, grade: editValue }],
+      });
+      setStudentSubjects((prev) => prev.map((s) => s.id === ss.id ? { ...s, grade: editValue } : s));
+      setEditingId(null);
+      setEditValue("");
+      showToast("Grade updated");
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
@@ -221,7 +237,30 @@ export default function StudentSubjectsModal({ student, onClose }) {
                         </td>
                         <td className="table-cell"><span className={`badge ${ss.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{ss.subject_type}</span></td>
                         <td className="table-cell text-slate-600">{ss.units}</td>
-                        <td className="table-cell">{ss.grade ? <span className="badge badge-green">{ss.grade}</span> : <span className="badge badge-yellow">INC</span>}</td>
+                        <td className="table-cell">
+                          {editingId === ss.id ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") handleEditGrade(ss); if (e.key === "Escape") setEditingId(null); }}
+                                className="w-16 px-1.5 py-0.5 text-xs border border-slate-200 rounded"
+                                autoFocus
+                                placeholder="Grade"
+                              />
+                              <button onClick={() => handleEditGrade(ss)} className="p-0.5 text-emerald-600 hover:text-emerald-700"><Check size={14} /></button>
+                            </div>
+                          ) : ss.grade ? (
+                            <span className="badge badge-green">{ss.grade}</span>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <span className="badge badge-yellow">INC</span>
+                              <button onClick={() => { setEditingId(ss.id); setEditValue(""); }} className="p-0.5 text-slate-400 hover:text-primary-600 transition" title="Edit grade">
+                                <Pencil size={12} />
+                              </button>
+                            </div>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

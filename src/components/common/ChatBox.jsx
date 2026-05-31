@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
-import { MessageCircle, X, Send, Megaphone, Check, CheckCheck, Reply, ArrowLeft, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Megaphone, Check, CheckCheck, Reply, ArrowLeft, Loader2, Pin, PinOff } from "lucide-react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -21,6 +21,7 @@ export default function ChatBox() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [pinnedMessages, setPinnedMessages] = useState([]);
   const listRef = useRef(null);
   const socketRef = useRef(null);
   const conversationRef = useRef({ tab: "global", userId: null });
@@ -58,10 +59,28 @@ export default function ChatBox() {
     socket.on("userOnline", (userId) => setOnlineUsers((prev) => new Set(prev).add(userId)));
     socket.on("userOffline", (userId) => setOnlineUsers((prev) => { const next = new Set(prev); next.delete(userId); return next; }));
     socket.on("onlineUsers", (ids) => setOnlineUsers(new Set(ids)));
+    socket.on("pinMessage", ({ id, is_pinned }) => {
+      setPinnedMessages((prev) => {
+        if (is_pinned) {
+          const msg = messages.find((m) => m.id === id);
+          if (msg && !prev.find((p) => p.id === id)) return [{ ...msg, is_pinned: true }, ...prev];
+          return prev;
+        }
+        return prev.filter((p) => p.id !== id);
+      });
+      setMessages((prev) => prev.map((m) => m.id === id ? { ...m, is_pinned } : m));
+    });
     socketRef.current = socket;
     socket.emit("joinChat");
     return () => { socket.disconnect(); socketRef.current = null; };
   }, [token, authUser]);
+
+  const fetchPinned = useCallback(async () => {
+    try {
+      const res = await api.get("/api/chat/pinned");
+      setPinnedMessages(res.data ?? []);
+    } catch (e) {}
+  }, []);
 
   const fetchMessages = useCallback(async () => {
     if (!token || !authUser) return;
@@ -93,8 +112,9 @@ export default function ChatBox() {
     if (open) {
       if (tab === "private") fetchUsers();
       fetchMessages();
+      fetchPinned();
     }
-  }, [open, tab, selectedUser, fetchMessages, fetchUsers, authUser]);
+  }, [open, tab, selectedUser, fetchMessages, fetchUsers, fetchPinned, authUser]);
 
   useEffect(() => {
     if (tab === "global") setSelectedUser(null);
@@ -105,6 +125,12 @@ export default function ChatBox() {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const togglePin = async (msg) => {
+    try {
+      await api.post(`/api/chat/messages/${msg.id}/pin`, { pinned: !msg.is_pinned });
+    } catch (e) {}
+  };
 
   const sendMessage = async () => {
     const text = input.trim();
@@ -246,6 +272,25 @@ export default function ChatBox() {
             </div>
           )}
 
+          {pinnedMessages.length > 0 && tab === "global" && (
+            <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-3 py-1.5 space-y-1 max-h-20 overflow-y-auto">
+              <span className="text-[10px] font-bold uppercase tracking-wide text-amber-600 flex items-center gap-1">
+                <Pin size={10} /> Pinned
+              </span>
+              {pinnedMessages.map((p) => (
+                <div key={p.id} className="flex items-center gap-1.5 text-[11px] text-amber-800">
+                  <span className="font-medium truncate max-w-[100px]">{p.full_name}:</span>
+                  <span className="truncate">{p.message}</span>
+                  {isSuperadmin && (
+                    <button onClick={() => togglePin(p)} className="ml-auto shrink-0 text-amber-400 hover:text-amber-600">
+                      <PinOff size={10} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           <div ref={listRef} className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50/50">
             {loading ? (
               <div className="flex items-center justify-center h-full text-xs text-slate-400">Loading...</div>
@@ -271,7 +316,7 @@ export default function ChatBox() {
                       )}
                       <button
                         onClick={() => { if (!isMine) { setReplyTo(m); setTab("private"); setSelectedUser(users.find(u => u.id === m.user_id) || null); } }}
-                        className={`text-left w-full rounded-xl px-3 py-2 text-sm transition ${
+                        className={`text-left w-full rounded-xl px-3 py-2 text-sm transition relative ${
                           isBroadcast
                             ? "bg-rose-50 text-rose-800 border border-rose-200 rounded-bl-sm shadow-sm"
                             : isMine
@@ -286,6 +331,17 @@ export default function ChatBox() {
                             </span>
                           </div>
                         )}
+                        {isBroadcast && isSuperadmin && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); togglePin(m); }}
+                            className={`absolute top-1 right-1 p-0.5 rounded transition ${
+                              m.is_pinned ? "text-amber-500 hover:text-amber-700" : "text-rose-300 hover:text-rose-600 opacity-0 group-hover:opacity-100"
+                            }`}
+                            title={m.is_pinned ? "Unpin" : "Pin"}
+                          >
+                            {m.is_pinned ? <PinOff size={11} /> : <Pin size={11} />}
+                          </button>
+                        )}
                         {isPrivate && !isMine && (
                           <div className="flex items-center gap-1.5 mb-1">
                             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${roleColors[m.role] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
@@ -299,6 +355,11 @@ export default function ChatBox() {
                             <span className="text-[10px] font-bold">{m.full_name}</span>
                             <span className="text-[10px] text-rose-400">·</span>
                             <span className="text-[10px] font-medium uppercase text-rose-500">{m.role}</span>
+                            {isSuperadmin && m.is_pinned && (
+                              <span className="text-[10px] flex items-center gap-0.5 text-amber-500 ml-auto">
+                                <Pin size={10} /> Pinned
+                              </span>
+                            )}
                           </div>
                         )}
                         <p className="leading-relaxed break-words">{m.message}</p>

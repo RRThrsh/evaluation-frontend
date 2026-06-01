@@ -540,10 +540,7 @@ export default function EvaluatorHome() {
             return {
               ...rest,
               undecided: isUndecided,
-              next_semester_subjects: [
-                ...nextSubjects,
-                ...specialClassSubjects,
-              ],
+              next_semester_subjects: [...nextSubjects],
               gap_fillers: gapFillers,
               special_class_subjects: specialClassSubjects,
             };

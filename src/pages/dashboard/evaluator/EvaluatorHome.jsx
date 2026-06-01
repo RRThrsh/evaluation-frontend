@@ -731,12 +731,12 @@ export default function EvaluatorHome() {
             )}
             {recommendations.length > 0 && (
               <div className={gapFillers.filter((s) => s.prereq_dependents > 0).length > 0 ? "w-full lg:w-80 shrink-0" : "w-full"}>
-                <div className="card p-4 border border-amber-200 bg-amber-50/30 space-y-2">
-                  <h4 className="text-sm font-semibold text-amber-800">Recommendation Notes</h4>
-                  <ul className="space-y-1.5 text-xs text-amber-700">
+                <div className="card p-4 border border-slate-200 bg-white space-y-2">
+                  <h4 className="text-sm font-semibold text-slate-800">Recommendation Notes</h4>
+                  <ul className="space-y-1.5 text-xs text-slate-700">
                     {recommendations.map((r, i) => (
                       <li key={i} className="flex gap-2">
-                        <span className="text-amber-500 font-bold mt-0.5">•</span>
+                        <span className="text-slate-400 font-bold mt-0.5">•</span>
                         <span>{r}</span>
                       </li>
                     ))}

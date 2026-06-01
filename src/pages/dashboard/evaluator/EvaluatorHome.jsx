@@ -369,6 +369,8 @@ export default function EvaluatorHome() {
   const [gapFillers, setGapFillers] = useState([]);
   const [allFails, setAllFails] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
+  const [maxUnits, setMaxUnits] = useState(0);
+  const [usedUnits, setUsedUnits] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -378,6 +380,7 @@ export default function EvaluatorHome() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [undecided, setUndecided] = useState(false);
   const snapshotRef = useRef(null);
+  const originalGapFillersRef = useRef([]);
   const [removedSubjectCodes, setRemovedSubjectCodes] = useState(new Set());
   const [specialClassSubjects, setSpecialClassSubjects] = useState([]);
   const [rawStudentSubjects, setRawStudentSubjects] = useState([]);
@@ -386,11 +389,13 @@ export default function EvaluatorHome() {
     setRemovedSubjectCodes((prev) => new Set([...prev, subject.subject_code]));
     setNextSubjects((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
     setAllFails((prev) => prev.some((s) => s.subject_code === subject.subject_code) ? prev : [subject, ...prev]);
+    setGapFillers((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
   }, []);
 
   const handleAddFailedToNext = useCallback((subject) => {
     setNextSubjects((prev) => [{ ...subject, is_retake: true }, ...prev]);
     setAllFails((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
+    setGapFillers((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
   }, []);
 
   const handleUndoSubject = useCallback((subject) => {
@@ -402,6 +407,15 @@ export default function EvaluatorHome() {
     setSpecialClassSubjects((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
     setAllFails((prev) => prev.filter((s) => s.subject_code !== subject.subject_code));
     setNextSubjects((prev) => [subject, ...prev]);
+    const wasGapFiller = originalGapFillersRef.current.some(
+      (g) => g.subject_code === subject.subject_code
+    );
+    if (wasGapFiller) {
+      const original = originalGapFillersRef.current.find(
+        (g) => g.subject_code === subject.subject_code
+      );
+      setGapFillers((prev) => [original, ...prev]);
+    }
   }, []);
 
   const handleAddSpecialClassFromNext = useCallback((subjectCode) => {
@@ -412,6 +426,7 @@ export default function EvaluatorHome() {
     const special = { ...subject, special_class: true };
     setSpecialClassSubjects((prev) => [special, ...prev]);
     setAllFails((prev) => [special, ...prev]);
+    setGapFillers((prev) => prev.filter((s) => s.subject_code !== subjectCode));
   }, [nextSubjects]);
 
   const handleSearch = async () => {
@@ -441,6 +456,8 @@ export default function EvaluatorHome() {
       let gaps = [];
       let allFails = [];
       let recs = [];
+      let maxU = 0;
+      let usedU = 0;
       let evalData = null;
       try {
         const evalRes = await api.get(`/api/evaluator/students/${data.id}/evaluate`);
@@ -450,8 +467,11 @@ export default function EvaluatorHome() {
         current = evalData?.current_enrolled_subjects || [];
         next = evalData?.next_semester_subjects || [];
         gaps = evalData?.gap_fillers || [];
+        originalGapFillersRef.current = gaps;
         allFails = evalData?.remaining_failed_subjects || [];
         recs = evalData?.recommendations || [];
+        maxU = evalData?.max_units || 0;
+        usedU = evalData?.used_units || 0;
         setRawStudentSubjects(evalData?.raw_student_subjects || []);
         const pendingReq = evalData?.has_pending_request;
         setHasPendingRequest(pendingReq);
@@ -471,6 +491,8 @@ export default function EvaluatorHome() {
       setGapFillers(gaps);
       setAllFails(allFails);
       setRecommendations(recs);
+      setMaxUnits(maxU);
+      setUsedUnits(usedU);
     } catch (err) {
       setError(err.message || "Student not found");
     } finally {
@@ -609,7 +631,7 @@ export default function EvaluatorHome() {
           </div>
         )}
 
-        {student && <StudentCard student={student} studentHistory={rawStudentSubjects} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} onShowToast={(msg, type) => { setToast({ type, message: msg }); setTimeout(() => setToast(null), 3000); }} onShiftComplete={(evalData) => { if (evalData) { setCurrentSubjects(evalData.current_enrolled_subjects || []); setNextSubjects(evalData.next_semester_subjects || []); setGapFillers(evalData.gap_fillers || []); setAllFails(evalData.remaining_failed_subjects || []); setRecommendations(evalData.recommendations || []); setRawStudentSubjects(evalData.raw_student_subjects || []); setStudent((prev) => ({ ...prev, course: evalData.student?.course || prev.course, overall: evalData.overall })); } }} />}
+        {student && <StudentCard student={student} studentHistory={rawStudentSubjects} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} onShowToast={(msg, type) => { setToast({ type, message: msg }); setTimeout(() => setToast(null), 3000); }} onShiftComplete={(evalData) => { if (evalData) { snapshotRef.current = evalData; originalGapFillersRef.current = evalData.gap_fillers || []; setCurrentSubjects(evalData.current_enrolled_subjects || []); setNextSubjects(evalData.next_semester_subjects || []); setGapFillers(evalData.gap_fillers || []); setAllFails(evalData.remaining_failed_subjects || []); setRecommendations(evalData.recommendations || []); setMaxUnits(evalData.max_units || 0); setUsedUnits(evalData.used_units || 0); setRawStudentSubjects(evalData.raw_student_subjects || []); setStudent((prev) => ({ ...prev, course: evalData.student?.course || prev.course, overall: evalData.overall })); } }} />}
         {showConfirm && (
           <div className="modal-overlay" onClick={() => setShowConfirm(false)}>
             <div className="modal-content max-w-sm p-6 text-center" onClick={(e) => e.stopPropagation()}>
@@ -655,9 +677,21 @@ export default function EvaluatorHome() {
                 emptyMsg="No possible subjects."
                 color="blue"
                 headerRight={
-                  <span className="text-xs font-medium text-blue-600 bg-blue-100/60 px-2.5 py-1 rounded-full">
-                    Total: {nextSubjects.reduce((sum, s) => sum + Number(s.units || 0), 0)} units
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {maxUnits > 0 && (
+                      <div className="hidden sm:flex items-center gap-1.5">
+                        <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-500 rounded-full transition-all"
+                            style={{ width: `${Math.min(100, (nextSubjects.reduce((sum, s) => sum + Number(s.units || 0), 0) / maxUnits) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <span className="text-xs font-medium text-blue-600 bg-blue-100/60 px-2.5 py-1 rounded-full whitespace-nowrap">
+                      {nextSubjects.reduce((sum, s) => sum + Number(s.units || 0), 0)} / {maxUnits} units
+                    </span>
+                  </div>
                 }
               />
             </div>
@@ -676,66 +710,40 @@ export default function EvaluatorHome() {
         )}
 
         {(student && (gapFillers.length > 0 || recommendations.length > 0)) && (
-          <div className="space-y-3">
-            <div className="flex flex-col lg:flex-row gap-4">
-              {gapFillers.filter((s) => s.prereq_dependents > 0).length > 0 && (
-                <div className="flex-1 min-w-0">
-                  <SubjectTable
-                    title="You add a subject to fill remaining units — higher priority unlocks more courses."
-                    subjects={gapFillers.filter((s) => s.prereq_dependents > 0)}
-                    columns={[
-                      { key: "subject_code", label: "Code", width: "auto", className: "whitespace-nowrap font-mono font-medium" },
-                      { key: "units", label: "Units", width: "auto", align: "right", render: (s) => s.units ?? "\u2014" },
-                      { key: "priority", label: "Priority", width: "auto", render: (s) =>
-                        s.prereq_dependents > 0
-                          ? <span className="text-xs font-bold text-amber-600">Unlocks {s.prereq_dependents} subject{s.prereq_dependents !== 1 ? "s" : ""}</span>
-                          : <span className="text-xs text-slate-400">\u2014</span>
-                      },
-                    ]}
-                    color="amber"
-                  />
+          <div className="flex flex-col lg:flex-row gap-6">
+            {gapFillers.filter((s) => s.prereq_dependents > 0).length > 0 && (
+              <div className="flex-1 min-w-0">
+                <SubjectTable
+                  title="Priority Subjects"
+                  subjects={gapFillers.filter((s) => s.prereq_dependents > 0)}
+                  columns={[
+                    { key: "subject_code", label: "Code", width: "auto", className: "whitespace-nowrap font-mono font-medium" },
+                    { key: "units", label: "Units", width: "auto", align: "right", render: (s) => s.units ?? "\u2014" },
+                    { key: "priority", label: "Priority", width: "auto", render: (s) =>
+                      s.prereq_dependents > 0
+                        ? <span className="text-xs font-bold text-amber-600">Unlocks {s.prereq_dependents} subject{s.prereq_dependents !== 1 ? "s" : ""}</span>
+                        : <span className="text-xs text-slate-400">\u2014</span>
+                    },
+                  ]}
+                  color="amber"
+                />
+              </div>
+            )}
+            {recommendations.length > 0 && (
+              <div className="w-full lg:w-80 shrink-0">
+                <div className="card p-4 border border-amber-200 bg-amber-50/30 space-y-2">
+                  <h4 className="text-sm font-semibold text-amber-800">Recommendation Notes</h4>
+                  <ul className="space-y-1.5 text-xs text-amber-700">
+                    {recommendations.map((r, i) => (
+                      <li key={i} className="flex gap-2">
+                        <span className="text-amber-500 font-bold mt-0.5">•</span>
+                        <span>{r}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              )}
-              {recommendations.length > 0 && (
-                <div className={gapFillers.filter((s) => s.prereq_dependents > 0).length > 0 ? "w-full lg:w-72 shrink-0" : "w-full"}>
-                  <div className="card p-4 border border-amber-200 bg-amber-50/30 space-y-3">
-                    <h4 className="text-sm font-semibold text-amber-800">Recommendation Notes</h4>
-                    <ul className="space-y-2 text-xs text-amber-700">
-                      {gapFillers.filter((s) => s.prereq_dependents > 0).length > 0 && (
-                        <li className="flex gap-2">
-                          <span className="text-amber-500 font-bold mt-0.5">•</span>
-                          <span><strong>{gapFillers.filter((s) => s.prereq_dependents > 0).length} subject(s)</strong> have prerequisites that unlock future courses. Prioritize these to avoid delays.</span>
-                        </li>
-                      )}
-                      {gapFillers.length > 0 && (
-                        <li className="flex gap-2">
-                          <span className="text-amber-500 font-bold mt-0.5">•</span>
-                          <span>Fill <strong>{gapFillers.reduce((sum, g) => sum + Number(g.units || 0), 0)} units</strong> for this semester.</span>
-                        </li>
-                      )}
-                      {gapFillers.length > 0 && (
-                        <li className="flex gap-2">
-                          <span className="text-amber-500 font-bold mt-0.5">•</span>
-                          <span>Added to Possible Subjects: <strong>{gapFillers.map((g) => g.subject_code).join(", ")}</strong></span>
-                        </li>
-                      )}
-                      {gapFillers.filter((s) => s.is_cross_course).length > 0 && (
-                        <li className="flex gap-2">
-                          <span className="text-amber-500 font-bold mt-0.5">•</span>
-                          <span><strong>{gapFillers.filter((s) => s.is_cross_course).length} subject(s)</strong> are from other courses with matching subject codes.</span>
-                        </li>
-                      )}
-                      {recommendations.map((r, i) => (
-                        <li key={i} className="flex gap-2">
-                          <span className="text-amber-500 font-bold mt-0.5">•</span>
-                          <span>{r}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
       </div>

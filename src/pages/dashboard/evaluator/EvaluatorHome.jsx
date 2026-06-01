@@ -392,6 +392,8 @@ export default function EvaluatorHome() {
   const [removedSubjectCodes, setRemovedSubjectCodes] = useState(new Set());
   const [specialClassSubjects, setSpecialClassSubjects] = useState([]);
   const [rawStudentSubjects, setRawStudentSubjects] = useState([]);
+  const [isGraduatingCandidate, setIsGraduatingCandidate] = useState(false);
+  const [graduation, setGraduation] = useState(null);
 
   const handleRemoveSubject = useCallback((subject) => {
     setRemovedSubjectCodes((prev) => new Set([...prev, subject.subject_code]));
@@ -452,6 +454,8 @@ export default function EvaluatorHome() {
     setRemovedSubjectCodes(new Set());
     setSpecialClassSubjects([]);
     setRawStudentSubjects([]);
+    setIsGraduatingCandidate(false);
+    setGraduation(null);
 
     try {
       const lookupRes = await api.get(`/api/students/lookup/${encodeURIComponent(q)}`);
@@ -481,6 +485,8 @@ export default function EvaluatorHome() {
         maxU = evalData?.max_units || 0;
         usedU = evalData?.used_units || 0;
         setRawStudentSubjects(evalData?.raw_student_subjects || []);
+        setIsGraduatingCandidate(evalData?.is_graduating_candidate || false);
+        setGraduation(evalData?.graduation || null);
         const pendingReq = evalData?.has_pending_request;
         setHasPendingRequest(pendingReq);
         if (pendingReq) setPendingRequestedBy(evalData?.pending_requested_by || "another evaluator");
@@ -529,6 +535,8 @@ export default function EvaluatorHome() {
       setMaxUnits(evalData?.max_units || 0);
       setUsedUnits(evalData?.used_units || 0);
       setRawStudentSubjects(evalData?.raw_student_subjects || []);
+      setIsGraduatingCandidate(evalData?.is_graduating_candidate || false);
+      setGraduation(evalData?.graduation || null);
       setRemovedSubjectCodes(new Set());
       setSpecialClassSubjects([]);
     } catch {
@@ -576,7 +584,15 @@ export default function EvaluatorHome() {
     { key: "prerequisite", label: "Prereq", width: "auto", render: (s) => (
       <div className="flex items-center gap-2">
         {s.special_class && <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded px-1.5 py-0.5 uppercase tracking-wide">Special Class</span>}
-        <span>{s.prerequisite || "\u2014"}</span>
+        <span className={s.prereq_failed ? "text-red-500 font-medium" : ""}>{s.prerequisite || "\u2014"}</span>
+        {s.blocked && (
+          <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 rounded px-1.5 py-0.5 uppercase tracking-wide whitespace-nowrap">
+            {s.blocked_reason === "inc" ? "BLOCKED (INC)" : s.blocked_reason === "not_taken" ? "PREREQ NOT TAKEN" : "BLOCKED"}
+          </span>
+        )}
+        {!s.blocked && s.prerequisite && (
+          <span className="text-[10px] text-emerald-600 font-medium">CLEAR</span>
+        )}
       </div>
     )},
     { key: "is_retake", label: "", width: "auto", render: (s) => s.is_retake ? <span className="text-xs font-bold text-amber-600 uppercase">[RETAKE]</span> : null },
@@ -656,7 +672,64 @@ export default function EvaluatorHome() {
           </div>
         )}
 
-        {student && <StudentCard student={student} studentHistory={rawStudentSubjects} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} onShowToast={(msg, type) => { setToast({ type, message: msg }); setTimeout(() => setToast(null), 3000); }} onShiftComplete={(evalData) => { if (evalData) { originalGapFillersRef.current = evalData.gap_fillers || []; setCurrentSubjects(evalData.current_enrolled_subjects || []); setNextSubjects(evalData.next_semester_subjects || []); setGapFillers(evalData.gap_fillers || []); setAllFails(evalData.remaining_failed_subjects || []); setRecommendations(evalData.recommendations || []); setMaxUnits(evalData.max_units || 0); setUsedUnits(evalData.used_units || 0); setRawStudentSubjects(evalData.raw_student_subjects || []); setStudent((prev) => ({ ...prev, course: evalData.student?.course || prev.course, overall: evalData.overall })); } }} onRefreshStatus={handleRefreshStatus} refreshingStatus={refreshingStatus} />}
+        {student && <StudentCard student={student} studentHistory={rawStudentSubjects} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} onShowToast={(msg, type) => { setToast({ type, message: msg }); setTimeout(() => setToast(null), 3000); }} onShiftComplete={(evalData) => { if (evalData) { originalGapFillersRef.current = evalData.gap_fillers || []; setCurrentSubjects(evalData.current_enrolled_subjects || []); setNextSubjects(evalData.next_semester_subjects || []); setGapFillers(evalData.gap_fillers || []); setAllFails(evalData.remaining_failed_subjects || []); setRecommendations(evalData.recommendations || []); setMaxUnits(evalData.max_units || 0); setUsedUnits(evalData.used_units || 0); setRawStudentSubjects(evalData.raw_student_subjects || []); setIsGraduatingCandidate(evalData?.is_graduating_candidate || false); setGraduation(evalData?.graduation || null); setStudent((prev) => ({ ...prev, course: evalData.student?.course || prev.course, overall: evalData.overall })); } }} onRefreshStatus={handleRefreshStatus} refreshingStatus={refreshingStatus} />}
+
+        {isGraduatingCandidate && (
+          <div className="card overflow-hidden border border-violet-200">
+            <div className="px-5 py-3 border-b bg-violet-50 border-violet-100 flex items-center justify-between">
+              <h3 className="font-semibold text-sm text-violet-700">Graduation Status</h3>
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide ${
+                graduation?.can_graduate
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-red-100 text-red-700"
+              }`}>
+                {graduation?.can_graduate ? "Can Graduate" : "Cannot Graduate"}
+              </span>
+            </div>
+            <div className="p-5 text-sm text-slate-700 space-y-2">
+              {graduation?.can_graduate ? (
+                <p>Student has met all graduation requirements.</p>
+              ) : (
+                <>
+                  <p className="font-medium text-red-600">
+                    {graduation?.blocking_subjects?.length || 0} blocking subject(s) remaining:
+                  </p>
+                  <ul className="space-y-1 ml-4">
+                    {graduation?.blocking_subjects?.map((s, i) => (
+                      <li key={i} className="flex gap-2 text-xs">
+                        <span className="text-red-400 font-bold">•</span>
+                        <span className="font-mono">{s.subject_code}</span>
+                        <span className="text-slate-400">— Year {s.year_level}, Semester {s.semester}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {graduation?.passed_with_broken_prereqs?.length > 0 && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
+                      <p className="text-xs font-semibold text-amber-700 mb-1">
+                        Passed subject(s) with unmet prerequisites:
+                      </p>
+                      <ul className="space-y-0.5">
+                        {graduation.passed_with_broken_prereqs.map((s, i) => (
+                          <li key={i} className="text-xs text-amber-600 flex gap-2">
+                            <span className="font-bold">•</span>
+                            <span className="font-mono">{s.subject_code}</span>
+                            <span className="text-amber-500">— prerequisite chain broken</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {graduation?.suggested_year_level && (
+                    <p className="text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
+                      Suggested re-enrollment: Year {graduation.suggested_year_level}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {showConfirm && (
           <div className="modal-overlay" onClick={() => setShowConfirm(false)}>
             <div className="modal-content max-w-sm p-6 text-center" onClick={(e) => e.stopPropagation()}>
@@ -701,6 +774,7 @@ export default function EvaluatorHome() {
                 columns={nextColumns}
                 emptyMsg="No possible subjects."
                 color="blue"
+                rowClassName={(s) => s.blocked ? "opacity-50 bg-slate-50" : ""}
                 headerRight={
                   <div className="flex items-center gap-2">
                     {maxUnits > 0 && (

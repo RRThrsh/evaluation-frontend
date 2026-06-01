@@ -547,11 +547,13 @@ export default function EvaluatorHome() {
     if (!student || submitting) return;
     setSubmitting(true);
     try {
-      const base = snapshotRef.current
-        ? (() => { const { overall, ...rest } = snapshotRef.current; return rest; })()
-        : {};
+      if (!snapshotRef.current) {
+        const evalRes = await api.get(`/api/evaluator/students/${student.id}/evaluate`);
+        snapshotRef.current = evalRes.data;
+      }
+      const { overall, ...rest } = snapshotRef.current;
       const snapshot = {
-        ...base,
+        ...rest,
         undecided: isUndecided,
         next_semester_subjects: [...nextSubjects],
         gap_fillers: gapFillers,

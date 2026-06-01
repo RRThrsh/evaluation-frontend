@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { AlertTriangle, Clock, User, FileText, Search, CheckCircle, X } from "lucide-react";
 import api from "../../services/api";
 import Pagination from "../common/Pagination";
+import { toPHString } from "../../utils/date";
 
 const PAGE_SIZE = 10;
 
@@ -77,7 +78,7 @@ function SnapshotDetailModal({ snapshot, onClose }) {
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Snapshot Date</p>
-            <p className="text-slate-700">{new Date(snapshot.updated_at).toLocaleString()}</p>
+            <p className="text-slate-700">{toPHString(snapshot.updated_at)}</p>
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Next Sem Subjects</p>
@@ -295,7 +296,7 @@ export default function Snapshots() {
                     <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
                       {s.course_name && <span>{s.course_name} ({s.course_code})</span>}
                       <span className="flex items-center gap-1"><User size={12} />{s.requested_by_name || "Unknown"}</span>
-                      <span className="flex items-center gap-1"><Clock size={12} />{new Date(s.updated_at).toLocaleString()}</span>
+                      <span className="flex items-center gap-1"><Clock size={12} />{toPHString(s.updated_at)}</span>
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, RefreshCw, Pause, Play, ChevronDown, ChevronRight, Activity } from "lucide-react";
 import api from "../../services/api";
+import { toPHDate, toPHTime } from "../../utils/date";
 
 const POLL_MS = 5000;
 
@@ -8,8 +9,8 @@ function fmt(d) {
   try {
     const dt = new Date(d);
     return {
-      date: dt.toLocaleDateString("en-US", { month: "short", day: "2-digit" }),
-      time: dt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }),
+      date: toPHDate(dt),
+      time: toPHTime(dt),
     };
   } catch { return { date: "", time: d || "" }; }
 }

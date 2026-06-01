@@ -5,6 +5,7 @@ import { sanitizeObject } from "../../utils/sanitize";
 import { usePermissions } from "../../context/PermissionContext";
 import ConfirmModal from "../common/ConfirmModal";
 import Pagination from "../common/Pagination";
+import { toPHDate } from "../../utils/date";
 
 const PAGE_SIZE = 15;
 
@@ -204,7 +205,7 @@ export default function CourseManager() {
                                     <td className="table-cell font-mono font-medium text-slate-800">{c.code}</td>
                                     <td className="table-cell text-slate-600">{c.name}</td>
                                     <td className="table-cell">{c.group_name ? <span className="badge badge-blue">{c.group_name}</span> : <span className="text-slate-300">—</span>}</td>
-                                    <td className="table-cell text-slate-400">{new Date(c.created_at).toLocaleDateString()}</td>
+                                    <td className="table-cell text-slate-400">{toPHDate(c.created_at)}</td>
                                     {can("courses.manage") && (
                                     <td className="table-cell">
                                         <div className="flex gap-1">

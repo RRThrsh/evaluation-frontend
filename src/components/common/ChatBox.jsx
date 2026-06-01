@@ -3,6 +3,7 @@ import { io } from "socket.io-client";
 import { MessageCircle, X, Send, Megaphone, Check, CheckCheck, Reply, ArrowLeft, Loader2, Pin, PinOff } from "lucide-react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { toPHDate, toPHTime } from "../../utils/date";
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || "";
 const ICON_CHECK = <Check size={12} />;
@@ -194,11 +195,11 @@ export default function ChatBox() {
     const d = new Date(t);
     const now = new Date();
     const diff = now - d;
-    const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const time = toPHTime(d);
     if (diff < 60000) return `${time} (just now)`;
     if (diff < 3600000) return `${time} (${Math.floor(diff / 60000)}m ago)`;
     if (diff < 86400000) return time;
-    return `${d.toLocaleDateString()} ${time}`;
+    return `${toPHDate(d)} ${time}`;
   }
 
   return (

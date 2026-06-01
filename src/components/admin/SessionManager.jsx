@@ -3,6 +3,7 @@ import api from "../../services/api";
 import { usePermissions } from "../../context/PermissionContext";
 import ConfirmModal from "../common/ConfirmModal";
 import Pagination from "../common/Pagination";
+import { toPHString } from "../../utils/date";
 
 const PAGE_SIZE = 15;
 
@@ -94,7 +95,7 @@ export default function SessionManager() {
                   <div><p className="font-medium text-slate-800">{s.full_name}</p><p className="text-xs text-slate-400">{s.email}</p></div>
                 </td>
                 <td className="px-5 py-3"><span className="badge badge-gray capitalize">{s.role}</span></td>
-                <td className="px-5 py-3 text-xs text-slate-400">{new Date(s.created_at).toLocaleString()}</td>
+                <td className="px-5 py-3 text-xs text-slate-400">{toPHString(s.created_at)}</td>
                 {can("sessions") && (
                 <td className="px-5 py-3 text-right">
                   <button onClick={() => setConfirmUser({ step: 1, userId: s.user_id, name: s.full_name })} className="btn btn-danger btn-sm">Force Logout</button>

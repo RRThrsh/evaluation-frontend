@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { X, User, BookOpen, GraduationCap, Pencil, Check } from "lucide-react";
 import api from "../../services/api";
 import AcademicRecord from "./AcademicRecord";
+import { toPHLongDate } from "../../utils/date";
 
 function Field({ label, value }) {
   return (
@@ -14,7 +15,7 @@ function Field({ label, value }) {
 
 function formatDate(d) {
   if (!d) return "—";
-  try { return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }); }
+  try { return toPHLongDate(d); }
   catch { return d; }
 }
 

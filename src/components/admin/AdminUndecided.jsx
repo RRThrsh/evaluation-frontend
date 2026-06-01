@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, Send, Trash2 } from "lucide-react";
 import { usePermissions } from "../../context/PermissionContext";
 import api from "../../services/api";
+import { toPHDate } from "../../utils/date";
 
 function SubjectTable({ title, subjects, columns, emptyMsg }) {
   if (!subjects || subjects.length === 0) return null;
@@ -99,7 +100,7 @@ function UndecidedModal({ request, onClose, onPreEnroll }) {
               </div>
               <div>
                 <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Submitted</span>
-                <p className="font-semibold text-slate-800 mt-0.5">{new Date(request.created_at).toLocaleDateString()}</p>
+                <p className="font-semibold text-slate-800 mt-0.5">{toPHDate(request.created_at)}</p>
               </div>
               {snapshot.undecided && (
               <div>
@@ -316,7 +317,7 @@ export default function AdminUndecided() {
                   <td className="px-6 py-4 text-slate-800 font-medium">{row.first_name} {row.last_name}</td>
                   <td className="px-6 py-4 text-slate-700">{row.course_name || "N/A"}</td>
                   <td className="px-6 py-4 text-slate-700">{row.evaluator_name || "N/A"}</td>
-                  <td className="px-6 py-4 text-slate-700">{new Date(row.created_at).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 text-slate-700">{toPHDate(row.created_at)}</td>
                   {can("enrolled-students.manage") && (
                   <td className="px-6 py-4 text-right">
                     <button onClick={(e) => { e.stopPropagation(); handlePreEnroll(row); }} className="p-1.5 rounded-lg hover:bg-emerald-50 transition-colors text-slate-400 hover:text-emerald-600 mr-1" title="Pre-Enroll">

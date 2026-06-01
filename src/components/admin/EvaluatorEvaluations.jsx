@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
+import { toPHDate } from "../../utils/date";
 
 function SvgIcon({ path, className = "w-5 h-5" }) {
   return (
@@ -88,7 +89,7 @@ export default function EvaluatorEvaluations() {
                     <p className="text-slate-800">{ev.evaluator_name}</p>
                     <p className="text-xs text-slate-400">{ev.evaluator_email}</p>
                   </td>
-                  <td className="px-5 py-3 text-xs text-slate-400">{new Date(ev.created_at).toLocaleDateString()}</td>
+                  <td className="px-5 py-3 text-xs text-slate-400">{toPHDate(ev.created_at)}</td>
                 </tr>
                 {expanded === ev.id && ev.evaluation_result && (
                   <tr key={`${ev.id}-detail`} className="bg-slate-50/70">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Users, GraduationCap, Monitor, Clock, UserCheck, ClipboardCheck, ClipboardList, BookOpen, BookText, BarChart3 } from "lucide-react";
 import api from "../../services/api";
+import { toPHDate } from "../../utils/date";
 
 const COLORS = ["#4f46e5", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
 
@@ -44,7 +45,7 @@ const formatTime = (t) => {
   if (diff < 60000) return "just now";
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-  return d.toLocaleDateString();
+  return toPHDate(d);
 };
 
 export default function DashboardOverview({ onNavigate }) {

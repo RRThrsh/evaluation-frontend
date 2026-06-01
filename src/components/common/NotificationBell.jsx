@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell } from "lucide-react";
 import api from "../../services/api";
 import useSocket from "../../hooks/useSocket";
+import { toPHDate } from "../../utils/date";
 
 // Shared AudioContext — created once on first user gesture, reused after
 let _audioCtx = null;
@@ -126,7 +127,7 @@ export default function NotificationBell() {
     if (diff < 60000) return "just now";
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return d.toLocaleDateString();
+    return toPHDate(d);
   };
 
   return (

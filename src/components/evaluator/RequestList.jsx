@@ -1,6 +1,7 @@
 import { useState, memo } from "react";
 import { ChevronRight } from "lucide-react";
 import Pagination from "../common/Pagination";
+import { toPHDate } from "../../utils/date";
 
 const PAGE_SIZE = 10;
 
@@ -53,7 +54,7 @@ export const RequestSection = memo(function RequestSection({ title, dotColor, re
                 {req.course_name && <p className="text-xs text-slate-400 mt-0.5">{req.course_code || req.course_name}</p>}
               </div>
               <div className="flex items-center gap-3 ml-4 shrink-0">
-                <span className="text-xs text-slate-400">{new Date(req.created_at).toLocaleDateString()}</span>
+                <span className="text-xs text-slate-400">{toPHDate(req.created_at)}</span>
                 <ChevronRight size={16} className="text-slate-300" />
               </div>
             </div>

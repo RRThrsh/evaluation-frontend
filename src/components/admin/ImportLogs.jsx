@@ -4,6 +4,7 @@ import * as XLSX from "xlsx";
 import api from "../../services/api";
 import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
+import { toPHString } from "../../utils/date";
 
 const PAGE_SIZE = 15;
 
@@ -45,7 +46,7 @@ export default function ImportLogs() {
       total_rows: l.result ? JSON.parse(l.result).total : 0,
       errors: l.result ? (JSON.parse(l.result).errors || []).length : 0,
       ip: l.ip_address || "",
-      created_at: new Date(l.created_at).toLocaleString(),
+      created_at: toPHString(l.created_at),
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -99,7 +100,7 @@ export default function ImportLogs() {
                       </span>
                     </td>
                     <td className="px-6 py-3 text-slate-500 font-mono text-xs">{l.ip_address || "—"}</td>
-                    <td className="px-6 py-3 text-slate-500 whitespace-nowrap">{new Date(l.created_at).toLocaleString()}</td>
+                    <td className="px-6 py-3 text-slate-500 whitespace-nowrap">{toPHString(l.created_at)}</td>
                     <td className="px-6 py-3 text-right">
                       <button onClick={() => setExpanded(expanded === l.id ? null : l.id)} className="text-xs text-primary-600 font-medium hover:underline">
                         {expanded === l.id ? "Hide" : "Details"}

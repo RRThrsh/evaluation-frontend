@@ -3,6 +3,7 @@ import { Search, RotateCcw } from "lucide-react";
 import api from "../../services/api";
 import { usePermissions } from "../../context/PermissionContext";
 import Pagination from "../common/Pagination";
+import { toPHDate } from "../../utils/date";
 
 const ROLES = ["admin", "evaluator"];
 const PAGE_SIZE = 15;
@@ -140,7 +141,7 @@ export default function UserManager() {
                       <span className={`text-xs font-medium ${u.active !== false ? "text-emerald-600" : "text-slate-400"}`}>{u.active !== false ? "Active" : "Inactive"}</span>
                       )}
                     </td>
-                    <td className="table-cell text-xs text-slate-400">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="table-cell text-xs text-slate-400">{toPHDate(u.created_at)}</td>
                     <td className="table-cell text-right">
                       {can("user-management.manage") && (
                       <button onClick={() => setConfirmAction({ user: u, type: "reset" })} className="btn btn-ghost btn-sm text-primary-600 hover:text-primary-700">

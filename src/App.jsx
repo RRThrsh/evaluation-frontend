@@ -31,10 +31,10 @@ import Maintenance from "./pages/error/Maintenance";
 
 function App() {
     return (
-        <ThemeProvider>
         <ClickSoundProvider>
         <ErrorBoundary>
         <AuthProvider>
+        <ThemeProvider>
             <BrowserRouter>
                 <Routes>
                     {/* Redirect root to login */}
@@ -83,10 +83,10 @@ function App() {
                 </Routes>
                 <ChatBox />
             </BrowserRouter>
+        </ThemeProvider>
         </AuthProvider>
         </ErrorBoundary>
         </ClickSoundProvider>
-        </ThemeProvider>
     );
 }
 

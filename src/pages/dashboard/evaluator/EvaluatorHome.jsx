@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
-import { Search, AlertTriangle, CheckCircle, X, Undo2, Plus, Send } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, X, Undo2, Plus, Send, RefreshCw } from "lucide-react";
 import api from "../../../services/api";
 import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
 import ConfirmModal from "../../../components/common/ConfirmModal";
@@ -19,7 +19,7 @@ const gradeBadge = (grade) => {
   return "badge badge-green";
 };
 
-function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pendingRequestedBy, onShowToast, onShiftComplete, studentHistory }) {
+function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pendingRequestedBy, onShowToast, onShiftComplete, studentHistory, onRefreshStatus, refreshingStatus }) {
   const [showShift, setShowShift] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [courses, setCourses] = useState([]);
@@ -96,8 +96,14 @@ function StudentCard({ student, onSubmit, submitting, hasPendingRequest, pending
           </div>
           <div className="flex items-center gap-3 shrink-0 ml-4">
             {hasPendingRequest ? (
-              <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-[220px] text-right leading-relaxed">
-                Already submitted by <span className="font-semibold">{pendingRequestedBy || "another evaluator"}</span>
+              <div className="flex items-center gap-2">
+                <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-[220px] text-right leading-relaxed">
+                  Already submitted by <span className="font-semibold">{pendingRequestedBy || "another evaluator"}</span>
+                </div>
+                <button onClick={onRefreshStatus} disabled={refreshingStatus} className="btn btn-ghost btn-sm gap-1" title="Re-check status">
+                  <RefreshCw size={14} className={refreshingStatus ? "animate-spin" : ""} />
+                  Re-check
+                </button>
               </div>
             ) : (
               <button onClick={onSubmit} disabled={submitting} className="btn btn-primary btn-sm gap-1.5">
@@ -372,6 +378,7 @@ export default function EvaluatorHome() {
   const [maxUnits, setMaxUnits] = useState(0);
   const [usedUnits, setUsedUnits] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [hasPendingRequest, setHasPendingRequest] = useState(false);
@@ -502,6 +509,24 @@ export default function EvaluatorHome() {
 
   const handleKeyDown = (e) => { if (e.key === "Enter") handleSearch(); };
 
+  const handleRefreshStatus = useCallback(async () => {
+    if (!student || refreshingStatus) return;
+    setRefreshingStatus(true);
+    try {
+      const res = await api.get(`/api/evaluator/students/${student.id}/evaluate`);
+      const evalData = res.data;
+      const pendingReq = evalData?.has_pending_request;
+      setHasPendingRequest(pendingReq);
+      if (pendingReq) setPendingRequestedBy(evalData?.pending_requested_by || "another evaluator");
+      else setPendingRequestedBy(null);
+    } catch {
+      setToast({ type: "error", message: "Failed to check status" });
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setRefreshingStatus(false);
+    }
+  }, [student, refreshingStatus]);
+
   const handleShowConfirm = () => setShowConfirm(true);
 
   const handleConfirmSubmit = async (isUndecided) => {
@@ -629,7 +654,7 @@ export default function EvaluatorHome() {
           </div>
         )}
 
-        {student && <StudentCard student={student} studentHistory={rawStudentSubjects} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} onShowToast={(msg, type) => { setToast({ type, message: msg }); setTimeout(() => setToast(null), 3000); }} onShiftComplete={(evalData) => { if (evalData) { snapshotRef.current = evalData; originalGapFillersRef.current = evalData.gap_fillers || []; setCurrentSubjects(evalData.current_enrolled_subjects || []); setNextSubjects(evalData.next_semester_subjects || []); setGapFillers(evalData.gap_fillers || []); setAllFails(evalData.remaining_failed_subjects || []); setRecommendations(evalData.recommendations || []); setMaxUnits(evalData.max_units || 0); setUsedUnits(evalData.used_units || 0); setRawStudentSubjects(evalData.raw_student_subjects || []); setStudent((prev) => ({ ...prev, course: evalData.student?.course || prev.course, overall: evalData.overall })); } }} />}
+        {student && <StudentCard student={student} studentHistory={rawStudentSubjects} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} onShowToast={(msg, type) => { setToast({ type, message: msg }); setTimeout(() => setToast(null), 3000); }} onShiftComplete={(evalData) => { if (evalData) { snapshotRef.current = evalData; originalGapFillersRef.current = evalData.gap_fillers || []; setCurrentSubjects(evalData.current_enrolled_subjects || []); setNextSubjects(evalData.next_semester_subjects || []); setGapFillers(evalData.gap_fillers || []); setAllFails(evalData.remaining_failed_subjects || []); setRecommendations(evalData.recommendations || []); setMaxUnits(evalData.max_units || 0); setUsedUnits(evalData.used_units || 0); setRawStudentSubjects(evalData.raw_student_subjects || []); setStudent((prev) => ({ ...prev, course: evalData.student?.course || prev.course, overall: evalData.overall })); } }} onRefreshStatus={handleRefreshStatus} refreshingStatus={refreshingStatus} />}
         {showConfirm && (
           <div className="modal-overlay" onClick={() => setShowConfirm(false)}>
             <div className="modal-content max-w-sm p-6 text-center" onClick={(e) => e.stopPropagation()}>

@@ -3,6 +3,7 @@ import { Search, AlertTriangle, CheckCircle, X, Undo2, Plus, Send, RefreshCw } f
 import api from "../../../services/api";
 import EvaluatorHeader from "../../../components/evaluator/EvaluatorHeader";
 import ConfirmModal from "../../../components/common/ConfirmModal";
+import { useAuth } from "../../../context/AuthContext";
 
 const YEAR_LEVELS = { 1: "1st Year", 2: "2nd Year", 3: "3rd Year", 4: "4th Year" };
 const SEM_LABELS = { 1: "1st Semester", 2: "2nd Semester" };
@@ -368,6 +369,7 @@ function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName, color 
 }
 
 export default function EvaluatorHome() {
+  const { user: authUser } = useAuth();
   const [searchValue, setSearchValue] = useState("");
   const [student, setStudent] = useState(null);
   const [currentSubjects, setCurrentSubjects] = useState([]);
@@ -386,7 +388,6 @@ export default function EvaluatorHome() {
   const [toast, setToast] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [undecided, setUndecided] = useState(false);
-  const snapshotRef = useRef(null);
   const originalGapFillersRef = useRef([]);
   const [removedSubjectCodes, setRemovedSubjectCodes] = useState(new Set());
   const [specialClassSubjects, setSpecialClassSubjects] = useState([]);
@@ -484,7 +485,6 @@ export default function EvaluatorHome() {
         setHasPendingRequest(pendingReq);
         if (pendingReq) setPendingRequestedBy(evalData?.pending_requested_by || "another evaluator");
       } catch {}
-      snapshotRef.current = evalData;
 
       setStudent({
         id: data.id, full_name: `${data.first_name} ${data.last_name}`,
@@ -520,7 +520,6 @@ export default function EvaluatorHome() {
       if (pendingReq) setPendingRequestedBy(evalData?.pending_requested_by || "another evaluator");
       else setPendingRequestedBy(null);
 
-      snapshotRef.current = evalData;
       originalGapFillersRef.current = evalData?.gap_fillers || [];
       setCurrentSubjects(evalData?.current_enrolled_subjects || []);
       setNextSubjects(evalData?.next_semester_subjects || []);
@@ -547,22 +546,15 @@ export default function EvaluatorHome() {
     if (!student || submitting) return;
     setSubmitting(true);
     try {
-      if (!snapshotRef.current) {
-        const evalRes = await api.get(`/api/evaluator/students/${student.id}/evaluate`);
-        snapshotRef.current = evalRes.data;
-      }
-      const { overall, ...rest } = snapshotRef.current;
-      const snapshot = {
-        ...rest,
-        undecided: isUndecided,
-        next_semester_subjects: [...nextSubjects],
-        gap_fillers: gapFillers,
-        special_class_subjects: specialClassSubjects,
-      };
       await api.post("/api/evaluator/evaluate", {
         student_number: student.student_number,
-        snapshot,
+        undecided: isUndecided,
+        next_semester_subjects: nextSubjects,
+        gap_fillers: gapFillers,
+        special_class_subjects: specialClassSubjects,
       });
+      setHasPendingRequest(true);
+      setPendingRequestedBy(authUser?.full_name || "You");
       setToast({ type: "success", message: "Evaluation request submitted" });
       setTimeout(() => setToast(null), 3000);
     } catch (err) {
@@ -664,7 +656,7 @@ export default function EvaluatorHome() {
           </div>
         )}
 
-        {student && <StudentCard student={student} studentHistory={rawStudentSubjects} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} onShowToast={(msg, type) => { setToast({ type, message: msg }); setTimeout(() => setToast(null), 3000); }} onShiftComplete={(evalData) => { if (evalData) { snapshotRef.current = evalData; originalGapFillersRef.current = evalData.gap_fillers || []; setCurrentSubjects(evalData.current_enrolled_subjects || []); setNextSubjects(evalData.next_semester_subjects || []); setGapFillers(evalData.gap_fillers || []); setAllFails(evalData.remaining_failed_subjects || []); setRecommendations(evalData.recommendations || []); setMaxUnits(evalData.max_units || 0); setUsedUnits(evalData.used_units || 0); setRawStudentSubjects(evalData.raw_student_subjects || []); setStudent((prev) => ({ ...prev, course: evalData.student?.course || prev.course, overall: evalData.overall })); } }} onRefreshStatus={handleRefreshStatus} refreshingStatus={refreshingStatus} />}
+        {student && <StudentCard student={student} studentHistory={rawStudentSubjects} onSubmit={handleShowConfirm} submitting={submitting} hasPendingRequest={hasPendingRequest} pendingRequestedBy={pendingRequestedBy} onShowToast={(msg, type) => { setToast({ type, message: msg }); setTimeout(() => setToast(null), 3000); }} onShiftComplete={(evalData) => { if (evalData) { originalGapFillersRef.current = evalData.gap_fillers || []; setCurrentSubjects(evalData.current_enrolled_subjects || []); setNextSubjects(evalData.next_semester_subjects || []); setGapFillers(evalData.gap_fillers || []); setAllFails(evalData.remaining_failed_subjects || []); setRecommendations(evalData.recommendations || []); setMaxUnits(evalData.max_units || 0); setUsedUnits(evalData.used_units || 0); setRawStudentSubjects(evalData.raw_student_subjects || []); setStudent((prev) => ({ ...prev, course: evalData.student?.course || prev.course, overall: evalData.overall })); } }} onRefreshStatus={handleRefreshStatus} refreshingStatus={refreshingStatus} />}
         {showConfirm && (
           <div className="modal-overlay" onClick={() => setShowConfirm(false)}>
             <div className="modal-content max-w-sm p-6 text-center" onClick={(e) => e.stopPropagation()}>

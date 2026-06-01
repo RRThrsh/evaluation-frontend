@@ -7,6 +7,7 @@ import { toPHString } from "../../utils/date";
 const PAGE_SIZE = 10;
 
 const SNAPSHOT_CONFIG = {
+  evaluator_submit: { icon: FileText, color: "text-blue-600", bg: "bg-blue-50", label: "Evaluator Submit" },
   admin_pre_enroll: { icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50", label: "Admin Pre-Enroll" },
 };
 
@@ -20,11 +21,25 @@ function SnapshotTypeBadge({ type }) {
   );
 }
 
-function parseEvalResult(evalResult) {
+function getEvalResult(raw) {
+  if (!raw) return null;
+  return typeof raw === "string" ? JSON.parse(raw) : raw;
+}
+
+function getSnapshotData(evalResult) {
   if (!evalResult) return null;
-  const data = typeof evalResult === "string" ? JSON.parse(evalResult) : evalResult;
-  const { snapshot_type, ...rest } = data;
-  return rest;
+  // New nested format: data is under a type key
+  if (evalResult.admin_pre_enroll) return evalResult.admin_pre_enroll;
+  if (evalResult.evaluator_submit) return evalResult.evaluator_submit;
+  // Legacy format: snapshot_type is at root level
+  return evalResult;
+}
+
+function getSnapshotType(evalResult) {
+  if (!evalResult) return "unknown";
+  if (evalResult.admin_pre_enroll) return "admin_pre_enroll";
+  if (evalResult.evaluator_submit) return "evaluator_submit";
+  return evalResult.snapshot_type || "unknown";
 }
 
 function SnapshotDetailModal({ snapshot, onClose }) {
@@ -36,11 +51,9 @@ function SnapshotDetailModal({ snapshot, onClose }) {
 
   if (!snapshot) return null;
 
-  const evalResult = snapshot.evaluation_result
-    ? (typeof snapshot.evaluation_result === "string" ? JSON.parse(snapshot.evaluation_result) : snapshot.evaluation_result)
-    : null;
-  const snapType = evalResult?.snapshot_type || "unknown";
-  const snapData = parseEvalResult(evalResult);
+  const evalResult = getEvalResult(snapshot.evaluation_result);
+  const snapType = getSnapshotType(evalResult);
+  const snapData = getSnapshotData(evalResult);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -187,7 +200,7 @@ export default function Snapshots() {
     setLoading(true);
     setError("");
     try {
-      const res = await api.get("/api/admin/snapshots", { params: { limit: 1000, type: "admin_pre_enroll" } });
+      const res = await api.get("/api/admin/snapshots", { params: { limit: 1000 } });
       const data = res.data || {};
       setSnapshots(data.snapshots || []);
     } catch (err) {
@@ -260,6 +273,7 @@ export default function Snapshots() {
             {courses.map(([code, name]) => <option key={code} value={code}>{name} ({code})</option>)}
           </select>
 
+
         </div>
       </div>
 
@@ -271,10 +285,8 @@ export default function Snapshots() {
 
       <div className="space-y-3">
         {paginated.map((s) => {
-          const evalResult = s.evaluation_result
-            ? (typeof s.evaluation_result === "string" ? JSON.parse(s.evaluation_result) : s.evaluation_result)
-            : null;
-          const snapType = evalResult?.snapshot_type || "unknown";
+          const evalResult = getEvalResult(s.evaluation_result);
+          const snapType = getSnapshotType(evalResult);
 
           return (
             <div

@@ -46,8 +46,8 @@ export const RequestSection = memo(function RequestSection({ title, dotColor, re
               <div className="min-w-0 flex-1">
                 <div className="flex gap-1.5 items-center flex-wrap">
                   <span className={statusStyle(req.status)}>{req.status}</span>
-                  {req.evaluation_result?.overall && (
-                    <span className={overallStyle(req.evaluation_result.overall)}>{req.evaluation_result.overall}</span>
+                  {(req.evaluation_result?.evaluator_submit || req.evaluation_result)?.overall && (
+                    <span className={overallStyle((req.evaluation_result.evaluator_submit || req.evaluation_result).overall)}>{(req.evaluation_result.evaluator_submit || req.evaluation_result).overall}</span>
                   )}
                 </div>
                 <p className="text-sm text-slate-700 mt-1">{req.student_number || "N/A"} &mdash; {req.reason ?? req.type}</p>

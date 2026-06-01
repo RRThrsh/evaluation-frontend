@@ -52,7 +52,8 @@ function formatNote(raw) {
 
 function UndecidedModal({ request, onClose, onPreEnroll }) {
   const overlayRef = useRef(null);
-  const snapshot = request.evaluation_result || {};
+  const rawResult = request.evaluation_result || {};
+  const snapshot = rawResult.evaluator_submit || rawResult;
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };

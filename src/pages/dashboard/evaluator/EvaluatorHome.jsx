@@ -519,6 +519,19 @@ export default function EvaluatorHome() {
       setHasPendingRequest(pendingReq);
       if (pendingReq) setPendingRequestedBy(evalData?.pending_requested_by || "another evaluator");
       else setPendingRequestedBy(null);
+
+      snapshotRef.current = evalData;
+      originalGapFillersRef.current = evalData?.gap_fillers || [];
+      setCurrentSubjects(evalData?.current_enrolled_subjects || []);
+      setNextSubjects(evalData?.next_semester_subjects || []);
+      setGapFillers(evalData?.gap_fillers || []);
+      setAllFails(evalData?.remaining_failed_subjects || []);
+      setRecommendations(evalData?.recommendations || []);
+      setMaxUnits(evalData?.max_units || 0);
+      setUsedUnits(evalData?.used_units || 0);
+      setRawStudentSubjects(evalData?.raw_student_subjects || []);
+      setRemovedSubjectCodes(new Set());
+      setSpecialClassSubjects([]);
     } catch {
       setToast({ type: "error", message: "Failed to check status" });
       setTimeout(() => setToast(null), 3000);

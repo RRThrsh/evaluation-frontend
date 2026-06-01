@@ -547,18 +547,16 @@ export default function EvaluatorHome() {
     if (!student || submitting) return;
     setSubmitting(true);
     try {
-      const snapshot = snapshotRef.current
-        ? (() => {
-            const { overall, ...rest } = snapshotRef.current;
-            return {
-              ...rest,
-              undecided: isUndecided,
-              next_semester_subjects: [...nextSubjects],
-              gap_fillers: gapFillers,
-              special_class_subjects: specialClassSubjects,
-            };
-          })()
-        : { undecided: isUndecided };
+      const base = snapshotRef.current
+        ? (() => { const { overall, ...rest } = snapshotRef.current; return rest; })()
+        : {};
+      const snapshot = {
+        ...base,
+        undecided: isUndecided,
+        next_semester_subjects: [...nextSubjects],
+        gap_fillers: gapFillers,
+        special_class_subjects: specialClassSubjects,
+      };
       await api.post("/api/evaluator/evaluate", {
         student_number: student.student_number,
         snapshot,

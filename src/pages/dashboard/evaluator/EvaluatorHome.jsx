@@ -519,9 +519,7 @@ export default function EvaluatorHome() {
                 ...nextSubjects,
                 ...specialClassSubjects,
               ],
-              gap_fillers: (snapshotRef.current.gap_fillers || []).filter(
-                (s) => !removedSubjectCodes.has(s.subject_code)
-              ),
+              gap_fillers: gapFillers,
               special_class_subjects: specialClassSubjects,
             };
           })()

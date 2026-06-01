@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ChevronRight, LogOut, LayoutDashboard, GraduationCap } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import ThemeSwitcher from "../common/ThemeSwitcher";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -21,7 +22,7 @@ const Header = () => {
   const dashboardPath = roleDashboard[user?.role] || "/login";
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-slate-200">
+    <header className="sticky top-0 z-50 w-full bg-surface/90 backdrop-blur-md border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to={user ? dashboardPath : "/login"} className="flex items-center gap-2.5 group">
           <div className="w-9 h-9 bg-primary-600 rounded-lg flex items-center justify-center text-white group-hover:bg-primary-700 transition-colors">
@@ -53,7 +54,8 @@ const Header = () => {
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-2.5 border-l border-slate-200 ml-3 pl-3">
+        <div className="hidden md:flex items-center gap-2 border-l border-border ml-3 pl-3">
+          <ThemeSwitcher />
           {user ? (
             <>
               <Link
@@ -99,7 +101,7 @@ const Header = () => {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-200 shadow-sm">
+        <div className="md:hidden absolute top-full left-0 w-full bg-surface border-b border-border shadow-sm">
           <nav className="flex flex-col p-4 space-y-1">
             {navLinks.map((link) => (
               <Link
@@ -116,7 +118,7 @@ const Header = () => {
                 <ChevronRight size={14} className={isActive(link.path) ? "opacity-100" : "opacity-0"} />
               </Link>
             ))}
-            <div className="pt-3 mt-3 border-t border-slate-100 flex flex-col gap-2">
+            <div className="pt-3 mt-3 border-t border-border flex flex-col gap-2">
               {user ? (
                 <>
                   <Link

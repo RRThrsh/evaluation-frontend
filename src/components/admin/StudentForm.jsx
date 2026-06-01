@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { X, User, Phone, GraduationCap, School } from "lucide-react";
 import { usePermissions } from "../../context/PermissionContext";
 import { sanitizeInput } from "../../utils/sanitize";
@@ -35,8 +36,17 @@ function Field({ label, required, children }) {
 }
 
 export default function StudentForm({ open, editingStudent, form, setForm, saving, YEARS, courses, onSave, onClose }) {
+  const overlayRef = useRef(null);
   const { can } = usePermissions();
-  if (!open || !can("students.manage")) return null;
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, onClose]);
+
+  if (!open || (!can("students.create") && !can("students.manage"))) return null;
 
   const isTransfer = form.is_transfer;
   const s    = (fn) => (e) => setForm({ ...form, [fn]: sanitizeInput(e.target.value) });
@@ -45,7 +55,7 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
   const initials = [form.first_name, form.last_name].filter(Boolean).map((n) => n[0]).join("").slice(0, 2) || "?";
 
   return (
-    <div className="modal-overlay items-start pt-8 pb-10 overflow-y-auto" onClick={onClose}>
+    <div ref={overlayRef} className="modal-overlay items-start pt-8 pb-10 overflow-y-auto" onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}>
       <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
@@ -153,12 +163,6 @@ export default function StudentForm({ open, editingStudent, form, setForm, savin
 
               {editingStudent && (
                 <div className="grid grid-cols-2 gap-3 mt-3">
-                  <Field label="Enrollment Type">
-                    <select value={form.enrollment_type} onChange={(e) => setForm({ ...form, enrollment_type: e.target.value })} className="input-field">
-                      <option value="regular">Regular</option>
-                      <option value="irregular">Irregular</option>
-                    </select>
-                  </Field>
                   <Field label="Status">
                     <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="input-field">
                       <option value="active">Active</option>

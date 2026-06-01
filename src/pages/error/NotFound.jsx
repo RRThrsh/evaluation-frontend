@@ -6,7 +6,7 @@ const NotFound = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-surface">
       <main className="flex-grow flex items-center justify-center relative overflow-hidden px-6 py-20">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
           <span className="text-[20rem] lg:text-[30rem] font-black text-slate-50 leading-none">404</span>

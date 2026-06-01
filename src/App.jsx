@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ClickSoundProvider from "./components/common/ClickSoundProvider";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import ChatBox from "./components/common/ChatBox";
 
 /*  ==============================================
     PAGES
@@ -32,6 +34,7 @@ function App() {
         <ClickSoundProvider>
         <ErrorBoundary>
         <AuthProvider>
+        <ThemeProvider>
             <BrowserRouter>
                 <Routes>
                     {/* Redirect root to login */}
@@ -78,7 +81,9 @@ function App() {
                     {/* 404 */}
                     <Route path="*" element={<NotFound />} />
                 </Routes>
+                <ChatBox />
             </BrowserRouter>
+        </ThemeProvider>
         </AuthProvider>
         </ErrorBoundary>
         </ClickSoundProvider>

@@ -1,6 +1,7 @@
 import { useState, memo } from "react";
 import { ChevronRight } from "lucide-react";
 import Pagination from "../common/Pagination";
+import { toPHDate } from "../../utils/date";
 
 const PAGE_SIZE = 10;
 
@@ -45,15 +46,15 @@ export const RequestSection = memo(function RequestSection({ title, dotColor, re
               <div className="min-w-0 flex-1">
                 <div className="flex gap-1.5 items-center flex-wrap">
                   <span className={statusStyle(req.status)}>{req.status}</span>
-                  {req.evaluation_result?.overall && (
-                    <span className={overallStyle(req.evaluation_result.overall)}>{req.evaluation_result.overall}</span>
+                  {(req.evaluation_result?.evaluator_submit || req.evaluation_result)?.overall && (
+                    <span className={overallStyle((req.evaluation_result.evaluator_submit || req.evaluation_result).overall)}>{(req.evaluation_result.evaluator_submit || req.evaluation_result).overall}</span>
                   )}
                 </div>
                 <p className="text-sm text-slate-700 mt-1">{req.student_number || "N/A"} &mdash; {req.reason ?? req.type}</p>
                 {req.course_name && <p className="text-xs text-slate-400 mt-0.5">{req.course_code || req.course_name}</p>}
               </div>
               <div className="flex items-center gap-3 ml-4 shrink-0">
-                <span className="text-xs text-slate-400">{new Date(req.created_at).toLocaleDateString()}</span>
+                <span className="text-xs text-slate-400">{toPHDate(req.created_at)}</span>
                 <ChevronRight size={16} className="text-slate-300" />
               </div>
             </div>

@@ -12,7 +12,7 @@ import { sanitizeObject } from "../../utils/sanitize";
 import ProfileHeader from "../../components/profile/ProfileHeader";
 import ProfileHero from "../../components/profile/ProfileHero";
 import ProfileInfo from "../../components/profile/ProfileInfo";
-import ProfileFAQ from "../../components/profile/ProfileFAQ";
+import ProfileGuide from "../../components/profile/ProfileGuide";
 import ProfileSidebar from "../../components/profile/ProfileSidebar";
 import ProfileActivity from "../../components/profile/ProfileActivity";
 
@@ -86,7 +86,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white text-slate-900">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-surface text-text">
       {/* Header */}
       <ProfileHeader />
 
@@ -209,20 +209,20 @@ export default function Profile() {
               </div>
             </section>
 
-            {/* FAQ */}
+            {/* Guide */}
             <section className="rounded-3xl border border-slate-200 bg-white shadow-lg">
               <div className="border-b border-slate-100 px-6 py-5">
                 <h2 className="text-lg font-semibold text-slate-900">
-                  Help & FAQ
+                  Help & Guide
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Answers to common questions about your profile.
+                  Helpful information about the Academic Evaluation System.
                 </p>
               </div>
 
               <div className="p-6">
-                <ProfileFAQ />
+                <ProfileGuide />
               </div>
             </section>
           </div>

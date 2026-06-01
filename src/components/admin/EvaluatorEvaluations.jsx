@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
+import { toPHDate } from "../../utils/date";
 
 function SvgIcon({ path, className = "w-5 h-5" }) {
   return (
@@ -27,12 +28,23 @@ export default function EvaluatorEvaluations() {
       .finally(() => setLoading(false));
   }, []);
 
-  const statusColor = (s) => {
-    if (s === "PENDING") return "text-amber-600 bg-amber-50";
-    if (s === "FOR_ENROLLMENT" || s === "IRREGULAR") return "text-blue-600 bg-blue-50";
-    if (s === "ENROLLED" || s === "IRREGULAR_ENROLLED") return "text-emerald-600 bg-emerald-50";
-    if (s === "REJECTED") return "text-red-600 bg-red-50";
-    return "text-slate-600 bg-slate-100";
+  const markRead = async (id) => {
+    try {
+      await api.patch(`/api/admin/evaluations/${id}/read`);
+      setEvaluations((prev) => prev.map((e) => (e.id === id ? { ...e, staff_viewed_at: new Date().toISOString() } : e)));
+    } catch {
+      // silent
+    }
+  };
+
+  const handleExpand = (ev) => {
+    const id = ev.id;
+    if (expanded === id) {
+      setExpanded(null);
+    } else {
+      setExpanded(id);
+      if (!ev.staff_viewed_at) markRead(id);
+    }
   };
 
   return (
@@ -46,9 +58,9 @@ export default function EvaluatorEvaluations() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
+              <th className="w-6 px-2 py-3.5"></th>
               <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase">Student</th>
               <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase">Evaluator</th>
-              <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase">Status</th>
               <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase">Date</th>
             </tr>
           </thead>
@@ -65,7 +77,10 @@ export default function EvaluatorEvaluations() {
               <tr><td colSpan={4} className="px-5 py-12 text-center text-sm text-slate-400">No evaluations found</td></tr>
             ) : evaluations.map((ev) => (
               <>
-                <tr key={ev.id} className="hover:bg-slate-50/50 cursor-pointer" onClick={() => setExpanded(expanded === ev.id ? null : ev.id)}>
+                <tr key={ev.id} className={`hover:bg-slate-50/50 cursor-pointer ${!ev.staff_viewed_at ? "bg-amber-50/40" : ""}`} onClick={() => handleExpand(ev)}>
+                  <td className="px-2 py-3 text-center">
+                    {!ev.staff_viewed_at && <span className="inline-block w-2 h-2 rounded-full bg-red-500" />}
+                  </td>
                   <td className="px-5 py-3">
                     <p className="font-medium text-slate-800">{ev.first_name} {ev.last_name}</p>
                     <p className="text-xs text-slate-400">{ev.student_number}</p>
@@ -74,10 +89,7 @@ export default function EvaluatorEvaluations() {
                     <p className="text-slate-800">{ev.evaluator_name}</p>
                     <p className="text-xs text-slate-400">{ev.evaluator_email}</p>
                   </td>
-                  <td className="px-5 py-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${statusColor(ev.status)}`}>{ev.status}</span>
-                  </td>
-                  <td className="px-5 py-3 text-xs text-slate-400">{new Date(ev.created_at).toLocaleDateString()}</td>
+                  <td className="px-5 py-3 text-xs text-slate-400">{toPHDate(ev.created_at)}</td>
                 </tr>
                 {expanded === ev.id && ev.evaluation_result && (
                   <tr key={`${ev.id}-detail`} className="bg-slate-50/70">

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "../../services/api";
 import { usePermissions } from "../../context/PermissionContext";
 import ConfirmModal from "../common/ConfirmModal";
 import Pagination from "../common/Pagination";
+import { toPHString } from "../../utils/date";
 
 const PAGE_SIZE = 15;
 
@@ -12,7 +13,11 @@ export default function SessionManager() {
   const [confirmUser, setConfirmUser] = useState(null);
   const [toast, setToast] = useState(null);
   const [page, setPage] = useState(1);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const timerRef = useRef(null);
   const { can } = usePermissions();
+
+  useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
 
   const showToast = (msg, type = "success") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -25,10 +30,31 @@ export default function SessionManager() {
 
   useEffect(() => { load(); }, []);
 
-  const forceLogout = async () => {
-    if (!confirmUser) return;
-    try { await api.delete(`/api/admin/sessions/${confirmUser}`); showToast(`Logged out ${confirmUser}`); setConfirmUser(null); await load(); }
-    catch (err) { showToast(err.message, "error"); }
+  const scheduleLogout = (userId, name) => {
+    let remaining = 3;
+    setPendingDelete({ userId, name, remaining });
+    timerRef.current = setInterval(() => {
+      remaining--;
+      if (remaining > 0) {
+        setPendingDelete((prev) => prev ? { ...prev, remaining } : null);
+      } else {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+        const targetId = userId;
+        const targetName = name;
+        setPendingDelete(null);
+        (async () => {
+          try { await api.delete(`/api/admin/sessions/${targetId}`); showToast(`Logged out ${targetName}`); await load(); }
+          catch (err) { showToast(err.message, "error"); }
+        })();
+      }
+    }, 1000);
+  };
+
+  const undoDelete = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+    setPendingDelete(null);
   };
 
   return (
@@ -69,10 +95,10 @@ export default function SessionManager() {
                   <div><p className="font-medium text-slate-800">{s.full_name}</p><p className="text-xs text-slate-400">{s.email}</p></div>
                 </td>
                 <td className="px-5 py-3"><span className="badge badge-gray capitalize">{s.role}</span></td>
-                <td className="px-5 py-3 text-xs text-slate-400">{new Date(s.created_at).toLocaleString()}</td>
+                <td className="px-5 py-3 text-xs text-slate-400">{toPHString(s.created_at)}</td>
                 {can("sessions") && (
                 <td className="px-5 py-3 text-right">
-                  <button onClick={() => setConfirmUser(s.user_id)} className="btn btn-danger btn-sm">Force Logout</button>
+                  <button onClick={() => setConfirmUser({ step: 1, userId: s.user_id, name: s.full_name })} className="btn btn-danger btn-sm">Force Logout</button>
                 </td>
                 )}
               </tr>
@@ -83,9 +109,17 @@ export default function SessionManager() {
         <Pagination currentPage={page} totalPages={Math.max(1, Math.ceil(sessions.length / PAGE_SIZE))} onPageChange={setPage} />
       </div>
 
-      {confirmUser && <ConfirmModal title="Force Logout" message="Force this user to log out? Their session will be cleared." confirmLabel="Logout" onConfirm={forceLogout} onCancel={() => setConfirmUser(null)} />}
+      {confirmUser?.step === 1 && <ConfirmModal title="Force Logout" message={`Force "${confirmUser.name}" to log out? Their session will be cleared.`} confirmLabel="Continue" onConfirm={() => setConfirmUser({ ...confirmUser, step: 2 })} onCancel={() => setConfirmUser(null)} />}
+      {confirmUser?.step === 2 && <ConfirmModal title="Confirm Force Logout" message={`Are you sure you want to force "${confirmUser.name}" to log out?`} extra="Their session will be cleared immediately." confirmLabel="Logout" onConfirm={() => { const { userId, name } = confirmUser; setConfirmUser(null); scheduleLogout(userId, name); }} onCancel={() => setConfirmUser(null)} />}
 
       {toast && <div className={`fixed bottom-6 right-6 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white ${toast.type === "error" ? "bg-red-500" : "bg-emerald-500"}`}>{toast.msg}</div>}
+
+      {pendingDelete && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl text-sm">
+          <span>Logging out <strong>{pendingDelete.name}</strong>... <span className="text-slate-400">({pendingDelete.remaining}s)</span></span>
+          <button onClick={undoDelete} className="btn bg-white text-slate-900 hover:bg-slate-200 btn-sm font-semibold px-3">Undo</button>
+        </div>
+      )}
     </div>
   );
 }

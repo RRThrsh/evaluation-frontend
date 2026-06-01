@@ -60,7 +60,7 @@ function EvalModal({ request, onClose, onPreEnroll }) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.get(`/api/evaluator/students/${request.student_id}/evaluate`);
+        const res = await api.get(`/api/admin/evaluations/${request.id}/pre-enrolled-data`);
         setEvalData(res.data);
       } catch (err) {
         console.error("Preview fetch failed:", err);
@@ -68,7 +68,7 @@ function EvalModal({ request, onClose, onPreEnroll }) {
         setLoading(false);
       }
     })();
-  }, [request.student_id]);
+  }, [request.id]);
 
   const handleOverlay = (e) => {
     if (e.target === overlayRef.current) onClose();
@@ -142,6 +142,19 @@ function EvalModal({ request, onClose, onPreEnroll }) {
             <>
               <SubjectTable title="Current Semester Subjects" subjects={evalData.current_semester_subjects} columns={currentColumns} />
               <SubjectTable title={`Possible Subjects (Next Semester)`} subjects={evalData.next_semester_subjects || []} columns={nextColumns} />
+
+              {evalData.is_graduating_candidate && evalData.graduation && !evalData.graduation.can_graduate && evalData.graduation.blocking_subjects?.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
+                  <AlertCircle size={16} className="text-red-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-red-700">Cannot Graduate</p>
+                    <p className="text-xs text-red-600 mt-0.5">
+                      Student has {evalData.graduation.blocking_subjects.length} failed subject(s) with no retake path.
+                      Must repeat 4th year to retake: {evalData.graduation.blocking_subjects.map((s) => s.subject_code).join(", ")}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <div className="space-y-1">

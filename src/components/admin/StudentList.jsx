@@ -29,7 +29,7 @@ export default function StudentList({ students, allStudents, loading, search, se
             <input value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-8 py-1.5 text-xs w-44" placeholder="Search students..." />
           </div>
           <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{allStudents?.length || students.length}</span>
-          {can("students.manage") && <button onClick={onAdd} className="btn btn-primary btn-sm flex items-center gap-1"><Plus size={13} /> Add</button>}
+          {(can("students.create") || can("students.manage")) && <button onClick={onAdd} className="btn btn-primary btn-sm flex items-center gap-1"><Plus size={13} /> Add</button>}
         </div>
       </div>
       {loading ? (
@@ -58,7 +58,6 @@ function StudentTable({ students, onSelect, onEdit, onDelete }) {
             <th className="px-5 py-3">Name</th>
             <th className="px-5 py-3">Year</th>
             <th className="px-5 py-3">Program</th>
-            <th className="px-5 py-3">Type</th>
             <th className="px-5 py-3">Status</th>
             <th className="px-5 py-3">Subjects</th>
             {can("students.manage") && <th className="px-5 py-3 w-28">Actions</th>}
@@ -72,11 +71,8 @@ function StudentTable({ students, onSelect, onEdit, onDelete }) {
               <td className="table-cell">
                 <span className="badge badge-gray">{ordinal(s.year_level)} Year</span>
               </td>
-              <td className="table-cell text-slate-500">{s.course_code || "\u2014"}</td>
-              <td className="table-cell">
-                <span className={`badge ${s.enrollment_type === "irregular" ? "badge-amber" : "badge-green"}`}>{s.enrollment_type || "regular"}</span>
-              </td>
-              <td className="table-cell">
+                <td className="table-cell text-slate-500">{s.course_code || "\u2014"}</td>
+                <td className="table-cell">
                 <span className={`badge ${s.status === "active" ? "badge-green" : s.status === "graduated" ? "badge-blue" : s.status === "dropped" || s.status === "transferred" ? "badge-red" : "badge-gray"}`}>{s.status || "active"}</span>
               </td>
               <td className="table-cell">

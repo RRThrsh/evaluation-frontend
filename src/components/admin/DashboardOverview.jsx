@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Users, GraduationCap, Monitor, Clock, UserCheck, ClipboardCheck, ClipboardList, BookOpen, BookText, BarChart3 } from "lucide-react";
 import api from "../../services/api";
+import { toPHDate } from "../../utils/date";
 
 const COLORS = ["#4f46e5", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
 
@@ -44,7 +45,7 @@ const formatTime = (t) => {
   if (diff < 60000) return "just now";
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-  return d.toLocaleDateString();
+  return toPHDate(d);
 };
 
 export default function DashboardOverview({ onNavigate }) {
@@ -90,7 +91,7 @@ export default function DashboardOverview({ onNavigate }) {
 
   const middleCards = [
     { key: "users", label: "Pending Approvals", value: d.pendingUsersCount ?? 0, icon: UserCheck, color: "text-amber-600 bg-amber-50" },
-    { key: "pre-evaluate", label: "Pre-Evaluate", value: d.pendingEvalCount ?? 0, icon: ClipboardCheck, color: "text-primary-600 bg-primary-50" },
+    { key: "undecided", label: "Undecided", value: d.pendingEvalCount ?? 0, icon: ClipboardCheck, color: "text-primary-600 bg-primary-50" },
     { key: "pre-enrolled", label: "Pre-Enrolled", value: d.forEnrollmentCount ?? 0, icon: ClipboardList, color: "text-blue-600 bg-blue-50" },
     { key: "enrolled", label: "Enrolled", value: d.enrolledCount ?? 0, icon: BookOpen, color: "text-emerald-600 bg-emerald-50" },
   ];

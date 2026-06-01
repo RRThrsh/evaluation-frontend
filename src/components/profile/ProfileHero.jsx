@@ -1,3 +1,4 @@
+import { toPHDate } from "../../utils/date";
 import {
   Edit3,
   Mail,
@@ -107,9 +108,7 @@ export default function ProfileHero({
 
                   <p className="mt-2 text-sm font-semibold text-slate-700">
                     {user?.created_at
-                      ? new Date(
-                          user.created_at
-                        ).toLocaleDateString()
+                      ? toPHDate(user.created_at)
                       : "—"}
                   </p>
                 </div>

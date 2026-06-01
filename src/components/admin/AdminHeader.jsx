@@ -1,5 +1,6 @@
 import { Menu } from "lucide-react";
 import NotificationBell from "../common/NotificationBell";
+import ThemeSwitcher from "../common/ThemeSwitcher";
 
 export default function AdminHeader({
   sidebarOpen,
@@ -8,7 +9,7 @@ export default function AdminHeader({
   error,
 }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur-xl">
       <div className="flex items-center justify-between px-4 py-3 md:px-8">
 
         {/* LEFT SIDE */}
@@ -19,14 +20,14 @@ export default function AdminHeader({
             onClick={() =>
               setSidebarOpen(true)
             }
-            className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:bg-slate-50 md:hidden"
+            className="rounded-xl border border-border bg-surface p-2 text-text-secondary shadow-sm transition hover:bg-surface-muted md:hidden"
           >
             <Menu size={18} />
           </button>
 
           {/* title block */}
           <div className="leading-tight">
-            <h2 className="text-lg font-bold text-slate-900 capitalize">
+            <h2 className="text-lg font-bold text-text capitalize">
               {activeTab?.replace(
                 /-/g,
                 " "
@@ -34,15 +35,15 @@ export default function AdminHeader({
             </h2>
 
             <div className="flex items-center gap-2">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-text-secondary">
                 System administration
               </p>
 
-              <span className="text-slate-300">
+              <span className="text-text-muted">
                 •
               </span>
 
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-text-muted">
                 Control center
               </p>
             </div>
@@ -51,6 +52,8 @@ export default function AdminHeader({
 
         {/* RIGHT SIDE */}
         <div className="flex items-center gap-3">
+
+          <ThemeSwitcher />
 
           <NotificationBell />
 

@@ -16,7 +16,7 @@ const FAQS = [
   },
   {
     q: "How does the evaluation workflow work?",
-    a: "An evaluator searches for a student, reviews grades and prerequisites, then submits a pending evaluation. An admin reviews it in the Pre-Enrolled panel and promotes it to PRE_ENROLLED for enrollment processing.",
+    a: "Evaluators search for a student, review grades and prerequisites, then submit an evaluation. Admins review pending evaluations and promote them to PRE_ENROLLED for final enrollment processing.",
   },
   {
     q: "What do the evaluation statuses mean?",

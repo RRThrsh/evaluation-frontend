@@ -1,6 +1,8 @@
 const API_BASE = import.meta.env.VITE_API_URL || "";
 const CACHE_TTL = 60_000;
 
+import { sanitizeObject } from "../utils/sanitize";
+
 class ApiError extends Error {
   constructor(status, message) {
     super(message);
@@ -10,11 +12,24 @@ class ApiError extends Error {
 
 const cache = new Map();
 
+const SENSITIVE_PATTERNS = [
+  "/api/admin/users", "/api/admin/students", "/api/auth/me",
+  "/api/admin/evaluations", "/api/admin/sessions",
+  "/api/admin/pending-users", "/api/admin/permissions",
+  "/api/audit-logs", "/api/admin/evaluator-logs",
+  "/api/admin/import-logs", "/api/admin/snapshots",
+];
+
+function isSensitive(endpoint) {
+  return SENSITIVE_PATTERNS.some(p => endpoint.startsWith(p));
+}
+
 function getCacheKey(endpoint) {
   return endpoint;
 }
 
 function getCached(key) {
+  if (isSensitive(key)) return null;
   const entry = cache.get(key);
   if (!entry) return null;
   if (Date.now() - entry.timestamp > CACHE_TTL) {
@@ -25,6 +40,7 @@ function getCached(key) {
 }
 
 function setCache(key, data) {
+  if (isSensitive(key)) return;
   cache.set(key, { data, timestamp: Date.now() });
 }
 
@@ -80,7 +96,7 @@ async function request(endpoint, options = {}) {
   }
 
   if (isGet) setCache(cacheKey, data);
-  else clearCache(endpoint.split("/").slice(0, 4).join("/"));
+  else clearCache(endpoint.split("/").slice(0, 3).join("/"));
 
   return data;
 }
@@ -96,10 +112,10 @@ export const api = {
     }
     return request(url);
   },
-  post: (endpoint, body) => request(endpoint, { method: "POST", body: JSON.stringify(body) }),
-  put: (endpoint, body) => request(endpoint, { method: "PUT", body: JSON.stringify(body) }),
-  patch: (endpoint, body) => request(endpoint, { method: "PATCH", body: JSON.stringify(body) }),
-  delete: (endpoint, body) => request(endpoint, { method: "DELETE", body: body ? JSON.stringify(body) : undefined }),
+  post: (endpoint, body) => request(endpoint, { method: "POST", body: JSON.stringify(sanitizeObject(body || {})) }),
+  put: (endpoint, body) => request(endpoint, { method: "PUT", body: JSON.stringify(sanitizeObject(body || {})) }),
+  patch: (endpoint, body) => request(endpoint, { method: "PATCH", body: JSON.stringify(sanitizeObject(body || {})) }),
+  delete: (endpoint, body) => request(endpoint, { method: "DELETE", body: body ? JSON.stringify(sanitizeObject(body)) : undefined }),
   request,
 };
 

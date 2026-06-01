@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { AlertTriangle, Clock, User, FileText, Search, Send, CheckCircle, X } from "lucide-react";
+import { AlertTriangle, Clock, User, FileText, Search, CheckCircle, X } from "lucide-react";
 import api from "../../services/api";
 import Pagination from "../common/Pagination";
+import { toPHString } from "../../utils/date";
 
 const PAGE_SIZE = 10;
 
 const SNAPSHOT_CONFIG = {
-  evaluator_submit: { icon: Send, color: "text-blue-600", bg: "bg-blue-50", label: "Evaluator Submit" },
+  evaluator_submit: { icon: FileText, color: "text-blue-600", bg: "bg-blue-50", label: "Evaluator Submit" },
   admin_pre_enroll: { icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50", label: "Admin Pre-Enroll" },
 };
 
@@ -20,11 +21,25 @@ function SnapshotTypeBadge({ type }) {
   );
 }
 
-function parseEvalResult(evalResult) {
+function getEvalResult(raw) {
+  if (!raw) return null;
+  return typeof raw === "string" ? JSON.parse(raw) : raw;
+}
+
+function getSnapshotData(evalResult) {
   if (!evalResult) return null;
-  const data = typeof evalResult === "string" ? JSON.parse(evalResult) : evalResult;
-  const { snapshot_type, ...rest } = data;
-  return rest;
+  // New nested format: data is under a type key
+  if (evalResult.admin_pre_enroll) return evalResult.admin_pre_enroll;
+  if (evalResult.evaluator_submit) return evalResult.evaluator_submit;
+  // Legacy format: snapshot_type is at root level
+  return evalResult;
+}
+
+function getSnapshotType(evalResult) {
+  if (!evalResult) return "unknown";
+  if (evalResult.admin_pre_enroll) return "admin_pre_enroll";
+  if (evalResult.evaluator_submit) return "evaluator_submit";
+  return evalResult.snapshot_type || "unknown";
 }
 
 function SnapshotDetailModal({ snapshot, onClose }) {
@@ -36,11 +51,9 @@ function SnapshotDetailModal({ snapshot, onClose }) {
 
   if (!snapshot) return null;
 
-  const evalResult = snapshot.evaluation_result
-    ? (typeof snapshot.evaluation_result === "string" ? JSON.parse(snapshot.evaluation_result) : snapshot.evaluation_result)
-    : null;
-  const snapType = evalResult?.snapshot_type || "unknown";
-  const snapData = parseEvalResult(evalResult);
+  const evalResult = getEvalResult(snapshot.evaluation_result);
+  const snapType = getSnapshotType(evalResult);
+  const snapData = getSnapshotData(evalResult);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -78,7 +91,7 @@ function SnapshotDetailModal({ snapshot, onClose }) {
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Snapshot Date</p>
-            <p className="text-slate-700">{new Date(snapshot.updated_at).toLocaleString()}</p>
+            <p className="text-slate-700">{toPHString(snapshot.updated_at)}</p>
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Next Sem Subjects</p>
@@ -178,8 +191,8 @@ export default function Snapshots() {
   const [snapshots, setSnapshots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filterType, setFilterType] = useState("");
   const [search, setSearch] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
   const [selectedSnapshot, setSelectedSnapshot] = useState(null);
   const [page, setPage] = useState(1);
 
@@ -187,9 +200,7 @@ export default function Snapshots() {
     setLoading(true);
     setError("");
     try {
-      const params = { limit: 1000 };
-      if (filterType) params.type = filterType;
-      const res = await api.get("/api/admin/snapshots", { params });
+      const res = await api.get("/api/admin/snapshots", { params: { limit: 1000 } });
       const data = res.data || {};
       setSnapshots(data.snapshots || []);
     } catch (err) {
@@ -197,18 +208,27 @@ export default function Snapshots() {
     } finally {
       setLoading(false);
     }
-  }, [filterType]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  useEffect(() => { setPage(1); }, [filterType, search]);
+  useEffect(() => { setPage(1); }, [search, courseFilter]);
+
+  const courses = useMemo(() => {
+    const map = {};
+    snapshots.forEach((s) => {
+      if (s.course_name && s.course_code) map[s.course_code] = s.course_name;
+    });
+    return Object.entries(map).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [snapshots]);
 
   const filtered = useMemo(() =>
-    snapshots.filter((s) =>
-      !search ||
-      `${s.student_name || ""} ${s.student_number || ""} ${s.requested_by_name || ""} ${s.reviewed_by_name || ""} ${s.course_name || ""} ${s.course_code || ""}`
-        .toLowerCase().includes(search.toLowerCase())
-    ), [snapshots, search]
+    snapshots.filter((s) => {
+      if (courseFilter && s.course_code !== courseFilter) return false;
+      if (search && !`${s.student_name || ""} ${s.student_number || ""} ${s.requested_by_name || ""} ${s.reviewed_by_name || ""} ${s.course_name || ""} ${s.course_code || ""}`
+          .toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    }), [snapshots, search, courseFilter]
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -248,10 +268,12 @@ export default function Snapshots() {
             />
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="input-field text-sm w-auto">
-            <option value="">All Types</option>
-            {Object.entries(SNAPSHOT_CONFIG).map(([key, cfg]) => <option key={key} value={key}>{cfg.label}</option>)}
+          <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="input-field text-sm w-auto">
+            <option value="">All Courses</option>
+            {courses.map(([code, name]) => <option key={code} value={code}>{name} ({code})</option>)}
           </select>
+
+
         </div>
       </div>
 
@@ -263,10 +285,8 @@ export default function Snapshots() {
 
       <div className="space-y-3">
         {paginated.map((s) => {
-          const evalResult = s.evaluation_result
-            ? (typeof s.evaluation_result === "string" ? JSON.parse(s.evaluation_result) : s.evaluation_result)
-            : null;
-          const snapType = evalResult?.snapshot_type || "unknown";
+          const evalResult = getEvalResult(s.evaluation_result);
+          const snapType = getSnapshotType(evalResult);
 
           return (
             <div
@@ -288,7 +308,7 @@ export default function Snapshots() {
                     <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
                       {s.course_name && <span>{s.course_name} ({s.course_code})</span>}
                       <span className="flex items-center gap-1"><User size={12} />{s.requested_by_name || "Unknown"}</span>
-                      <span className="flex items-center gap-1"><Clock size={12} />{new Date(s.updated_at).toLocaleString()}</span>
+                      <span className="flex items-center gap-1"><Clock size={12} />{toPHString(s.updated_at)}</span>
                     </div>
                   </div>
                 </div>

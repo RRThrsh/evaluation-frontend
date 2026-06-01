@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "../../services/api";
 import { usePermissions } from "../../context/PermissionContext";
 import SvgIcon from "../common/SvgIcon";
@@ -25,15 +25,42 @@ export default function DatabaseViewer({ selectedTable, tableData, tableLoading,
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const timerRef = useRef(null);
+
+  useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
 
   const showToast = (message, type = "success") => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
+  const executeDelete = async (tableName, rowId) => {
     setDeleting(true);
-    try { await api.delete(`/api/admin/tables/${deleteTarget.tableName}/${deleteTarget.rowId}`); showToast("Record deleted successfully"); setDeleteTarget(null); onLoadTable(deleteTarget.tableName); }
+    try { await api.delete(`/api/admin/tables/${tableName}/${rowId}`); showToast("Record deleted successfully"); onLoadTable(tableName); }
     catch (err) { showToast(err.message, "error"); }
     finally { setDeleting(false); }
+  };
+
+  const scheduleDelete = (tableName, rowId) => {
+    let remaining = 3;
+    setPendingDelete({ tableName, rowId, remaining });
+    timerRef.current = setInterval(() => {
+      remaining--;
+      if (remaining > 0) {
+        setPendingDelete((prev) => prev ? { ...prev, remaining } : null);
+      } else {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+        const targetTable = tableName;
+        const targetRow = rowId;
+        setPendingDelete(null);
+        executeDelete(targetTable, targetRow);
+      }
+    }, 1000);
+  };
+
+  const undoDelete = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+    setPendingDelete(null);
   };
 
   const handleEditSave = async () => {
@@ -101,7 +128,14 @@ export default function DatabaseViewer({ selectedTable, tableData, tableLoading,
         </div>
       </div>
 
-      <DeleteModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} tableName={deleteTarget?.tableName} rowId={deleteTarget?.rowId} deleting={deleting} />
+      <DeleteModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => { const { tableName, rowId } = deleteTarget; setDeleteTarget(null); scheduleDelete(tableName, rowId); }} tableName={deleteTarget?.tableName} rowId={deleteTarget?.rowId} deleting={deleting} />
+
+      {pendingDelete && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl text-sm">
+          <span>Deleting <strong>{pendingDelete.tableName} #{pendingDelete.rowId}</strong>... <span className="text-slate-400">({pendingDelete.remaining}s)</span></span>
+          <button onClick={undoDelete} className="btn bg-white text-slate-900 hover:bg-slate-200 btn-sm font-semibold px-3">Undo</button>
+        </div>
+      )}
 
       {editRow && (
         <div className="modal-overlay items-start pt-10 pb-10 overflow-y-auto" onClick={() => setEditRow(null)}>

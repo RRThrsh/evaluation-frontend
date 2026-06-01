@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { X, User, BookOpen, GraduationCap } from "lucide-react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { X, User, BookOpen, GraduationCap, Pencil, Check } from "lucide-react";
 import api from "../../services/api";
 import AcademicRecord from "./AcademicRecord";
+import { toPHLongDate } from "../../utils/date";
 
 function Field({ label, value }) {
   return (
@@ -14,7 +15,7 @@ function Field({ label, value }) {
 
 function formatDate(d) {
   if (!d) return "—";
-  try { return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }); }
+  try { return toPHLongDate(d); }
   catch { return d; }
 }
 
@@ -31,13 +32,42 @@ const TABS = [
   { key: "curriculum", label: "Curriculum", icon: GraduationCap },
 ];
 
-export default function StudentSubjectsModal({ student, subjects, config, onClose, onToast }) {
+export default function StudentSubjectsModal({ student, onClose }) {
+  const overlayRef = useRef(null);
   const [tab, setTab] = useState("subjects");
   const [studentSubjects, setStudentSubjects] = useState([]);
   const [profileData, setProfileData] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [curriculum, setCurriculum] = useState([]);
   const [loadingCurriculum, setLoadingCurriculum] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editValue, setEditValue] = useState("");
+
+  const handleEditGrade = async (ss) => {
+    try {
+      await api.post(`/api/admin/students/${student.id}/bulk-enroll`, {
+        subjects: [{ subject_id: ss.subject_id, grade: editValue }],
+      });
+      setStudentSubjects((prev) => prev.map((s) => s.id === ss.id ? { ...s, grade: editValue } : s));
+      setEditingId(null);
+      setEditValue("");
+      showToast("Grade updated");
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
 
   useEffect(() => { loadSubjects(); }, []);
 
@@ -48,30 +78,42 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
 
   const loadProfile = async () => {
     setProfileLoading(true);
-    try { const d = await api.get(`/api/admin/students/${student.id}`); setProfileData(d.data ?? d); }
-    catch (err) { onToast(err.message, "error"); }
+    try { const d = await api.get(`/api/students/${student.id}`); setProfileData(d.data ?? d); }
+    catch (err) { showToast(err.message, "error"); }
     finally { setProfileLoading(false); }
   };
 
   const loadSubjects = async () => {
     try { const d = await api.get(`/api/admin/students/${student.id}/subjects`); setStudentSubjects(d.data ?? []); }
-    catch (err) { onToast(err.message, "error"); }
+    catch (err) { showToast(err.message, "error"); }
   };
 
   const loadCurriculum = async () => {
     setLoadingCurriculum(true);
     try { const d = await api.get(`/api/admin/students/${student.id}/curriculum`); setCurriculum(d.data ?? []); }
-    catch (err) { onToast(err.message, "error"); }
+    catch (err) { showToast(err.message, "error"); }
     finally { setLoadingCurriculum(false); }
   };
 
   const fullName = (s) => [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(" ") || s.full_name || "—";
 
+  const currentSubjects = useMemo(() => {
+    return studentSubjects.filter((ss) => {
+      if (ss.sub_year == null || ss.sub_semester == null) return true;
+      return ss.sub_year === student.year_level && ss.sub_semester === student.current_semester;
+    });
+  }, [studentSubjects, student.year_level, student.current_semester]);
+
   const tabIndex = TABS.findIndex((t) => t.key === tab);
 
   return (
-    <div className="modal-overlay items-start pt-8 pb-10 overflow-y-auto" onClick={onClose}>
+    <div ref={overlayRef} className="modal-overlay items-start pt-8 pb-10 overflow-y-auto" onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}>
       <div className="modal-content max-w-4xl" onClick={(e) => e.stopPropagation()}>
+        {toast && (
+          <div className={`mx-6 mt-4 px-4 py-2 rounded-xl text-sm font-medium border ${
+            toast.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"
+          }`}>{toast.message}</div>
+        )}
 
         {/* ── Header ── */}
         <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex items-center justify-between gap-4">
@@ -169,11 +211,13 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
           {tab === "subjects" && (
             <div className="card overflow-hidden">
               <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-                <span className="text-sm font-semibold text-slate-800">Enrolled Subjects</span>
-                <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{studentSubjects.length} subjects</span>
+                <span className="text-sm font-semibold text-slate-800">
+                  {ordinal(student.year_level)} Year — {ordinal(student.current_semester)} Semester Subjects
+                </span>
+                <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{currentSubjects.length} subjects</span>
               </div>
-              {studentSubjects.length === 0 ? (
-                <div className="p-10 text-center text-sm text-slate-400">No subjects enrolled</div>
+              {currentSubjects.length === 0 ? (
+                <div className="p-10 text-center text-sm text-slate-400">No subjects enrolled for this semester</div>
               ) : (
                 <table className="w-full text-left text-xs">
                   <thead className="table-header">
@@ -185,15 +229,39 @@ export default function StudentSubjectsModal({ student, subjects, config, onClos
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {studentSubjects.map((ss) => (
+                    {currentSubjects.map((ss) => (
                       <tr key={ss.id} className="table-row">
                         <td className="table-cell">
                           <span className="font-mono font-medium text-slate-800">{ss.subject_code}</span>
                           <p className="text-[11px] text-slate-500">{ss.subject_name}</p>
+                          {ss.is_retake && <span className="badge badge-blue ml-1 text-[10px]">Retake</span>}
                         </td>
                         <td className="table-cell"><span className={`badge ${ss.subject_type === "major" ? "badge-purple" : "badge-amber"}`}>{ss.subject_type}</span></td>
                         <td className="table-cell text-slate-600">{ss.units}</td>
-                        <td className="table-cell">{ss.grade ? <span className="badge badge-green">{ss.grade}</span> : <span className="badge badge-yellow">INC</span>}</td>
+                        <td className="table-cell">
+                          {editingId === ss.id ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") handleEditGrade(ss); if (e.key === "Escape") setEditingId(null); }}
+                                className="w-16 px-1.5 py-0.5 text-xs border border-slate-200 rounded"
+                                autoFocus
+                                placeholder="Grade"
+                              />
+                              <button onClick={() => handleEditGrade(ss)} className="p-0.5 text-emerald-600 hover:text-emerald-700"><Check size={14} /></button>
+                            </div>
+                          ) : ss.grade ? (
+                            <span className="badge badge-green">{ss.grade}</span>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <span className="badge badge-yellow">INC</span>
+                              <button onClick={() => { setEditingId(ss.id); setEditValue(""); }} className="p-0.5 text-slate-400 hover:text-primary-600 transition" title="Edit grade">
+                                <Pencil size={12} />
+                              </button>
+                            </div>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

@@ -1,22 +1,36 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell } from "lucide-react";
 import api from "../../services/api";
+import useSocket from "../../hooks/useSocket";
+import { toPHDate } from "../../utils/date";
+
+// Shared AudioContext — created once on first user gesture, reused after
+let _audioCtx = null;
+
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_audioCtx.state === "suspended") _audioCtx.resume();
+  return _audioCtx;
+}
 
 function playNotificationSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g);
-    g.connect(ctx.destination);
-    o.type = "sine";
-    o.frequency.setValueAtTime(523.25, ctx.currentTime);
-    o.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
-    o.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
-    g.gain.setValueAtTime(0.3, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-    o.start(ctx.currentTime);
-    o.stop(ctx.currentTime + 0.5);
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    // Three-note ascending chime: C5 → E5 → G5
+    [[523.25, 0], [659.25, 0.13], [783.99, 0.26]].forEach(([freq, offset]) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.type = "sine";
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0, now + offset);
+      g.gain.linearRampToValueAtTime(0.28, now + offset + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.35);
+      o.start(now + offset);
+      o.stop(now + offset + 0.35);
+    });
   } catch (e) {}
 }
 
@@ -24,14 +38,25 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
-  const prevCount = useRef(0);
+  const prevCount = useRef(null); // null = initial load, skip chime
   const dropdownRef = useRef(null);
+
+  const onNotification = useCallback((data) => {
+    setNotifications((prev) => [data, ...prev]);
+    setUnreadCount((c) => {
+      playNotificationSound();
+      return c + 1;
+    });
+  }, []);
+
+  useSocket(onNotification);
 
   const fetchUnreadCount = useCallback(() => {
     api.get("/api/notifications/unread-count")
       .then((res) => {
         const count = res.data?.count ?? 0;
-        if (count > prevCount.current && prevCount.current > 0) {
+        // Only chime on poll if count genuinely increased (skip initial load)
+        if (prevCount.current !== null && count > prevCount.current) {
           playNotificationSound();
         }
         prevCount.current = count;
@@ -102,7 +127,7 @@ export default function NotificationBell() {
     if (diff < 60000) return "just now";
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return d.toLocaleDateString();
+    return toPHDate(d);
   };
 
   return (

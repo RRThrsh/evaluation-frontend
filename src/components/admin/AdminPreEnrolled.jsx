@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, Trash2, Download } from "lucide-react";
 import { usePermissions } from "../../context/PermissionContext";
+import * as XLSX from "xlsx";
 import api from "../../services/api";
 
 function SubjectTable({ title, subjects, columns, emptyMsg, rowClassName }) {
@@ -139,6 +140,19 @@ function PreEnrolledModal({ request, onClose }) {
                 <div className="card p-8 text-center text-slate-400 text-sm">No possible subjects available.</div>
               )}
 
+              {evalData.is_graduating_candidate && evalData.graduation && !evalData.graduation.can_graduate && evalData.graduation.blocking_subjects?.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
+                  <AlertTriangle size={16} className="text-red-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-red-700">Cannot Graduate</p>
+                    <p className="text-xs text-red-600 mt-0.5">
+                      Student has {evalData.graduation.blocking_subjects.length} failed subject(s) with no retake path.
+                      Must repeat 4th year to retake: {evalData.graduation.blocking_subjects.map((s) => s.subject_code).join(", ")}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {evalData.recommendations?.length > 0 && (
                 <div className="card p-4">
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Evaluation Notes</h4>
@@ -176,8 +190,14 @@ export default function AdminPreEnrolled() {
   const [error, setError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [confirmExport, setConfirmExport] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [modal, setModal] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const timerRef = useRef(null);
   const { can } = usePermissions();
+
+  useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
 
   const fetchRequests = useCallback(async (pg) => {
     setLoading(true);
@@ -202,18 +222,110 @@ export default function AdminPreEnrolled() {
     fetchRequests(p);
   };
 
-  const handleDelete = async () => {
-    if (!confirmDelete) return;
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await api.get("/api/admin/evaluations", { params: { limit: 99999, status: "PRE_ENROLLED" } });
+      const requests = res.data.requests || [];
+      const details = await Promise.all(
+        requests.map(async (r) => {
+          try {
+            const d = await api.get(`/api/admin/evaluations/${r.id}/pre-enrolled-data`);
+            return d.data;
+          } catch { return null; }
+        })
+      );
+      const data = [];
+      requests.forEach((r, i) => {
+        const info = details[i];
+        const studentHeader = {
+          "School Year": r.school_year || "",
+          Semester: r.semester ? `Sem ${r.semester}` : "",
+          "Student No.": r.student_number,
+          "First Name": r.first_name || "",
+          "Last Name": r.last_name || "",
+          "Middle Name": r.middle_name || "",
+          "Extension": r.extension_name || "",
+          "Email": r.email || "",
+          "Contact No.": r.contact_number || "",
+          "Year Level": r.year_level ?? "",
+          "Current Semester": r.current_semester ?? "",
+          "Enrollment Type": r.enrollment_type || "",
+          "Student Status": r.student_status || "",
+          "Course": r.course_name || "",
+          "Course Code": r.course_code || "",
+        };
+        const pushRow = (subject, tag) => {
+          data.push({
+            ...studentHeader,
+            "Source": tag,
+            "Subject Code": subject.subject_code || "",
+            "Subject Name": subject.subject_name || "",
+            "Subject Type": subject.subject_type || "",
+            "Units": subject.units ?? "",
+            "Year Level": subject.sub_year_level ?? subject.year_level ?? "",
+            "Semester": subject.sub_semester ?? subject.semester ?? "",
+            "Grade": subject.grade ?? "",
+            "Status": subject.status ?? "",
+            "Result": subject.result ?? "",
+            "Gap Filler": subject.is_gap_filler ? "Yes" : "",
+            "Retake": subject.is_retake ? "Yes" : "",
+            "Prerequisite": subject.prerequisite ?? subject.prereq_code ?? "",
+            "Prereq Name": subject.prereq_name ?? "",
+          });
+        };
+        (info?.raw_student_subjects || []).forEach((s) => pushRow(s, "Raw"));
+        (info?.current_semester_subjects || []).forEach((s) => pushRow(s, "Current"));
+        (info?.subjects || []).forEach((s) => pushRow(s, "Pre-Enrolled"));
+        if (!info?.raw_student_subjects?.length && !info?.current_semester_subjects?.length && !info?.subjects?.length) {
+          data.push({ ...studentHeader, "Subject Code": "" });
+        }
+      });
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Pre-Enrolled");
+      XLSX.writeFile(wb, "pre-enrolled-students.xlsx");
+    } catch (err) {
+      setError(err.message || "Export failed");
+    } finally {
+      setExporting(false);
+      setConfirmExport(false);
+    }
+  };
+
+  const executeDelete = async (id) => {
     setDeleting(true);
     try {
-      await api.delete(`/api/admin/evaluations/${confirmDelete.id}`);
-      setConfirmDelete(null);
+      await api.delete(`/api/admin/evaluations/${id}`);
       fetchRequests(page);
     } catch (err) {
       setError(err.message || "Failed to delete");
     } finally {
       setDeleting(false);
     }
+  };
+
+  const scheduleDelete = (id, name) => {
+    let remaining = 3;
+    setPendingDelete({ id, name, remaining });
+    timerRef.current = setInterval(() => {
+      remaining--;
+      if (remaining > 0) {
+        setPendingDelete((prev) => prev ? { ...prev, remaining } : null);
+      } else {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+        const targetId = id;
+        setPendingDelete(null);
+        executeDelete(targetId);
+      }
+    }, 1000);
+  };
+
+  const undoDelete = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+    setPendingDelete(null);
   };
 
   return (
@@ -223,9 +335,14 @@ export default function AdminPreEnrolled() {
           <h3 className="font-semibold text-sm text-slate-700">
             Pre-Enrolled Students {!loading && <span className="text-slate-400 font-normal">({total})</span>}
           </h3>
-          {loading && (
-            <span className="inline-block w-4 h-4 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-          )}
+          <div className="flex items-center gap-2">
+            <button onClick={() => setConfirmExport(true)} disabled={loading || requests.length === 0} className="btn btn-ghost btn-sm gap-1.5">
+              <Download size={14} /> Export
+            </button>
+            {loading && (
+              <span className="inline-block w-4 h-4 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+            )}
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -249,7 +366,7 @@ export default function AdminPreEnrolled() {
                   <td className="px-6 py-4 text-slate-700">{row.course_name || "N/A"}</td>
                   {can("enrolled-students.manage") && (
                   <td className="px-6 py-4 text-right">
-                    <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(row); }} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600" title="Delete">
+                    <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ ...row, step: 1 }); }} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600" title="Delete">
                       <Trash2 size={16} />
                     </button>
                   </td>
@@ -283,7 +400,24 @@ export default function AdminPreEnrolled() {
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium">{error}</div>
       )}
 
-      {confirmDelete && (
+      {confirmExport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => !exporting && setConfirmExport(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-slate-800 mb-2">Export Pre-Enrolled</h3>
+            <p className="text-sm text-slate-600 mb-5">
+              Export <span className="font-semibold">{total}</span> pre-enrolled student{total !== 1 ? "s" : ""} to Excel?
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button onClick={() => setConfirmExport(false)} disabled={exporting} className="btn btn-ghost btn-sm">Cancel</button>
+              <button onClick={handleExport} disabled={exporting} className="btn btn-primary btn-sm">
+                {exporting ? "Exporting..." : "Export"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete?.step === 1 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => !deleting && setConfirmDelete(null)}>
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-bold text-slate-800 mb-2">Delete Pre-Enrolled</h3>
@@ -291,8 +425,22 @@ export default function AdminPreEnrolled() {
               Remove <span className="font-semibold">{confirmDelete.first_name} {confirmDelete.last_name}</span> from pre-enrolled list?
             </p>
             <div className="flex items-center justify-end gap-2">
+              <button onClick={() => setConfirmDelete(null)} className="btn btn-ghost btn-sm">Cancel</button>
+              <button onClick={() => setConfirmDelete({ ...confirmDelete, step: 2 })} className="btn btn-primary btn-sm">Continue</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmDelete?.step === 2 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => !deleting && setConfirmDelete(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-slate-800 mb-2">Confirm Delete</h3>
+            <p className="text-sm text-slate-600 mb-5">
+              Are you sure you want to permanently delete <span className="font-semibold">{confirmDelete.first_name} {confirmDelete.last_name}</span>'s pre-enrolled record?
+            </p>
+            <div className="flex items-center justify-end gap-2">
               <button onClick={() => setConfirmDelete(null)} disabled={deleting} className="btn btn-ghost btn-sm">Cancel</button>
-              <button onClick={handleDelete} disabled={deleting} className="btn btn-danger btn-sm">
+              <button onClick={() => { const { id, first_name, last_name } = confirmDelete; setConfirmDelete(null); scheduleDelete(id, `${first_name} ${last_name}`); }} disabled={deleting} className="btn btn-danger btn-sm">
                 {deleting ? "Deleting..." : "Delete"}
               </button>
             </div>
@@ -301,6 +449,13 @@ export default function AdminPreEnrolled() {
       )}
 
       {modal && <PreEnrolledModal request={modal} onClose={() => setModal(null)} />}
+
+      {pendingDelete && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl text-sm">
+          <span>Deleting <strong>{pendingDelete.name}</strong>... <span className="text-slate-400">({pendingDelete.remaining}s)</span></span>
+          <button onClick={undoDelete} className="btn bg-white text-slate-900 hover:bg-slate-200 btn-sm font-semibold px-3">Undo</button>
+        </div>
+      )}
     </div>
   );
 }

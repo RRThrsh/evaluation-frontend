@@ -26,7 +26,7 @@ export default function PendingUsers({ users, loading, onApprove, onReject }) {
                 <p className="text-sm font-medium text-slate-800">{u.full_name}</p>
                 <p className="text-xs text-slate-400">{u.email} &middot; {u.role}</p>
               </div>
-              {can("users.manage") && (
+              {(can("users.create") || can("users.manage")) && (
               <div className="flex items-center gap-2">
                 <button onClick={() => onApprove(u.id)} className="btn btn-sm flex items-center gap-1 text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-lg font-semibold">
                   <Check size={14} /> Approve

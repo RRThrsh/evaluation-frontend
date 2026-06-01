@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, ShieldCheck, Check, Loader2, Users, Eye, Edit3, ChevronRight } from "lucide-react";
+import { Search, ShieldCheck, Check, Loader2, Users, Eye, Edit3, Plus, ChevronRight, FolderOpen } from "lucide-react";
 import api from "../../services/api";
 
 const FEATURES = [
-  { key: "courses",           label: "Programs" },
-  { key: "subjects",          label: "Subjects" },
-  { key: "students",          label: "Student Records" },
-  { key: "users",             label: "Pending Approvals" },
+  { key: "courses",           label: "Programs",           create: true },
+  { key: "subjects",          label: "Subjects",           create: true },
+  { key: "students",          label: "Student Records",    create: true },
+  { key: "users",             label: "Pending Approvals",  create: true },
   { key: "user-management",   label: "All Users" },
-  { key: "enrolled-students", label: "Enrolled Students" },
-
   { key: "database",          label: "Database Explorer" },
 ];
 
@@ -19,17 +17,21 @@ const SIMPLE_PERMS = [
   { key: "evaluator-logs",  label: "Evaluator Logs" },
   { key: "academic-config", label: "Academic Config" },
   { key: "sessions",        label: "Active Sessions" },
-  { key: "class-subjects",  label: "Class Subjects" },
-  { key: "pre-evaluate",    label: "Pre-Evaluate" },
+
+  { key: "undecided",      label: "Undecided" },
   { key: "pre-enrolled",    label: "Pre-Enrolled" },
   { key: "permissions",     label: "Permissions" },
   { key: "snapshots",       label: "Snapshots" },
+
+  { key: "enrolled-students.view",   label: "Enrolled Students View" },
+  { key: "enrolled-students.manage", label: "Enrolled Students Manage" },
 ];
 
 const initials = (name) => name?.split(" ").map((n) => n[0]).join("").slice(0, 2) ?? "?";
 
-function PermRow({ label, viewKey, manageKey, has, saving, toggle, userId }) {
+function PermRow({ label, viewKey, createKey, manageKey, has, saving, toggle, userId }) {
   const viewActive   = has(userId, viewKey);
+  const createActive = createKey ? has(userId, createKey) : false;
   const manageActive = has(userId, manageKey);
 
   return (
@@ -46,6 +48,18 @@ function PermRow({ label, viewKey, manageKey, has, saving, toggle, userId }) {
           {saving[`${userId}-${viewKey}`] ? <Loader2 size={11} className="animate-spin" /> : <Eye size={11} />}
           View
         </button>
+        {createKey && (
+          <button
+            onClick={() => toggle(userId, createKey, !createActive)}
+            disabled={!!saving[`${userId}-${createKey}`]}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium border transition-all disabled:opacity-50 ${
+              createActive ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-white border-slate-200 text-slate-400 hover:border-emerald-200 hover:text-emerald-500"
+            }`}
+          >
+            {saving[`${userId}-${createKey}`] ? <Loader2 size={11} className="animate-spin" /> : <Plus size={11} />}
+            Create
+          </button>
+        )}
         <button
           onClick={() => toggle(userId, manageKey, !manageActive)}
           disabled={!!saving[`${userId}-${manageKey}`]}
@@ -89,6 +103,9 @@ export default function PermissionManager() {
   const [saving, setSaving] = useState({});
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [selected, setSelected] = useState(null);
+  const [courseGroups, setCourseGroups] = useState([]);
+  const [userCourseGroups, setUserCourseGroups] = useState({});
+  const [savingGroups, setSavingGroups] = useState({});
 
   const loadUsers = useCallback(async () => {
     try {
@@ -103,6 +120,12 @@ export default function PermissionManager() {
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
   useEffect(() => {
+    api.get("/api/admin/course-groups")
+      .then((r) => setCourseGroups(r.data || []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     users.forEach((u) => {
       if (userPerms[u.id] === undefined) {
         api.get(`/api/admin/users/${u.id}/permissions`)
@@ -111,6 +134,14 @@ export default function PermissionManager() {
       }
     });
   }, [users]);
+
+  useEffect(() => {
+    if (!selected) return;
+    if (userCourseGroups[selected] !== undefined) return;
+    api.get(`/api/admin/users/${selected}/course-groups`)
+      .then((r) => setUserCourseGroups((prev) => ({ ...prev, [selected]: new Set((r.data || []).map((g) => g.id)) })))
+      .catch(() => {});
+  }, [selected, userCourseGroups]);
 
   const toggle = async (userId, permName, granted) => {
     setSaving((prev) => ({ ...prev, [`${userId}-${permName}`]: true }));
@@ -127,6 +158,18 @@ export default function PermissionManager() {
   };
 
   const has = (userId, permName) => userPerms[userId]?.has(permName) ?? false;
+
+  const toggleGroup = async (userId, groupId, add) => {
+    setSavingGroups((prev) => ({ ...prev, [`${userId}-${groupId}`]: true }));
+    try {
+      const current = [...(userCourseGroups[userId] || [])];
+      const next = add ? [...current, groupId] : current.filter((g) => g !== groupId);
+      await api.post(`/api/admin/users/${userId}/course-groups`, { group_ids: next });
+      setUserCourseGroups((prev) => ({ ...prev, [userId]: new Set(next) }));
+    } catch {} finally {
+      setSavingGroups((prev) => ({ ...prev, [`${userId}-${groupId}`]: false }));
+    }
+  };
 
   const filtered = useMemo(() =>
     users.filter((u) =>
@@ -238,6 +281,7 @@ export default function PermissionManager() {
                     key={f.key}
                     label={f.label}
                     viewKey={`${f.key}.view`}
+                    createKey={f.create ? `${f.key}.create` : null}
                     manageKey={`${f.key}.manage`}
                     has={has}
                     saving={saving}
@@ -269,6 +313,42 @@ export default function PermissionManager() {
                 ))}
               </div>
             </div>
+
+            {/* Course Group Access */}
+            {courseGroups.length > 0 && (
+            <div className="card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <FolderOpen size={14} className="text-violet-500" />
+                <h3 className="text-sm font-semibold text-slate-700">Course Group Access</h3>
+                <span className="text-xs text-slate-400 ml-1">Restrict admin to specific course groups</span>
+              </div>
+              <div>
+                {courseGroups.map((g) => {
+                  const active = userCourseGroups[selectedUser.id]?.has(g.id) ?? false;
+                  return (
+                    <div key={g.id} className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
+                      <span className="text-sm text-slate-700">{g.name}</span>
+                      <button
+                        onClick={() => toggleGroup(selectedUser.id, g.id, !active)}
+                        disabled={!!savingGroups[`${selectedUser.id}-${g.id}`]}
+                        className={`w-9 h-5 rounded-full border transition-all relative disabled:opacity-50 ${
+                          active ? "bg-violet-500 border-violet-500" : "bg-slate-200 border-slate-200"
+                        }`}
+                      >
+                        {savingGroups[`${selectedUser.id}-${g.id}`]
+                          ? <Loader2 size={10} className="animate-spin absolute top-0.5 left-0.5 text-white" />
+                          : <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${active ? "left-4" : "left-0.5"}`} />
+                        }
+                      </button>
+                    </div>
+                  );
+                })}
+                {courseGroups.length === 0 && (
+                  <p className="text-xs text-slate-400 py-2">No course groups created yet</p>
+                )}
+              </div>
+            </div>
+            )}
 
           </div>
         )}

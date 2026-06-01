@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { AlertTriangle, Clock, User, FileText, CheckCircle, XCircle, Send, Eye, Search } from "lucide-react";
 import api from "../../services/api";
 import Pagination from "../common/Pagination";
+import { toPHString } from "../../utils/date";
 
 const PAGE_SIZE = 10;
 
@@ -140,7 +141,7 @@ export default function EvaluatorLogs() {
                       {log.course_name && <span>{log.course_name} ({log.course_code})</span>}
                       <span className="flex items-center gap-1"><User size={12} />{log.requested_by_name || "Unknown"}</span>
                       {log.reviewed_by_name && <span className="flex items-center gap-1"><CheckCircle size={12} />{log.reviewed_by_name}</span>}
-                      <span className="flex items-center gap-1"><Clock size={12} />{new Date(log.created_at).toLocaleString()}</span>
+                      <span className="flex items-center gap-1"><Clock size={12} />{toPHString(log.created_at)}</span>
                     </div>
                   </div>
                 </div>
@@ -151,24 +152,24 @@ export default function EvaluatorLogs() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                       <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Created</p>
-                      <p className="text-slate-700">{new Date(log.created_at).toLocaleString()}</p>
+                      <p className="text-slate-700">{toPHString(log.created_at)}</p>
                     </div>
                     {log.evaluated_at && (
                       <div>
                         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Evaluated</p>
-                        <p className="text-slate-700">{new Date(log.evaluated_at).toLocaleString()}</p>
+                        <p className="text-slate-700">{toPHString(log.evaluated_at)}</p>
                       </div>
                     )}
                     {log.updated_at !== log.created_at && (
                       <div>
                         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Last Updated</p>
-                        <p className="text-slate-700">{new Date(log.updated_at).toLocaleString()}</p>
+                        <p className="text-slate-700">{toPHString(log.updated_at)}</p>
                       </div>
                     )}
                     {log.staff_viewed_at && (
                       <div>
                         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Staff Viewed</p>
-                        <p className="text-slate-700">{new Date(log.staff_viewed_at).toLocaleString()}</p>
+                        <p className="text-slate-700">{toPHString(log.staff_viewed_at)}</p>
                       </div>
                     )}
                     {log.school_year && (

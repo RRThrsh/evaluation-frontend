@@ -89,30 +89,13 @@ const SessionManager = lazy(
       "../../../components/admin/SessionManager"
     )
 );
-const AdminPreEvaluate = lazy(
-  () =>
-    import(
-      "../../../components/admin/AdminPreEvaluate"
-    )
-);
 const AdminPreEnrolled = lazy(
   () =>
     import(
       "../../../components/admin/AdminPreEnrolled"
     )
 );
-const EnrolledStudents = lazy(
-  () =>
-    import(
-      "../../../components/admin/EnrolledStudents"
-    )
-);
-const ClassSubject = lazy(
-  () =>
-    import(
-      "../../../components/admin/ClassSubject"
-    )
-);
+
 const PermissionManager = lazy(
   () =>
     import(
@@ -123,6 +106,18 @@ const Snapshots = lazy(
   () =>
     import(
       "../../../components/admin/Snapshots"
+    )
+);
+const GuideManager = lazy(
+  () =>
+    import(
+      "../../../components/admin/GuideManager"
+    )
+);
+const AdminUndecided = lazy(
+  () =>
+    import(
+      "../../../components/admin/AdminUndecided"
     )
 );
 
@@ -191,8 +186,23 @@ export default function AdminHome() {
   const [userPermissions, setUserPermissions] =
     useState([]);
 
+  const [badgeCounts, setBadgeCounts] =
+    useState({ pending_users: 0, pending_evaluations: 0, pre_enrolled: 0 });
+
   const isSuperAdmin =
     user?.role === "superadmin";
+
+  /* badge counts */
+  useEffect(() => {
+    const fetch = () => {
+      api.get("/api/admin/badge-counts")
+        .then((r) => setBadgeCounts(r.data ?? { pending_users: 0, pending_evaluations: 0, pre_enrolled: 0 }))
+        .catch(() => {});
+    };
+    fetch();
+    const id = setInterval(fetch, 30000);
+    return () => clearInterval(id);
+  }, []);
 
   /* permissions */
   useEffect(() => {
@@ -262,6 +272,26 @@ export default function AdminHome() {
       );
   }, [activeTab]);
 
+  const handleApprove = async (id) => {
+    try {
+      await api.post(`/api/admin/users/${id}/approve`);
+      setPendingUsers((prev) => prev.filter((u) => u.id !== id));
+      showToast("User approved successfully");
+    } catch (err) {
+      showToast(err.message || "Failed to approve user", "error");
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await api.post(`/api/admin/users/${id}/reject`);
+      setPendingUsers((prev) => prev.filter((u) => u.id !== id));
+      showToast("User rejected");
+    } catch (err) {
+      showToast(err.message || "Failed to reject user", "error");
+    }
+  };
+
   /* helpers */
   const showToast = (
     message,
@@ -313,7 +343,7 @@ export default function AdminHome() {
     );
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       {/* overlay */}
       {sidebarOpen && (
         <div
@@ -326,20 +356,21 @@ export default function AdminHome() {
 
       {/* sidebar */}
       <AdminSidebar
-        activeTab={activeTab}
-        onNavigate={navigateTab}
-        availableGroups={availableGroups}
-        activeGroup={activeGroup}
-        setActiveGroup={setActiveGroup}
-        selectedTable={selectedTable}
-        onSelectTable={loadTable}
-        user={user}
-        logout={logout}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        userPermissions={userPermissions}
-        isSuperAdmin={isSuperAdmin}
-      />
+          activeTab={activeTab}
+          onNavigate={navigateTab}
+          availableGroups={availableGroups}
+          activeGroup={activeGroup}
+          setActiveGroup={setActiveGroup}
+          selectedTable={selectedTable}
+          onSelectTable={loadTable}
+          user={user}
+          logout={logout}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          userPermissions={userPermissions}
+          isSuperAdmin={isSuperAdmin}
+          badgeCounts={badgeCounts}
+        />
 
       {/* content */}
       <div className="md:ml-64">
@@ -418,8 +449,8 @@ export default function AdminHome() {
                   loading={
                     pendingUsersLoading
                   }
-                  onApprove={() => {}}
-                  onReject={() => {}}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
                 />
               )}
 
@@ -444,23 +475,13 @@ export default function AdminHome() {
               )}
 
               {activeTab ===
-                "pre-evaluate" && (
-                <AdminPreEvaluate />
+                "undecided" && (
+                <AdminUndecided />
               )}
 
               {activeTab ===
                 "pre-enrolled" && (
                 <AdminPreEnrolled />
-              )}
-
-              {activeTab ===
-                "enrolled" && (
-                <EnrolledStudents />
-              )}
-
-              {activeTab ===
-                "class-subjects" && (
-                <ClassSubject />
               )}
 
               {activeTab ===
@@ -476,6 +497,11 @@ export default function AdminHome() {
               {activeTab ===
                 "snapshots" && (
                 <Snapshots />
+              )}
+
+              {activeTab ===
+                "guides" && (
+                <GuideManager />
               )}
 
               {activeTab ===

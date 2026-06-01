@@ -15,7 +15,7 @@ const Unauthorized = () => {
   const dashboardPath = roleDashboard[user?.role] || "/";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-6">
+    <div className="min-h-screen flex items-center justify-center bg-background px-6">
       <div className="max-w-md w-full text-center">
         <div className="w-20 h-20 mx-auto mb-6 bg-white border border-red-200 rounded-2xl flex items-center justify-center text-red-500 shadow-lg">
           <Lock size={36} />

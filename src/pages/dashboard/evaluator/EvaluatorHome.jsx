@@ -730,7 +730,7 @@ export default function EvaluatorHome() {
               </div>
             )}
             {recommendations.length > 0 && (
-              <div className="w-full lg:w-80 shrink-0">
+              <div className={gapFillers.filter((s) => s.prereq_dependents > 0).length > 0 ? "w-full lg:w-80 shrink-0" : "w-full"}>
                 <div className="card p-4 border border-amber-200 bg-amber-50/30 space-y-2">
                   <h4 className="text-sm font-semibold text-amber-800">Recommendation Notes</h4>
                   <ul className="space-y-1.5 text-xs text-amber-700">
